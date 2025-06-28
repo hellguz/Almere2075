@@ -27,10 +27,6 @@ services:
     ports:
       # Vite's default port is 5173
       - "2075:5173"
-    # Add environment variable to enable Vite's polling mechanism
-    # This is crucial for hot-reloading to work reliably in Docker
-    environment:
-      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - backend
     # Volume mount for frontend hot-reloading
@@ -43,3 +39,4 @@ services:
 networks:
   almere-net:
     driver: bridge
+
