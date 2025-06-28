@@ -50,34 +50,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const { prompt } = await fetchFromBackend('/generate-prompt', { imageBase64: uploadedImageBase64 });
             generatedPrompt.textContent = prompt;
 
-            // --- FIX: Check for refusal message and stop execution ---
             const refusalKeywords = ["sorry", "can't process", "unable to", "could not be processed"];
             if (refusalKeywords.some(keyword => prompt.toLowerCase().includes(keyword))) {
                 console.log("AI refused to process the image. Halting process.");
+                transformedImagePlaceholder.style.display = 'flex'; // Show placeholder again
                 setLoading(false); // Stop the loader
-                return; // Exit the function before calling Replicate
+                return; 
             }
 
             const { transformedImageUrl } = await fetchFromBackend('/transform-image', { imageBase64: uploadedImageBase64, prompt });
-            
             console.log("Received image URL from backend:", transformedImageUrl);
 
             if (transformedImageUrl) {
                 transformedImage.src = transformedImageUrl;
                 transformedImage.style.display = 'block';
+                transformedImagePlaceholder.style.display = 'none'; 
             } else {
                 throw new Error("Backend did not return a valid image URL.");
             }
-
+            setLoading(false); // Stop loader on success
         } catch (error) {
             console.error('An error occurred:', error);
             generatedPrompt.textContent = `Error: ${error.message}`;
             alert(`An error occurred: ${error.message}`);
             transformedImage.style.display = 'none';
             transformedImagePlaceholder.style.display = 'flex';
-        } finally {
-            // setLoading(false) is now handled inside the try block for the success/refusal cases
-            // or in the catch block for errors.
+            setLoading(false); // Stop loader on error
         }
     }
     
@@ -99,7 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
-        
         const data = await response.json();
         if (!response.ok) {
             throw new Error(data.error || 'An unknown error occurred on the server.');
@@ -107,3 +104,4 @@ document.addEventListener('DOMContentLoaded', () => {
         return data;
     }
 });
+

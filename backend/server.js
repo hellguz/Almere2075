@@ -53,7 +53,7 @@ app.post('/generate-prompt', async (req, res) => {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
             body: JSON.stringify({
                 // FIX: Switched to gpt-4-turbo for better stability with this task
-                model: "gpt-4-turbo",
+                model: "gpt-4.1-2025-04-14",
                 messages: [{ role: "system", content: systemPromptForFlux }, { role: "user", content: [{ type: "text", text: "Generate a prompt for the following image:" }, { type: "image_url", image_url: { "url": imageBase64 } }] }],
                 max_tokens: 300
             })
