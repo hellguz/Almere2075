@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Almere 2075 Cinematic Architect</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
-    <link href="[https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap](https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap)" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="main-container">
@@ -19,12 +19,12 @@
         <div class="example-gallery-container">
             <h3>Or select an example:</h3>
             <div class="gallery-thumbnails">
-                <img src="/img/example-1.jpg" alt="Example image 1" class="thumbnail">
-                <img src="/img/example-2.jpg" alt="Example image 2" class="thumbnail">
-                <img src="/img/example-3.jpg" alt="Example image 3" class="thumbnail">
-                <img src="/img/example-4.jpg" alt="Example image 4" class="thumbnail">
-                <img src="/img/example-5.jpg" alt="Example image 5" class="thumbnail">
-                <img src="/img/example-6.jpg" alt="Example image 6" class="thumbnail">
+                <img src="./img/example-1.jpg" alt="Example image 1" class="thumbnail">
+                <img src="./img/example-2.webm" alt="Example image 2" class="thumbnail">
+                <img src="./img/example-3.webm" alt="Example image 3" class="thumbnail">
+                <img src="./img/example-4.jpg" alt="Example image 4" class="thumbnail">
+                <img src="./img/example-5.webm" alt="Example image 5" class="thumbnail">
+                <img src="./img/example-6.jpg" alt="Example image 6" class="thumbnail">
             </div>
         </div>
 
@@ -33,7 +33,7 @@
                 <div class="card image-card" id="original-card">
                     <div class="card-header">Original Image</div>
                     <div class="image-placeholder" id="original-image-placeholder">
-                        <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                         <span>Click to upload image</span>
                     </div>
                     <img id="original-image" alt="Original" style="display: none;">
@@ -41,7 +41,7 @@
                 <div class="card image-card" id="transformed-card">
                      <div class="card-header">Transformed Image</div>
                     <div class="image-placeholder" id="transformed-image-placeholder">
-                       <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10A10 10 0 0 0 12 2Z"/><path d="m16.24 7.76-1.82 1.82a4 4 0 0 0-5.66 5.66l1.82 1.82"/><path d="m7.76 16.24 1.82-1.82a4 4 0 0 0 5.66-5.66l-1.82-1.82"/></svg>
+                       <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10A10 10 0 0 0 12 2Z"/><path d="m16.24 7.76-1.82 1.82a4 4 0 0 0-5.66 5.66l1.82 1.82"/><path d="m7.76 16.24 1.82-1.82a4 4 0 0 0 5.66-5.66l-1.82-1.82"/></svg>
                         <span>Awaiting transformation</span>
                     </div>
                     <div class="loader-container" id="loader">
