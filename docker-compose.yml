@@ -26,7 +26,7 @@ services:
     restart: unless-stopped
     ports:
       # Vite's default port is 5173
-      - "5173:5173"
+      - "2075:5173"
     # Add environment variable to enable Vite's polling mechanism
     # This is crucial for hot-reloading to work reliably in Docker
     environment:
