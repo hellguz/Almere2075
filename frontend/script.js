@@ -1,5 +1,4 @@
-
-// frontend/script.js (Corrected with better logging)
+// frontend/script.js (Added logic to stop on AI refusal)
 
 document.addEventListener('DOMContentLoaded', () => {
     const imageUpload = document.getElementById('image-upload');
@@ -51,9 +50,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const { prompt } = await fetchFromBackend('/generate-prompt', { imageBase64: uploadedImageBase64 });
             generatedPrompt.textContent = prompt;
 
+            // --- FIX: Check for refusal message and stop execution ---
+            const refusalKeywords = ["sorry", "can't process", "unable to", "could not be processed"];
+            if (refusalKeywords.some(keyword => prompt.toLowerCase().includes(keyword))) {
+                console.log("AI refused to process the image. Halting process.");
+                setLoading(false); // Stop the loader
+                return; // Exit the function before calling Replicate
+            }
+
             const { transformedImageUrl } = await fetchFromBackend('/transform-image', { imageBase64: uploadedImageBase64, prompt });
             
-            // --- NEW: LOGGING ---
             console.log("Received image URL from backend:", transformedImageUrl);
 
             if (transformedImageUrl) {
@@ -67,11 +73,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('An error occurred:', error);
             generatedPrompt.textContent = `Error: ${error.message}`;
             alert(`An error occurred: ${error.message}`);
-            // Reset to placeholder if something goes wrong
             transformedImage.style.display = 'none';
             transformedImagePlaceholder.style.display = 'flex';
         } finally {
-            setLoading(false);
+            // setLoading(false) is now handled inside the try block for the success/refusal cases
+            // or in the catch block for errors.
         }
     }
     

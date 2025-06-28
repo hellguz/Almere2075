@@ -1,4 +1,4 @@
-// backend/server.js (With improved prompt for better error handling)
+// backend/server.js (Switched to gpt-4-turbo for better stability)
 
 const express = require('express');
 const fetch = require('node-fetch');
@@ -52,7 +52,8 @@ app.post('/generate-prompt', async (req, res) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_API_KEY}` },
             body: JSON.stringify({
-                model: "gpt-4o",
+                // FIX: Switched to gpt-4-turbo for better stability with this task
+                model: "gpt-4-turbo",
                 messages: [{ role: "system", content: systemPromptForFlux }, { role: "user", content: [{ type: "text", text: "Generate a prompt for the following image:" }, { type: "image_url", image_url: { "url": imageBase64 } }] }],
                 max_tokens: 300
             })
@@ -94,9 +95,9 @@ app.post('/transform-image', async (req, res) => {
 
         let imageUrl = null;
         if (Array.isArray(output) && output.length > 0) {
-            imageUrl = output[0]; // Handle array case
+            imageUrl = output[0];
         } else if (typeof output === 'string') {
-            imageUrl = output; // Handle direct string case
+            imageUrl = output;
         }
 
         if (typeof imageUrl !== 'string' || !imageUrl.startsWith('http')) {
@@ -114,3 +115,4 @@ app.post('/transform-image', async (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
+
