@@ -28,35 +28,36 @@
                             <span>Click to upload image</span>
                         </div>
                         <img id="original-image" alt="Original" style="display: none;">
-                    </div>
+                     </div>
                 </div>
                 <div class="card image-card" id="transformed-card">
                     <div class="card-header">Transformed Image</div>
                     <div class="image-content-wrapper">
-                        <div class="image-placeholder" id="transformed-image-placeholder">
+                         <div class="image-placeholder" id="transformed-image-placeholder">
                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10A10 10 0 0 0 12 2Z"/><path d="m16.24 7.76-1.82 1.82a4 4 0 0 0-5.66 5.66l1.82 1.82"/><path d="m7.76 16.24 1.82-1.82a4 4 0 0 0 5.66-5.66l-1.82-1.82"/></svg>
-                            <span>Awaiting transformation</span>
+                             <span>Awaiting transformation</span>
                         </div>
                         <div class="loader-container" id="loader">
                             <div class="loader"></div>
-                            <p>Transforming image...</p>
+                             <p>Transforming image...</p>
                         </div>
                         <img id="transformed-image" alt="Transformed" style="display: none;">
                     </div>
-                </div>
+                 </div>
             </div>
 
             <div class="prompt-container card">
                  <div class="card-header">Generated Prompt</div>
                  <p id="generated-prompt">The generated prompt will appear here once the transformation begins.</p>
             </div>
-             <div class="controls-container">
+              <div class="controls-container">
                 <input type="file" id="image-upload" accept="image/*" style="display: none;">
                 <button class="button" id="upload-button">Upload Image</button>
                 <button class="button" id="generate-button" disabled>Generate Transformation</button>
             </div>
         </main>
     </div>
-    <script type="module" src="/script.js"></script>
+    
+    <script type="module" src="/script.js?v=1.1"></script>
 </body>
 </html>
