@@ -1,0 +1,39 @@
+# docker-compose.yml
+
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: almere-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "3000:3000"
+    # Volume mount for backend hot-reloading
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - almere-net
+
+  frontend:
+    build: ./frontend
+    container_name: almere-frontend
+    restart: unless-stopped
+    ports:
+      # Vite's default port is 5173
+      - "5173:5173"
+    depends_on:
+      - backend
+    # Volume mount for frontend hot-reloading
+    volumes:
+      - ./frontend:/usr/src/app
+      - /usr/src/app/node_modules
+    networks:
+      - almere-net
+
+networks:
+  almere-net:
+    driver: bridge
