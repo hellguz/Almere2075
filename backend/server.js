@@ -1,5 +1,3 @@
-// backend/server.js (Switched to gpt-4-turbo for better stability)
-
 const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
@@ -11,8 +9,6 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 const replicate = new Replicate({
     auth: process.env.REPLICATE_API_KEY,
@@ -72,15 +68,15 @@ You are the "Almere 2075 Cinematic Architect." Your mission is to function as a 
 ---
 **PERFECT PROMPT EXAMPLES (Follow this style and level of detail):**
 
-**Example 1:** "Replace the central white town hall with a grand 'Kinetic Timber & Glass' civic building that strictly follows the original's ornate volume, including its central tower and roofline. The new facade features a massive timber exoskeleton and floor-to-ceiling glass, revealing bustling interior galleries. The entire cobblestone square is transformed into a vibrant 'Sponge Park,' a lush landscape of flowering meadows and native grasses, interwoven with shallow, reflective bioswales to handle heavy rainfall. Add two new people, a city planner and a journalist, reviewing plans on a transparent data-slate in the foreground. The style is a high-detail architectural photograph, capturing the bright, warm sunlight and rich textures of the timber and plant life, while preserving all the original people at the market stalls, which are now situated on paved islands within the park."
+**Example 1:** "Replace the red-brick building with a 'Modular Pod Housing' structure that perfectly matches the original's volume and hip-roof form. The new building is visibly composed of interlocking modules of heavy timber and light-colored recycled composites, with some pods extended as balconies overflowing with plants. The roof is now a shared 'Rooftop Greenhouse,' its glass structure glowing warmly. The street and parking lot are replaced by a calm canal for 'Autonomous Water Transport,' with the sidewalk transformed into a wooden boardwalk featuring an 'Edible Streetscape' of integrated planters. Add a new person, an elderly resident, tending to the herbs in a planter on the boardwalk as a sleek, autonomous water taxi silently docks nearby. The style is a professional architectural photograph, capturing the warm textures of the timber against the cool, reflective water under the same overcast sky, preserving the yellow building on the left."
 
-**Example 2:** "Replace the entire row of buildings on the right with new structures featuring 'Amphibious/Plinth Buildings,' perfectly matching the original volumes and rooflines. The new facades are made of resilient, water-resistant recycled materials, and the ground floors are open-air covered walkways with boat docks. The cobblestone street is transformed into a shallow, slow-moving canal for 'Autonomous Water Transport' to manage rising water levels. Add a new person, a resident, leaning out of a large open window and lowering a basket to a small, floating delivery pod in the water below. The style is a crisp, photorealistic architectural photograph, using the overcast light to create soft reflections in the water, while meticulously preserving the two men, who are now walking along the new elevated walkway in the distance."
+**Example 2:** "Replace the pink building on the right with a new 'Modular Pod Housing' structure that strictly follows its original volumetric form and gabled roofline. The new facade is composed of interlocking modules made of light-colored recycled composites, each with a large window and a small timber balcony overflowing with flowering plants. The entire cobblestone square is transformed into a 'Sponge Park,' a lush landscape of soft mosses and native grasses with a shallow, clean stream meandering through it. Add a young parent and a child at the edge of the stream; the child is laughing while placing a small, glowing toy boat in the water. while preserving the building on the left, the clock tower, all original people in the background, and the bright daytime lighting. The style is a crisp, lively, and high-detail architectural photograph, full of warm sunlight."
 
-**Example 3:** "Replace all the buildings visible through the archway with 'Kinetic Timber & Glass Residences' that strictly adhere to the original volumetric forms and rooflines of the historic structures. The new buildings feature heavy timber exoskeletons, floor-to-ceiling windows, and balconies overflowing with cascading greenery. The inclined cobblestone street is transformed into a 'Cascading Water Feature,' a series of shallow, clear water terraces and miniature waterfalls flowing gently down the slope to manage storm runoff, bordered by wide steps made of recycled stone. Add a new child sitting on the steps, safely splashing their hands in the sparkling water. The style is a high-detail architectural photograph, perfectly preserving the old stone archway in the foreground to create a frame, while capturing the rich textures of the new timber and the lively, sunlit water beyond, all while keeping the original pedestrians in the scene."
+**Example 3:** "Replace the row of buildings on the left with new 'Kinetic Timber & Glass Residences' that strictly follow the original volumetric form and rooflines. The new structures feature a heavy timber exoskeleton, floor-to-ceiling windows, and balconies overflowing with lush greenery. The entire cobblestone street and sidewalk are transformed into a 'Sponge Park,' a continuous landscape of soft native grasses, mosses, and shallow bioswales collecting rainwater, with a central winding path made of permeable pavers. Add a new person, an urban botanist, kneeling to inspect the plant life in a bioswale. The style is a crisp, high-detail architectural photograph, captured with a professional camera under the same overcast sky, highlighting the rich textures of the wood and the soft, absorbent park landscape, while preserving the original half-timbered building on the right and the people sitting at the cafe."
 
-**Example 4:** "Replace the prominent corner building on the right with a 'Modular Pod Housing' structure that meticulously follows the original's volume and distinctive bay window shape. The new facade is composed of interlocking modules made from light-colored recycled composites and sustainable timber, with large windows and integrated planters overflowing with vines. The asphalt street and sidewalks are completely transformed into an 'Edible Streetscape,' a lush corridor of community vegetable gardens and fruit bushes, navigated by a narrow, winding pedestrian path. Add a sleek, translucent 'Elevated Mobility System' walkway for bicycles suspended above the gardens. Add a new person, a young resident, cycling across the elevated path, while another tends to tomato plants below. The style is a high-detail architectural photograph, full of life, captured under the same overcast sky, preserving the original tree and bicycle on the left."
+**Example 4:** "Replace all the buildings visible through the archway with 'Kinetic Timber & Glass Residences' that strictly adhere to the original volumetric forms and rooflines of the historic structures. The new buildings feature heavy timber exoskeletons, floor-to-ceiling windows, and balconies overflowing with cascading greenery. The inclined cobblestone street is transformed into a 'Cascading Water Feature,' a series of shallow, clear water terraces and miniature waterfalls flowing gently down the slope, bordered by wide steps made of recycled stone. Add a new child sitting on the steps, safely splashing their hands in the sparkling water. The style is a high-detail architectural photograph, perfectly preserving the old stone archway in the foreground to create a frame, while capturing the rich textures of the new timber and the lively, sunlit water beyond, all while keeping the original pedestrians in the scene."
 
-**Example 5:** "Replace the red-brick building with a 'Modular Pod Housing' structure that perfectly matches the original's volume and hip-roof form. The new building is visibly composed of interlocking modules of heavy timber and light-colored recycled composites, with some pods extended as balconies overflowing with plants. The roof is now a shared 'Rooftop Greenhouse,' its glass structure glowing warmly. The street and parking lot are replaced by a calm canal for 'Autonomous Water Transport,' with the sidewalk transformed into a wooden boardwalk featuring an 'Edible Streetscape' of integrated planters. Add a new person, an elderly resident, tending to the herbs in a planter on the boardwalk as a sleek, autonomous water taxi silently docks nearby. The style is a professional architectural photograph, capturing the warm textures of the timber against the cool, reflective water under the same overcast sky, preserving the yellow building on the left."
+**Example 5:** "Replace the yellow brick building on the left with a 'Community Repair Hub' that matches the original's volume, featuring a large, open glass garage door revealing a brightly lit workshop. The building on the right is transformed into a 'Kinetic Timber & Glass Residence' of the same shape. The entire cobblestone courtyard, including the parked van, is replaced by a miniature 'Edible Streetscape,' a community garden with raised planters made of recycled plastic, filled with herbs and vegetables. Add a new resident from the timber building kneeling to tend to a planter, while inside the workshop, another person is visibly repairing an e-bike. The style is a lively, high-detail architectural photograph, preserving the tree branches at the top left and the overcast sky, capturing the rich textures of the garden and the tools in the workshop."
 `;
 
 app.post('/generate-prompt', async (req, res) => {
@@ -100,7 +96,7 @@ app.post('/generate-prompt', async (req, res) => {
         });
         if (!response.ok) { const err = await response.json(); throw new Error(err.error.message); }
         const data = await response.json();
-        
+
         let promptContent = data.choices[0].message.content;
         try {
             const parsed = JSON.parse(promptContent);
@@ -115,6 +111,7 @@ app.post('/generate-prompt', async (req, res) => {
         res.json({ prompt: promptContent });
     } catch (error) { res.status(500).json({ error: `OpenAI Error: ${error.message}` }); }
 });
+
 
 app.post('/transform-image', async (req, res) => {
     const { imageBase64, prompt } = req.body;
@@ -145,7 +142,6 @@ app.post('/transform-image', async (req, res) => {
         }
         
         res.json({ transformedImageUrl: imageUrl });
-
     } catch (error) {
         console.error("--- DETAILED REPLICATE ERROR ---");
         console.error(error);

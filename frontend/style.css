@@ -21,7 +21,7 @@
 /* 1. Make the page fill the screen and prevent scrolling */
 html, body {
     height: 100vh;
-    overflow: hidden;
+    overflow-y: auto; /* Allow scrolling for the whole page if content overflows */
 }
 
 body {
@@ -31,7 +31,7 @@ body {
     margin: 0;
     padding: var(--main-gap);
     display: flex;
-    justify-content: center;
+    flex-direction: column; /* Changed to column for gallery */
     align-items: center;
 }
 
@@ -63,6 +63,46 @@ body {
     margin: 0;
 }
 
+.example-gallery-container {
+    background-color: var(--surface-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: var(--main-gap);
+    width: 100%;
+    max-width: 1200px;
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+}
+
+.example-gallery-container h3 {
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.gallery-thumbnails {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.thumbnail {
+    height: 80px;
+    width: auto;
+    border-radius: 8px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.thumbnail:hover {
+    transform: scale(1.05);
+    border-color: var(--primary-color);
+}
+
+
 .content {
     flex-grow: 1; /* Allows this main section to fill available vertical space */
     min-height: 0;
@@ -70,6 +110,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: var(--main-gap);
+    width: 100%;
 }
 
 .card {
