@@ -1,0 +1,21 @@
+# Development Dockerfile for Backend
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Create a non-root user for security
+RUN addgroup --system app && adduser --system --group app
+
+# Copy only the requirements file first to leverage Docker's cache
+COPY ./requirements.txt /app/
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# The rest of the app will be mounted via a volume in docker-compose.dev.yml
+# This just sets the correct ownership for the WORKDIR.
+RUN chown -R app:app /app
+
+USER app
+
+# The CMD is now in docker-compose.dev.yml to include the --reload flag
+

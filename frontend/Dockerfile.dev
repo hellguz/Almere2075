@@ -1,0 +1,15 @@
+# Development Dockerfile for Frontend
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# The source code will be mounted as a volume.
+# The `npm run dev` command will be run from docker-compose.
+CMD ["npm", "run", "dev"]
+

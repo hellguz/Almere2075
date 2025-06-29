@@ -1,0 +1,66 @@
+version: '3.8'
+
+# Development-specific docker-compose file.
+# To run: docker-compose -f docker-compose.dev.yml up --build
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: almere-proxy-dev
+    ports:
+      # The application will be accessible on http://localhost:2075
+      - "${NGINX_HOST_PORT:-2075}:80"
+    volumes:
+      # Mount the development-specific nginx configuration
+      - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+     - almere-net
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      # Use a development-specific Dockerfile
+      dockerfile: Dockerfile.dev
+    container_name: almere-backend-dev
+    env_file: .env
+    volumes:
+      # Mount the entire backend directory to enable hot-reloading
+      - ./backend:/app
+    networks:
+      - almere-net
+    expose:
+      # Expose port 8000 for the FastAPI server
+      - "8000"
+    restart: unless-stopped
+    # The command now uses --reload to watch for file changes
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  frontend:
+    build:
+      context: ./frontend
+      # Use a development-specific Dockerfile
+      dockerfile: Dockerfile.dev
+    container_name: almere-frontend-dev
+    environment:
+      # Ensure Vite uses the correct port for HMR
+      - VITE_HMR_CLIENT_PORT=${NGINX_HOST_PORT:-2075}
+    volumes:
+      # Mount the frontend source code to enable hot-reloading
+      - ./frontend:/app
+      # Cache node_modules in a volume for better performance
+      - /app/node_modules
+    networks:
+      - almere-net
+    expose:
+      # Expose the Vite dev server port
+      - "5173"
+    restart: unless-stopped
+
+networks:
+  almere-net:
+    driver: bridge
+
