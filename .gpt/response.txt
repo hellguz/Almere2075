@@ -1,183 +1,238 @@
-<./backend/app/main.py>
-import os
-import base64
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from contextlib import asynccontextmanager
-from pathlib import Path
-import aiofiles
-from PIL import Image
-import openai
-import replicate
-from dotenv import load_dotenv
+<./frontend\src\App.jsx>
+import { useState, useEffect } from 'react';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-from .models import GeneratePromptRequest, TransformImageRequest
-from .ai_prompts import system_prompt_for_flux
+// --- Components ---
 
-# Load environment variables
-load_dotenv()
+const LoadingIndicator = () => (
+  <div className="loader-container">
+    <div className="spinner"></div>
+    <p>Generating your vision...</p>
+  </div>
+);
 
-# --- Configuration ---
-THUMBNAIL_SIZE = (400, 400)
-IMAGES_DIR = Path("/app/images")
-THUMBNAILS_DIR = Path("/app/thumbnails")
-ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
+const ImageIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+    <polyline points="21 15 16 10 5 21"></polyline>
+  </svg>
+);
 
-# API Clients
-openai.api_key = os.getenv("OPENAI_API_KEY")
-replicate_client = replicate.Client(api_token=os.getenv("REPLICATE_API_KEY"))
+const GalleryItemPlaceholder = ({ filename }) => (
+  <div className="gallery-item-placeholder">
+    <ImageIcon />
+    <span>{filename.split('.').pop().toUpperCase()}</span>
+    <span className="no-preview-text">No Preview</span>
+  </div>
+);
 
-# --- Helper Functions ---
-def create_thumbnail(image_path: Path):
-    try:
-        if not THUMBNAILS_DIR.exists():
-            THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
-        
-        # Save all thumbnails as jpeg for consistency
-        thumbnail_path = THUMBNAILS_DIR / f"{image_path.stem}.jpeg"
-        if thumbnail_path.exists():
-            return
+// --- Main App Component ---
 
-        with Image.open(image_path) as img:
-            img.thumbnail(THUMBNAIL_SIZE)
-            # Convert to RGB before saving as JPEG
-            if img.mode in ("RGBA", "P"):
-                img = img.convert("RGB")
-            img.save(thumbnail_path, "JPEG")
-            print(f"Created thumbnail for {image_path.name}")
+function App() {
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState(null);
+  const [originalImage, setOriginalImage] = useState(null); // Will hold the Blob URL
+  const [originalImageFile, setOriginalImageFile] = useState(null); // Will hold the File object
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [transformedImageUrl, setTransformedImageUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-    except Exception as e:
-        print(f"Error creating thumbnail for {image_path.name}: {e}")
+  // Fetch gallery images on component mount
+  useEffect(() => {
+    const fetchGalleryImages = async () => {
+      try {
+        // CORRECTED: Removed /api from the start of the path
+        const response = await fetch(`${API_BASE_URL}/gallery`);
+        if (!response.ok) throw new Error('Failed to fetch gallery');
+        const data = await response.json();
+        setGalleryImages(data);
+      } catch (err) {
+        setError('Could not load example gallery. Please try again later.');
+        console.error(err);
+      }
+    };
+    fetchGalleryImages();
+  }, []);
 
-# --- FastAPI Lifespan Events ---
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # On startup: Create thumbnails for example images
-    print("Application starting up...")
-    if not IMAGES_DIR.exists():
-        print(f"Images directory not found: {IMAGES_DIR}")
-    else:
-        print(f"Scanning for images in {IMAGES_DIR}...")
-        for image_file in IMAGES_DIR.iterdir():
-            if image_file.is_file() and image_file.suffix.lower() in ALLOWED_EXTENSIONS:
-                create_thumbnail(image_file)
-    yield
-    # On shutdown
-    print("Application shutting down.")
+  // Convert a File object to a Base64 string
+  const toBase64 = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
 
+  const resetState = () => {
+    setTransformedImageUrl('');
+    setGeneratedPrompt('');
+    setError('');
+  };
 
-# --- FastAPI App Initialization ---
-app = FastAPI(lifespan=lifespan)
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      resetState();
+      setOriginalImage(URL.createObjectURL(file));
+      setOriginalImageFile(file);
+      setSelectedGalleryImage(null); // Deselect gallery item
+    }
+  };
 
-# CORS Middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+  const handleGalleryClick = async (image) => {
+    try {
+      resetState();
+      // CORRECTED: Removed /api from the start of the path
+      const imageUrl = `${API_BASE_URL}/images/${image.filename}`;
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error(`Could not load image: ${image.filename}`);
+      const imageBlob = await response.blob();
+      const imageFile = new File([imageBlob], image.filename, { type: imageBlob.type });
 
-# Mount static directories
-app.mount("/api/images", StaticFiles(directory=IMAGES_DIR), name="images")
-app.mount("/api/thumbnails", StaticFiles(directory=THUMBNAILS_DIR), name="thumbnails")
+      setOriginalImage(URL.createObjectURL(imageFile));
+      setOriginalImageFile(imageFile);
+      setSelectedGalleryImage(image.filename);
+    } catch (err) {
+      setError(err.message);
+      console.error(err);
+    }
+  };
 
-# --- API Endpoints ---
-@app.get("/api")
-async def root():
-    return {"message": "Almere 2075 Backend is running"}
+  const handleGenerate = async () => {
+    if (!originalImageFile) {
+      setError('Please select an image first.');
+      return;
+    }
 
-@app.get("/api/gallery")
-async def get_gallery_index():
-    """Fetches a list of filenames for the example images to populate the gallery."""
-    if not IMAGES_DIR.exists():
-        return []
-    try:
-        image_files = [
-            f.name for f in IMAGES_DIR.iterdir() 
-            if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS
-        ]
-        return image_files
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    setIsLoading(true);
+    setError('');
+    setGeneratedPrompt('');
+    setTransformedImageUrl('');
 
-@app.post("/api/generate-prompt")
-async def generate_prompt(request: GeneratePromptRequest):
-    """Receives a base64 image and generates a descriptive prompt via OpenAI."""
-    if not openai.api_key:
-        raise HTTPException(status_code=500, detail="OpenAI API key not configured.")
-    
-    try:
-        response = openai.chat.completions.create(
-            model="gpt-4-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt_for_flux},
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text", 
-                            "text": "Generate a prompt for this image based on the system instructions."
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": request.imageBase64},
-                        },
-                    ],
-                },
-            ],
-            max_tokens=500,
-        )
-        prompt = response.choices[0].message.content.strip()
-        return {"prompt": prompt}
-    except Exception as e:
-        print(f"Error calling OpenAI: {e}")
-        raise HTTPException(status_code=500, detail="Failed to generate prompt from AI.")
+    try {
+      const base64Image = await toBase64(originalImageFile);
+      
+      // CORRECTED: Removed /api from the start of the path
+      const promptResponse = await fetch(`${API_BASE_URL}/generate-prompt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64Image }),
+      });
+      if (!promptResponse.ok) {
+        const errData = await promptResponse.json();
+        throw new Error(`Failed to generate prompt: ${errData.detail || promptResponse.statusText}`);
+      }
+      const promptData = await promptResponse.json();
+      setGeneratedPrompt(promptData.prompt);
 
-@app.post("/api/transform-image")
-async def transform_image(request: TransformImageRequest):
-    """Receives a base64 image and a prompt, then generates a new image via Replicate."""
-    if not os.getenv("REPLICATE_API_KEY"):
-         raise HTTPException(status_code=500, detail="Replicate API key not configured.")
+      // CORRECTED: Removed /api from the start of the path
+      const transformResponse = await fetch(`${API_BASE_URL}/transform-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64Image, prompt: promptData.prompt }),
+      });
+      if (!transformResponse.ok) {
+        const errData = await transformResponse.json();
+        throw new Error(`Failed to transform image: ${errData.detail || transformResponse.statusText}`);
+      }
+      const transformData = await transformResponse.json();
+      setTransformedImageUrl(transformData.transformedImageUrl);
 
-    try:
-        # CORRECTED: Using the asynchronous prediction pattern to get a URL output.
-        model_name = "black-forest-labs/flux-kontext-pro"
-        input_data = {
-            "prompt": request.prompt,
-            "input_image": request.imageBase64,
-            "output_format": "png"  # Explicitly request a png output
-        }
-        
-        print(f"Starting Replicate prediction with model: {model_name}")
-        
-        # 1. Create the prediction job
-        prediction = replicate_client.predictions.create(
-            model=model_name,
-            input=input_data
-        )
+    } catch (err) {
+      setError(`An error occurred: ${err.message}`);
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        print(f"Started prediction with ID: {prediction.id}. Waiting for completion...")
-        
-        # 2. Wait for the prediction to complete (this is a blocking call)
-        prediction.wait()
+  return (
+    <div className="app-container">
+      <header>
+        <div className="header-content">
+          <h1>Almere 2075</h1>
+          <p className="subtitle">Reimagining our city with sustainable, AI-driven architecture.</p>
+        </div>
+      </header>
 
-        # 3. Check the final status and get the output URL
-        if prediction.status != "succeeded":
-            raise ValueError(f"Prediction failed with status: {prediction.status}. Error: {prediction.error}")
-        
-        print(f"Prediction succeeded. Output: {prediction.output}")
+      <main>
+        <section className="controls-section">
+          <div className="gallery-container">
+            <h3>Start with an example</h3>
+            <div className="gallery">
+              {galleryImages.length > 0 ? (
+                galleryImages.map(img => (
+                  <div
+                    key={img.filename}
+                    className={`gallery-item ${selectedGalleryImage === img.filename ? 'selected' : ''}`}
+                    onClick={() => handleGalleryClick(img)}
+                    title={img.filename}
+                  >
+                    {img.thumbnail ? (
+                      // CORRECTED: Removed /api from the start of the path
+                      <img
+                        src={`${API_BASE_URL}/thumbnails/${img.thumbnail}`}
+                        alt={`Example view of Almere - ${img.filename}`}
+                      />
+                    ) : (
+                      <GalleryItemPlaceholder filename={img.filename} />
+                    )}
+                  </div>
+                ))
+              ) : (
+                <p>No example images found.</p>
+              )}
+            </div>
+          </div>
+          
+          <div className="upload-actions">
+            <p>Or upload your own image of Almere</p>
+            <input id="file-upload" type="file" accept="image/png, image/jpeg, image/webp, image/webm" onChange={handleImageUpload} />
+            <label htmlFor="file-upload" className="button button-secondary">Choose File</label>
+            <button className="button button-primary" onClick={handleGenerate} disabled={!originalImage || isLoading}>
+              {isLoading ? 'Generating...' : 'Generate Vision'}
+            </button>
+          </div>
+          {error && <p className="error-message">{error}</p>}
+        </section>
 
-        if not prediction.output or not isinstance(prediction.output, str):
-            raise ValueError(f"Model returned invalid or empty output. Expected a URL string, but got: {prediction.output}")
+        <section className="results-section">
+          <div className="image-display">
+            <h3>Original</h3>
+            <div className="image-container">
+              {originalImage ? (
+                  <img src={originalImage} alt="Original upload" />
+              ) : (
+                <p className="placeholder-text">Select an example or upload an image to begin.</p>
+              )}
+            </div>
+          </div>
+          <div className="image-display">
+            <h3>Almere 2075 Vision</h3>
+            <div className="image-container">
+              {isLoading && <LoadingIndicator />}
+              {transformedImageUrl && !isLoading && <img src={transformedImageUrl} alt="Transformed Almere 2075 vision" />}
+              {!transformedImageUrl && !isLoading && <p className="placeholder-text">The AI-generated vision will appear here.</p>}
+            </div>
+          </div>
+        </section>
 
-        image_url = prediction.output
-            
-        return {"transformedImageUrl": image_url}
-    except Exception as e:
-        print(f"--- DETAILED REPLICATE ERROR ---")
-        print(f"Error Type: {type(e).__name__}")
-        print(f"Error Details: {e}")
-        print(f"--------------------------------")
-        raise HTTPException(status_code=500, detail="Failed to transform image with AI.")
+        {generatedPrompt && (
+          <section className="prompt-display">
+            <h3>Generated AI Prompt</h3>
+            <div className="prompt-content">
+              {generatedPrompt}
+            </div>
+          </section>
+        )}
+      </main>
+
+      <footer>
+        <p>Almere 2075 Concept Visualizer</p>
+      </footer>
+    </div>
+  );
+}
+
+export default App;

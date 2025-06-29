@@ -1,5 +1,6 @@
 import os
 import base64
+import io
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -21,7 +22,7 @@ load_dotenv()
 THUMBNAIL_SIZE = (400, 400)
 IMAGES_DIR = Path("/app/images")
 THUMBNAILS_DIR = Path("/app/thumbnails")
-ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
+ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.webm'}
 
 # API Clients
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -29,7 +30,13 @@ replicate_client = replicate.Client(api_token=os.getenv("REPLICATE_API_KEY"))
 
 # --- Helper Functions ---
 def create_thumbnail(image_path: Path):
+    """Creates a JPEG thumbnail for a given image, skipping unsupported formats like webm."""
     try:
+        # Pillow does not support WebM, so we skip thumbnail creation for it.
+        if image_path.suffix.lower() == '.webm':
+            print(f"Skipping thumbnail creation for unsupported format: {image_path.name}")
+            return
+
         if not THUMBNAILS_DIR.exists():
             THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
         
@@ -89,25 +96,63 @@ async def root():
 
 @app.get("/api/gallery")
 async def get_gallery_index():
-    """Fetches a list of filenames for the example images to populate the gallery."""
+    """
+    Fetches a structured list of gallery items, including the corresponding thumbnail filename if it exists.
+    """
     if not IMAGES_DIR.exists():
         return []
     try:
-        image_files = [
-            f.name for f in IMAGES_DIR.iterdir() 
+        gallery_data = []
+        # Sort files for a consistent order
+        image_files = sorted([
+            f for f in IMAGES_DIR.iterdir()
             if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS
-        ]
-        return image_files
+        ])
+
+        for f in image_files:
+            thumbnail_name = None
+            # Only image formats supported by Pillow will have a thumbnail.
+            if f.suffix.lower() != '.webm':
+                thumbnail_filename = f"{f.stem}.jpeg"
+                # Check if thumbnail exists before adding it to the response
+                if (THUMBNAILS_DIR / thumbnail_filename).exists():
+                    thumbnail_name = thumbnail_filename
+            
+            gallery_data.append({"filename": f.name, "thumbnail": thumbnail_name})
+            
+        return gallery_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/generate-prompt")
 async def generate_prompt(request: GeneratePromptRequest):
-    """Receives a base64 image and generates a descriptive prompt via OpenAI."""
+    """
+    Receives a base64 image, standardizes it to PNG, and then generates a descriptive prompt via OpenAI.
+    """
     if not openai.api_key:
         raise HTTPException(status_code=500, detail="OpenAI API key not configured.")
     
     try:
+        # --- Image Standardization Step ---
+        # 1. Decode the incoming base64 data URL
+        header, encoded = request.imageBase64.split(",", 1)
+        data = base64.b64decode(encoded)
+
+        # 2. Open the image with Pillow
+        image = Image.open(io.BytesIO(data))
+
+        # 3. Convert to PNG (which supports transparency) and save to an in-memory buffer
+        output_buffer = io.BytesIO()
+        image.save(output_buffer, format="PNG")
+        output_buffer.seek(0)
+
+        # 4. Re-encode the standardized image to a new base64 string
+        new_encoded_data = base64.b64encode(output_buffer.read()).decode("utf-8")
+        
+        # 5. Create a new data URL with the image/png MIME type
+        standardized_data_url = f"data:image/png;base64,{new_encoded_data}"
+        # --- End of Standardization ---
+
         response = openai.chat.completions.create(
             model="gpt-4-turbo",
             messages=[
@@ -121,7 +166,8 @@ async def generate_prompt(request: GeneratePromptRequest):
                         },
                         {
                             "type": "image_url",
-                            "image_url": {"url": request.imageBase64},
+                            # 6. Use the new, standardized data URL
+                            "image_url": {"url": standardized_data_url},
                         },
                     ],
                 },
@@ -141,17 +187,15 @@ async def transform_image(request: TransformImageRequest):
          raise HTTPException(status_code=500, detail="Replicate API key not configured.")
 
     try:
-        # CORRECTED: Using the asynchronous prediction pattern to get a URL output.
         model_name = "black-forest-labs/flux-kontext-pro"
         input_data = {
             "prompt": request.prompt,
             "input_image": request.imageBase64,
-            "output_format": "png"  # Explicitly request a png output
+            "output_format": "png"
         }
         
         print(f"Starting Replicate prediction with model: {model_name}")
         
-        # 1. Create the prediction job
         prediction = replicate_client.predictions.create(
             model=model_name,
             input=input_data
@@ -159,10 +203,8 @@ async def transform_image(request: TransformImageRequest):
 
         print(f"Started prediction with ID: {prediction.id}. Waiting for completion...")
         
-        # 2. Wait for the prediction to complete (this is a blocking call)
         prediction.wait()
 
-        # 3. Check the final status and get the output URL
         if prediction.status != "succeeded":
             raise ValueError(f"Prediction failed with status: {prediction.status}. Error: {prediction.error}")
         

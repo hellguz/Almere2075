@@ -1,18 +1,36 @@
 import { useState, useEffect } from 'react';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+// --- Components ---
 
-// Loading Spinner Component
 const LoadingIndicator = () => (
-  <div className="loading-overlay">
+  <div className="loader-container">
     <div className="spinner"></div>
-    <p>Generating your vision of Almere 2075... This may take a minute.</p>
+    <p>Generating your vision...</p>
   </div>
 );
 
-// Main App Component
+const ImageIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+    <polyline points="21 15 16 10 5 21"></polyline>
+  </svg>
+);
+
+const GalleryItemPlaceholder = ({ filename }) => (
+  <div className="gallery-item-placeholder">
+    <ImageIcon />
+    <span>{filename.split('.').pop().toUpperCase()}</span>
+    <span className="no-preview-text">No Preview</span>
+  </div>
+);
+
+// --- Main App Component ---
+
 function App() {
   const [galleryImages, setGalleryImages] = useState([]);
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState(null);
   const [originalImage, setOriginalImage] = useState(null); // Will hold the Blob URL
   const [originalImageFile, setOriginalImageFile] = useState(null); // Will hold the File object
   const [generatedPrompt, setGeneratedPrompt] = useState('');
@@ -24,6 +42,7 @@ function App() {
   useEffect(() => {
     const fetchGalleryImages = async () => {
       try {
+        // CORRECTED: Removed /api from the start of the path
         const response = await fetch(`${API_BASE_URL}/gallery`);
         if (!response.ok) throw new Error('Failed to fetch gallery');
         const data = await response.json();
@@ -44,30 +63,35 @@ function App() {
     reader.onerror = error => reject(error);
   });
 
+  const resetState = () => {
+    setTransformedImageUrl('');
+    setGeneratedPrompt('');
+    setError('');
+  };
+
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
+      resetState();
       setOriginalImage(URL.createObjectURL(file));
       setOriginalImageFile(file);
-      setTransformedImageUrl('');
-      setGeneratedPrompt('');
-      setError('');
+      setSelectedGalleryImage(null); // Deselect gallery item
     }
   };
 
-  const handleGalleryClick = async (imageName) => {
+  const handleGalleryClick = async (image) => {
     try {
-      const imageUrl = `${API_BASE_URL}/images/${imageName}`;
+      resetState();
+      // CORRECTED: Removed /api from the start of the path
+      const imageUrl = `${API_BASE_URL}/images/${image.filename}`;
       const response = await fetch(imageUrl);
-      if (!response.ok) throw new Error(`Could not load image: ${imageName}`);
+      if (!response.ok) throw new Error(`Could not load image: ${image.filename}`);
       const imageBlob = await response.blob();
-      const imageFile = new File([imageBlob], imageName, { type: imageBlob.type });
-      
+      const imageFile = new File([imageBlob], image.filename, { type: imageBlob.type });
+
       setOriginalImage(URL.createObjectURL(imageFile));
       setOriginalImageFile(imageFile);
-      setTransformedImageUrl('');
-      setGeneratedPrompt('');
-      setError('');
+      setSelectedGalleryImage(image.filename);
     } catch (err) {
       setError(err.message);
       console.error(err);
@@ -86,16 +110,14 @@ function App() {
     setTransformedImageUrl('');
 
     try {
-      // 1. Convert image to Base64
       const base64Image = await toBase64(originalImageFile);
-
-      // 2. Generate the prompt
+      
+      // CORRECTED: Removed /api from the start of the path
       const promptResponse = await fetch(`${API_BASE_URL}/generate-prompt`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: base64Image }),
       });
-
       if (!promptResponse.ok) {
         const errData = await promptResponse.json();
         throw new Error(`Failed to generate prompt: ${errData.detail || promptResponse.statusText}`);
@@ -103,13 +125,12 @@ function App() {
       const promptData = await promptResponse.json();
       setGeneratedPrompt(promptData.prompt);
 
-      // 3. Transform the image using the new prompt
+      // CORRECTED: Removed /api from the start of the path
       const transformResponse = await fetch(`${API_BASE_URL}/transform-image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64: base64Image, prompt: promptData.prompt }),
       });
-      
       if (!transformResponse.ok) {
         const errData = await transformResponse.json();
         throw new Error(`Failed to transform image: ${errData.detail || transformResponse.statusText}`);
@@ -125,12 +146,13 @@ function App() {
     }
   };
 
-
   return (
     <div className="app-container">
-      {isLoading && <LoadingIndicator />}
       <header>
-        <h1>Almere 2075 Vision Generator</h1>
+        <div className="header-content">
+          <h1>Almere 2075</h1>
+          <p className="subtitle">Reimagining our city with sustainable, AI-driven architecture.</p>
+        </div>
       </header>
 
       <main>
@@ -140,13 +162,22 @@ function App() {
             <div className="gallery">
               {galleryImages.length > 0 ? (
                 galleryImages.map(img => (
-                  <img
-                    key={img}
-                    src={`${API_BASE_URL}/thumbnails/${img}`}
-                    alt={`Example view of Almere - ${img}`}
-                    className="gallery-item"
+                  <div
+                    key={img.filename}
+                    className={`gallery-item ${selectedGalleryImage === img.filename ? 'selected' : ''}`}
                     onClick={() => handleGalleryClick(img)}
-                  />
+                    title={img.filename}
+                  >
+                    {img.thumbnail ? (
+                      // CORRECTED: Removed /api from the start of the path
+                      <img
+                        src={`${API_BASE_URL}/thumbnails/${img.thumbnail}`}
+                        alt={`Example view of Almere - ${img.filename}`}
+                      />
+                    ) : (
+                      <GalleryItemPlaceholder filename={img.filename} />
+                    )}
+                  </div>
                 ))
               ) : (
                 <p>No example images found.</p>
@@ -155,11 +186,11 @@ function App() {
           </div>
           
           <div className="upload-actions">
-            <label htmlFor="file-upload" className="file-upload-label">Or Upload Your Own Image</label>
-            {/* CORRECTED: Added 'image/webp' to the accept attribute */}
-            <input id="file-upload" type="file" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} />
-            <button className="generate-button" onClick={handleGenerate} disabled={!originalImage || isLoading}>
-              {isLoading ? 'Generating...' : 'Generate Transformation'}
+            <p>Or upload your own image of Almere</p>
+            <input id="file-upload" type="file" accept="image/png, image/jpeg, image/webp, image/webm" onChange={handleImageUpload} />
+            <label htmlFor="file-upload" className="button button-secondary">Choose File</label>
+            <button className="button button-primary" onClick={handleGenerate} disabled={!originalImage || isLoading}>
+              {isLoading ? 'Generating...' : 'Generate Vision'}
             </button>
           </div>
           {error && <p className="error-message">{error}</p>}
@@ -167,15 +198,21 @@ function App() {
 
         <section className="results-section">
           <div className="image-display">
-            <h3>Original Image</h3>
+            <h3>Original</h3>
             <div className="image-container">
-              {originalImage ? <img src={originalImage} alt="Original upload" /> : <p>Select an example or upload an image to begin.</p>}
+              {originalImage ? (
+                  <img src={originalImage} alt="Original upload" />
+              ) : (
+                <p className="placeholder-text">Select an example or upload an image to begin.</p>
+              )}
             </div>
           </div>
           <div className="image-display">
             <h3>Almere 2075 Vision</h3>
             <div className="image-container">
-              {transformedImageUrl ? <img src={transformedImageUrl} alt="Transformed Almere 2075 vision" /> : <p>Your transformed image will appear here.</p>}
+              {isLoading && <LoadingIndicator />}
+              {transformedImageUrl && !isLoading && <img src={transformedImageUrl} alt="Transformed Almere 2075 vision" />}
+              {!transformedImageUrl && !isLoading && <p className="placeholder-text">The AI-generated vision will appear here.</p>}
             </div>
           </div>
         </section>
