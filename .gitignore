@@ -1,0 +1,48 @@
+# General
+.DS_Store
+
+# Environment variables
+# Ignore the local env file containing secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+
+# Node
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+*.log
+.env
+.env.*
+!.env.example
+
+# Node / Frontend
+/frontend/node_modules
+/frontend/dist
+/frontend/.pnp
+/frontend/.pnp.js
+/frontend/coverage
+/frontend/.vite
+
+# Python / Backend
+/backend/__pycache__/*
+/backend/*.pyc
+/backend/.venv
+/backend/.pytest_cache
+/backend/instance
+
+*/__pycache__
+
+*/thumbnails
+
+.gpt/*.txt
+
+expressions.txt
