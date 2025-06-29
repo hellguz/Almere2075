@@ -8,7 +8,7 @@ const POLLING_INTERVAL = 2500; // ms
 
 // --- Constants for Gallery Grid ---
 const GAP_PX = 5; // The desired gap between images in pixels
-const MAX_MAGNIFICATION = 4.0
+const MAX_MAGNIFICATION = 4.0;
 const MOUSE_INFLUENCE_RADIUS = 0.3;
 
 // --- Constants for UI Layout ---
@@ -48,10 +48,30 @@ const addLogMessage = (text, type = 'info') => {
 
 // --- 3D Gallery Component ---
 
-const ImagePlane = ({ index, texture, position, scale, onClick }) => {
+const ImagePlane = ({ texture, position, scale, onClick }) => {
     const mesh = useRef();
     const originalPosition = useMemo(() => new Vector2(position[0], position[1]), [position]);
     const baseScale = useMemo(() => new Vector2(scale[0], scale[1]), [scale]);
+
+    const textureClone = useMemo(() => texture.clone(), [texture]);
+    
+    useEffect(() => {
+        textureClone.needsUpdate = true;
+        const planeAspect = baseScale.x / baseScale.y;
+        const imageAspect = texture.image.width / texture.image.height;
+        
+        textureClone.repeat.set(1, 1);
+        textureClone.offset.set(0, 0);
+
+        if (planeAspect > imageAspect) {
+            textureClone.repeat.x = imageAspect / planeAspect;
+            textureClone.offset.x = (1 - textureClone.repeat.x) / 2;
+        } else {
+            textureClone.repeat.y = planeAspect / imageAspect;
+            textureClone.offset.y = (1 - textureClone.repeat.y) / 2;
+        }
+    }, [texture, textureClone, baseScale]);
+
 
     useFrame(({ viewport, mouse }) => {
         if (!mesh.current) return;
@@ -60,20 +80,14 @@ const ImagePlane = ({ index, texture, position, scale, onClick }) => {
         const planeVec = new Vector2(mesh.current.position.x, mesh.current.position.y);
         
         const dist = mouseVec.distanceTo(planeVec);
-        const influence = Math.max(0, (MOUSE_INFLUENCE_RADIUS * viewport.width) - dist) / (MOUSE_INFLUENCE_RADIUS * viewport.width);
+        const influence = Math.pow(1 - Math.min(dist / (MOUSE_INFLUENCE_RADIUS * viewport.width), 1.0), 2.0);
         
         const scaleFactor = 1 + (MAX_MAGNIFICATION - 1) * influence;
         
-        const targetScaleX = baseScale.x * scaleFactor;
-        const targetScaleY = baseScale.y * scaleFactor;
-        
-        mesh.current.scale.lerp({ x: targetScaleX, y: targetScaleY, z: 1 }, 0.1);
+        mesh.current.scale.lerp({ x: baseScale.x * scaleFactor, y: baseScale.y * scaleFactor, z: 1 }, 0.1);
         
         const displacement = new Vector2().subVectors(planeVec, mouseVec).normalize().multiplyScalar(influence * 0.4);
-        const targetX = originalPosition.x + displacement.x;
-        const targetY = originalPosition.y + displacement.y;
-
-        mesh.current.position.lerp({ x: targetX, y: targetY, z: position[2] }, 0.1);
+        mesh.current.position.lerp({ x: originalPosition.x + displacement.x, y: originalPosition.y + displacement.y, z: influence * 0.5 }, 0.1);
     });
 
     return (
@@ -84,7 +98,7 @@ const ImagePlane = ({ index, texture, position, scale, onClick }) => {
             onClick={() => onClick(texture)}
         >
             <planeGeometry args={[1, 1]} />
-            <meshBasicMaterial map={texture} toneMapped={false} />
+            <meshBasicMaterial map={textureClone} toneMapped={false} />
         </mesh>
     );
 };
@@ -92,55 +106,51 @@ const ImagePlane = ({ index, texture, position, scale, onClick }) => {
 
 const GalleryGrid = ({ images, onImageClick }) => {
     const textures = useLoader(TextureLoader, images.map(img => `${API_BASE_URL}/thumbnails/${img.thumbnail}`));
-    const { size, viewport } = useThree(); // size = pixel dimensions, viewport = world units
+    const { size, viewport } = useThree();
 
     const grid = useMemo(() => {
         if (!textures.length || size.width === 0) return [];
 
         const imageCount = textures.length;
-        const aspectRatio = textures[0].image.width / textures[0].image.height;
-        
-        // Convert pixel gap to world units
         const gapWorldUnits = (GAP_PX / size.width) * viewport.width;
 
-        let bestGrid = { cols: 0, rows: 0, imageWidth: 0 };
+        let bestGrid = { cols: 0, rows: 0, cellWidth: 0 };
 
-        // Iterate through possible column counts to find the best fit
         for (let c = 1; c <= imageCount; c++) {
             const r = Math.ceil(imageCount / c);
+            const avgAspectRatio = viewport.width / viewport.height;
             
-            // Calculate potential image width based on screen width and screen height constraints
-            const imageWidthFromWidth = (viewport.width - (c - 1) * gapWorldUnits) / c;
-            const imageHeightFromHeight = (viewport.height - (r - 1) * gapWorldUnits) / r;
-            const imageWidthFromHeight = imageHeightFromHeight * aspectRatio;
+            const cellWidthFromWidth = (viewport.width - (c + 1) * gapWorldUnits) / c;
+            const cellHeightFromHeight = (viewport.height - (r + 1) * gapWorldUnits) / r;
+            const cellWidthFromHeight = cellHeightFromHeight * avgAspectRatio;
             
-            // The actual width is the smaller of the two, to ensure it fits
-            const imageWidth = Math.min(imageWidthFromWidth, imageWidthFromHeight);
+            const cellWidth = Math.min(cellWidthFromWidth, cellWidthFromHeight);
 
-            if (imageWidth > bestGrid.imageWidth) {
-                bestGrid = { cols: c, rows: r, imageWidth: imageWidth };
+            if (cellWidth > bestGrid.cellWidth) {
+                bestGrid = { cols: c, rows: r, cellWidth: cellWidth };
             }
         }
 
         const items = [];
-        const { cols, rows, imageWidth } = bestGrid;
-        const imageHeight = imageWidth / aspectRatio;
+        const { cols, rows, cellWidth } = bestGrid;
+        const avgAspectRatio = viewport.width / viewport.height;
+        const cellHeight = cellWidth / avgAspectRatio;
         
-        const totalGridWidth = cols * imageWidth + Math.max(0, cols - 1) * gapWorldUnits;
-        const totalGridHeight = rows * imageHeight + Math.max(0, rows - 1) * gapWorldUnits;
+        const totalGridWidth = cols * cellWidth + Math.max(0, cols - 1) * gapWorldUnits;
+        const totalGridHeight = rows * cellHeight + Math.max(0, rows - 1) * gapWorldUnits;
 
         for (let i = 0; i < imageCount; i++) {
             const c = i % cols;
             const r = Math.floor(i / cols);
             
-            const x = -totalGridWidth / 2 + c * (imageWidth + gapWorldUnits) + imageWidth / 2;
-            const y = totalGridHeight / 2 - r * (imageHeight + gapWorldUnits) - imageHeight / 2;
+            const x = -totalGridWidth / 2 + c * (cellWidth + gapWorldUnits) + cellWidth / 2;
+            const y = totalGridHeight / 2 - r * (cellHeight + gapWorldUnits) - cellHeight / 2;
             
             items.push({
                 index: i,
                 texture: textures[i],
                 position: [x, y, 0],
-                scale: [imageWidth, imageHeight, 1],
+                scale: [cellWidth, cellHeight, 1],
             });
         }
         return items;
@@ -159,11 +169,13 @@ const GalleryView = ({ images, isVisible }) => {
     const [showInstructions, setShowInstructions] = useState(true);
 
     useEffect(() => {
-      const handleMouseMove = () => setShowInstructions(false);
-      window.addEventListener('mousemove', handleMouseMove, { once: true });
+      const handleInteraction = () => setShowInstructions(false);
+      window.addEventListener('mousemove', handleInteraction, { once: true });
+      window.addEventListener('click', handleInteraction, { once: true });
       const timer = setTimeout(() => setShowInstructions(false), 5000);
       return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mousemove', handleInteraction);
+        window.removeEventListener('click', handleInteraction);
         clearTimeout(timer);
       };
     }, []);
@@ -238,14 +250,28 @@ const TransformView = ({ image, isVisible, isProcessing, onTransform }) => {
 
 const ComparisonView = ({ originalImage, outputImage, isVisible, mode, onModeChange }) => {
     const sliderContainerRef = useRef(null);
+    const [isDragging, setIsDragging] = useState(false);
     const [clipPosition, setClipPosition] = useState(50);
 
-    const handleSliderMouseMove = (e) => {
-        if (sliderContainerRef.current) {
-            const rect = sliderContainerRef.current.getBoundingClientRect();
-            setClipPosition(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
+    const handleMouseMove = useCallback((e) => {
+        if (!isDragging || !sliderContainerRef.current) return;
+        const rect = sliderContainerRef.current.getBoundingClientRect();
+        setClipPosition(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
+    }, [isDragging]);
+    
+    const handleMouseUp = useCallback(() => setIsDragging(false), []);
+
+    useEffect(() => {
+        if (isDragging) {
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
         }
-    };
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isDragging, handleMouseMove, handleMouseUp]);
+
 
     if (!originalImage || !outputImage) return null;
     return (
@@ -265,7 +291,7 @@ const ComparisonView = ({ originalImage, outputImage, isVisible, mode, onModeCha
             )}
             
             {mode === 'slider' && (
-                <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleSliderMouseMove}>
+                <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseDown={() => setIsDragging(true)}>
                     <div className="image-panel"><img src={`${API_BASE_URL}/images/${originalImage.filename}`} alt="Original" /></div>
                     <div className="image-panel after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}><img src={outputImage} alt="Almere 2075" /></div>
                     <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
