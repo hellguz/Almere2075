@@ -4,16 +4,24 @@ FROM python:3.10-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container at /app
-COPY ./requirements.txt /app/
+# Create a non-root user and group
+RUN addgroup --system app && adduser --system --group app
 
-# Install any needed packages specified in requirements.txt
+# Copy the requirements file and install dependencies
+COPY ./requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application's code into the container at /app
+# Copy the rest of the application's code into the container
+# and set correct permissions for the new user
 COPY . /app
+RUN chown -R app:app /app
+
+# Switch to the non-root user
+USER app
 
 # Command to run the application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+
 

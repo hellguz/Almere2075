@@ -3,7 +3,7 @@ version: '3.8'
 services:
   nginx:
     image: nginx:alpine
-    container_name: almere-proxy
+    container_name: almere-proxy-prod
     ports:
       - "${NGINX_HOST_PORT:-2075}:80"
     volumes:
@@ -12,18 +12,15 @@ services:
       - frontend
       - backend
     networks:
-      - almere-net
+     - almere-net
     restart: unless-stopped
 
   backend:
     build:
       context: ./backend
-    container_name: almere-backend
+    container_name: almere-backend-prod
     env_file: .env
-    volumes:
-      - ./backend/app:/app/app
-      - ./backend/images:/app/images
-      - ./backend/thumbnails:/app/thumbnails
+    # VOLUMES are removed for production. The code is baked into the image.
     networks:
       - almere-net
     expose:
@@ -33,16 +30,19 @@ services:
   frontend:
     build:
       context: ./frontend
-    container_name: almere-frontend
-    environment:
-      - VITE_API_BASE_URL=/api
+    container_name: almere-frontend-prod
+    # ENVIRONMENT variables are no longer needed as they are baked into the static build.
+    # VOLUMES are removed for production.
     networks:
       - almere-net
     expose:
-      - "5173"
+      # The new frontend container runs Nginx on port 80
+      - "80"
     restart: unless-stopped
 
 networks:
   almere-net:
     driver: bridge
+
+
 

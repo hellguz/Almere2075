@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 // --- Configuration ---
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+// CORRECTED: Set '/api' as the default fallback to ensure production builds work correctly.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const MIN_LIBRARY_WIDTH = 200;
 const MIN_LOG_HEIGHT = 100;
 
@@ -52,7 +53,9 @@ const ComparisonPanel = ({ beforeSrc, afterSrc, viewMode, panelSplit, onSplitter
         }
     };
 
-    if (!beforeSrc) {
+    const hasContent = beforeSrc || afterSrc;
+
+    if (!hasContent) {
         return (
             <div className="comparison-panel">
                 <div className="placeholder">Select an image from the library to begin.</div>
@@ -220,7 +223,7 @@ function App() {
       <main className="main-panel">
         <div className="main-panel-header">
             <div className="main-panel-title">
-                {viewMode === 'slider' && 'Comparison View'}
+                {viewMode === 'slider' && <span>Comparison View</span>}
                 {viewMode === 'side-by-side' && <><span>SOURCE</span><span>ALMERE 2075</span></>}
             </div>
             <div className="view-mode-toggle">
@@ -241,4 +244,3 @@ function App() {
 }
 
 export default App;
-
