@@ -1,224 +1,407 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
+import { TextureLoader, Vector2 } from 'three';
 
 // --- Configuration ---
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const MIN_LIBRARY_WIDTH = 200;
-const MIN_LOG_HEIGHT = 100;
-const POLLING_INTERVAL = 3000; // 3 seconds
+const POLLING_INTERVAL = 2500; // ms
 
-// --- Helper Components ---
+// --- Constants for Gallery Grid ---
+const GAP_PX = 5; // The desired gap between images in pixels
+const MAX_MAGNIFICATION = 4.0
+const MOUSE_INFLUENCE_RADIUS = 0.3;
+
+// --- Constants for UI Layout ---
+const LOG_PANEL_WIDTH = '450px';
+const LOG_PANEL_HEIGHT = '300px';
+
+// --- Global State ---
+const AppState = {
+  view: 'gallery', // gallery, transform, comparison
+  comparisonMode: 'slider', // slider, side-by-side
+  selectedImage: null,
+  outputImage: null,
+  isProcessing: false,
+  logMessages: [],
+};
+
+const state = AppState;
+
+// --- Helper Functions ---
 const formatTime = () => new Date().toLocaleTimeString('en-GB');
-const Resizer = ({ onMouseDown, direction = 'vertical' }) => <div className={`resizer ${direction}`} onMouseDown={onMouseDown} />;
 
-const ProcessLog = ({ messages, onGenerate, isProcessing, disabled }) => {
+const listeners = new Set();
+const subscribe = (callback) => {
+  listeners.add(callback);
+  return () => listeners.delete(callback);
+};
+
+const setState = (key, value) => {
+  state[key] = value;
+  listeners.forEach((listener) => listener());
+};
+
+const addLogMessage = (text, type = 'info') => {
+    const newLog = { time: formatTime(), text, type };
+    setState('logMessages', [...state.logMessages, newLog]);
+};
+
+// --- 3D Gallery Component ---
+
+const ImagePlane = ({ index, texture, position, scale, onClick }) => {
+    const mesh = useRef();
+    const originalPosition = useMemo(() => new Vector2(position[0], position[1]), [position]);
+    const baseScale = useMemo(() => new Vector2(scale[0], scale[1]), [scale]);
+
+    useFrame(({ viewport, mouse }) => {
+        if (!mesh.current) return;
+
+        const mouseVec = new Vector2(mouse.x * viewport.width / 2, mouse.y * viewport.height / 2);
+        const planeVec = new Vector2(mesh.current.position.x, mesh.current.position.y);
+        
+        const dist = mouseVec.distanceTo(planeVec);
+        const influence = Math.max(0, (MOUSE_INFLUENCE_RADIUS * viewport.width) - dist) / (MOUSE_INFLUENCE_RADIUS * viewport.width);
+        
+        const scaleFactor = 1 + (MAX_MAGNIFICATION - 1) * influence;
+        
+        const targetScaleX = baseScale.x * scaleFactor;
+        const targetScaleY = baseScale.y * scaleFactor;
+        
+        mesh.current.scale.lerp({ x: targetScaleX, y: targetScaleY, z: 1 }, 0.1);
+        
+        const displacement = new Vector2().subVectors(planeVec, mouseVec).normalize().multiplyScalar(influence * 0.4);
+        const targetX = originalPosition.x + displacement.x;
+        const targetY = originalPosition.y + displacement.y;
+
+        mesh.current.position.lerp({ x: targetX, y: targetY, z: position[2] }, 0.1);
+    });
+
+    return (
+        <mesh
+            ref={mesh}
+            position={position}
+            scale={scale}
+            onClick={() => onClick(texture)}
+        >
+            <planeGeometry args={[1, 1]} />
+            <meshBasicMaterial map={texture} toneMapped={false} />
+        </mesh>
+    );
+};
+
+
+const GalleryGrid = ({ images, onImageClick }) => {
+    const textures = useLoader(TextureLoader, images.map(img => `${API_BASE_URL}/thumbnails/${img.thumbnail}`));
+    const { size, viewport } = useThree(); // size = pixel dimensions, viewport = world units
+
+    const grid = useMemo(() => {
+        if (!textures.length || size.width === 0) return [];
+
+        const imageCount = textures.length;
+        const aspectRatio = textures[0].image.width / textures[0].image.height;
+        
+        // Convert pixel gap to world units
+        const gapWorldUnits = (GAP_PX / size.width) * viewport.width;
+
+        let bestGrid = { cols: 0, rows: 0, imageWidth: 0 };
+
+        // Iterate through possible column counts to find the best fit
+        for (let c = 1; c <= imageCount; c++) {
+            const r = Math.ceil(imageCount / c);
+            
+            // Calculate potential image width based on screen width and screen height constraints
+            const imageWidthFromWidth = (viewport.width - (c - 1) * gapWorldUnits) / c;
+            const imageHeightFromHeight = (viewport.height - (r - 1) * gapWorldUnits) / r;
+            const imageWidthFromHeight = imageHeightFromHeight * aspectRatio;
+            
+            // The actual width is the smaller of the two, to ensure it fits
+            const imageWidth = Math.min(imageWidthFromWidth, imageWidthFromHeight);
+
+            if (imageWidth > bestGrid.imageWidth) {
+                bestGrid = { cols: c, rows: r, imageWidth: imageWidth };
+            }
+        }
+
+        const items = [];
+        const { cols, rows, imageWidth } = bestGrid;
+        const imageHeight = imageWidth / aspectRatio;
+        
+        const totalGridWidth = cols * imageWidth + Math.max(0, cols - 1) * gapWorldUnits;
+        const totalGridHeight = rows * imageHeight + Math.max(0, rows - 1) * gapWorldUnits;
+
+        for (let i = 0; i < imageCount; i++) {
+            const c = i % cols;
+            const r = Math.floor(i / cols);
+            
+            const x = -totalGridWidth / 2 + c * (imageWidth + gapWorldUnits) + imageWidth / 2;
+            const y = totalGridHeight / 2 - r * (imageHeight + gapWorldUnits) - imageHeight / 2;
+            
+            items.push({
+                index: i,
+                texture: textures[i],
+                position: [x, y, 0],
+                scale: [imageWidth, imageHeight, 1],
+            });
+        }
+        return items;
+    }, [textures, viewport, size]);
+
+    return (
+        <group>
+            {grid.map(item => (
+                <ImagePlane key={item.index} {...item} onClick={onImageClick} />
+            ))}
+        </group>
+    );
+};
+
+const GalleryView = ({ images, isVisible }) => {
+    const [showInstructions, setShowInstructions] = useState(true);
+
+    useEffect(() => {
+      const handleMouseMove = () => setShowInstructions(false);
+      window.addEventListener('mousemove', handleMouseMove, { once: true });
+      const timer = setTimeout(() => setShowInstructions(false), 5000);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        clearTimeout(timer);
+      };
+    }, []);
+
+    const handleImageClick = (texture) => {
+        const imageName = texture.image.src.split('/').pop();
+        const fullImage = images.find(img => img.thumbnail === imageName);
+        if (fullImage) {
+            setState('selectedImage', fullImage);
+            setState('view', 'transform');
+            addLogMessage(`Source selected: ${fullImage.filename}`);
+        }
+    };
+    
+    return (
+        <div className={`fullscreen-canvas-container ${isVisible ? 'visible' : ''} ${!isVisible ? 'in-background' : ''}`}>
+             <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
+                MOVE MOUSE TO EXPLORE. CLICK AN IMAGE TO BEGIN.
+            </div>
+            <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
+                <ambientLight intensity={3} />
+                {images.length > 0 && <GalleryGrid images={images} onImageClick={handleImageClick} />}
+            </Canvas>
+        </div>
+    );
+};
+
+
+// --- UI Components ---
+
+const LogPanel = ({ messages, isVisible }) => {
   const logEndRef = useRef(null);
-  useEffect(() => { logEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   return (
-    <div className="process-log-wrapper">
-      <div className="log-header">Process Log</div>
+    <div 
+        className={`process-log-wrapper ${isVisible ? 'visible' : ''}`}
+        style={{'--panel-width': LOG_PANEL_WIDTH, '--panel-height': LOG_PANEL_HEIGHT}}
+    >
+      <div className="log-header">PROCESS LOG</div>
       <div className="log-content">
-        {messages.map((msg, i) => <p key={i} className={`log-message ${msg.type || ''}`}><span>{msg.time}</span><span>{msg.text}</span></p>)}
+        {messages.map((msg, i) => (
+          <p key={i} className={`log-message ${msg.type || ''}`}>
+            <span>{msg.time}</span>
+            <span>{msg.text}</span>
+          </p>
+        ))}
         <div ref={logEndRef} />
-      </div>
-      <div className="log-footer">
-        <button className="generate-button" onClick={onGenerate} disabled={disabled || isProcessing}>
-          {isProcessing ? 'PROCESSING...' : 'ANALYZE & TRANSFORM'}
-        </button>
       </div>
     </div>
   );
 };
 
-const ComparisonPanel = ({ beforeSrc, afterSrc, viewMode, panelSplit, onSplitterMouseDown }) => {
+const TransformView = ({ image, isVisible, isProcessing, onTransform }) => {
+    if (!image) return null;
+    return (
+        <div className={`transform-view ${isVisible ? 'visible' : ''}`}>
+            <div className="main-image-container">
+                <img src={`${API_BASE_URL}/images/${image.filename}`} alt="Selected for transformation" className="main-image" />
+            </div>
+            {isProcessing && <div className="scanline"></div>}
+            {!isProcessing && (
+                <div className="transform-controls">
+                    <button onClick={onTransform}>TRANSFORM TO ALMERE 2075</button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const ComparisonView = ({ originalImage, outputImage, isVisible, mode, onModeChange }) => {
     const sliderContainerRef = useRef(null);
     const [clipPosition, setClipPosition] = useState(50);
+
     const handleSliderMouseMove = (e) => {
         if (sliderContainerRef.current) {
             const rect = sliderContainerRef.current.getBoundingClientRect();
             setClipPosition(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
         }
     };
-    if (!beforeSrc) return <div className="comparison-panel"><div className="placeholder">Select an image from the library to begin.</div></div>;
-    if (viewMode === 'side-by-side') {
-        return (
-            <div className="comparison-panel side-by-side">
-                <div className="image-panel" style={{ width: `calc(${panelSplit}% - 1px)`}}><div className="image-container">{beforeSrc && <img src={beforeSrc} alt="Source" />}</div></div>
-                <Resizer onMouseDown={onSplitterMouseDown} direction="vertical" />
-                <div className="image-panel" style={{ width: `calc(${100 - panelSplit}% - 1px)`}}><div className="image-container">{afterSrc ? <img src={afterSrc} alt="Almere 2075" /> : <div className="placeholder dark">Output</div>}</div></div>
-            </div>
-        )
-    }
+
+    if (!originalImage || !outputImage) return null;
     return (
-        <div className="comparison-panel slider-mode" ref={sliderContainerRef} onMouseMove={afterSrc ? handleSliderMouseMove : null}>
-            <div className="image-container"><img src={beforeSrc} alt="Source" /></div>
-            {afterSrc && <>
-                <div className="image-container after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}><img src={afterSrc} alt="Almere 2075" /></div>
-                <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
-            </>}
+        <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
+            <div className="comparison-header">
+                <div className="view-mode-toggle">
+                    <button className={mode === 'slider' ? 'active' : ''} onClick={() => onModeChange('slider')}>Slider</button>
+                    <button className={mode === 'side-by-side' ? 'active' : ''} onClick={() => onModeChange('side-by-side')}>Side-by-Side</button>
+                </div>
+            </div>
+
+            {mode === 'side-by-side' && (
+                <div className="comparison-view side-by-side">
+                    <div className="image-panel"><div className="image-header">SOURCE</div><img src={`${API_BASE_URL}/images/${originalImage.filename}`} alt="Original" /></div>
+                    <div className="image-panel"><div className="image-header">ALMERE 2075</div><img src={outputImage} alt="Transformed" /></div>
+                </div>
+            )}
+            
+            {mode === 'slider' && (
+                <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleSliderMouseMove}>
+                    <div className="image-panel"><img src={`${API_BASE_URL}/images/${originalImage.filename}`} alt="Original" /></div>
+                    <div className="image-panel after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}><img src={outputImage} alt="Almere 2075" /></div>
+                    <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
+                </div>
+            )}
         </div>
     );
 };
 
-const MobileNav = ({ activeView, setActiveView, disabled }) => (
-    <nav className="mobile-nav">
-        <button className={activeView === 'library' ? 'active' : ''} onClick={() => setActiveView('library')}>Library</button>
-        <button className={activeView === 'workbench' ? 'active' : ''} onClick={() => setActiveView('workbench')} disabled={disabled}>Workbench</button>
-        <button className={activeView === 'log' ? 'active' : ''} onClick={() => setActiveView('log')} disabled={disabled}>Log</button>
-    </nav>
-);
 
+// --- Main App Component ---
 function App() {
+  const [appState, setAppState] = useState(state);
   const [galleryImages, setGalleryImages] = useState([]);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [outputImageUrl, setOutputImageUrl] = useState(null);
-  const [logMessages, setLogMessages] = useState([{ time: formatTime(), text: 'Workbench initialized. Please select an image.' }]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState('');
-  const [viewMode, setViewMode] = useState('slider');
-  const [panelSizes, setPanelSizes] = useState({ library: 280, log: 220, mainSplit: 50 });
-  const [mobileView, setMobileView] = useState('library');
   const pollingRef = useRef(null);
 
-  const handleMouseDown = useCallback((onDrag) => (startEvent) => {
-    startEvent.preventDefault();
-    const onMove = (moveEvent) => onDrag(moveEvent);
-    const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+  useEffect(() => subscribe(() => setAppState({ ...state })), []);
+  
+  useEffect(() => {
+    const fetchGallery = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/gallery`);
+            if (!response.ok) throw new Error(`Network error (${response.status})`);
+            const images = await response.json();
+            const validImages = images.filter(img => img.thumbnail);
+            setGalleryImages(validImages);
+        } catch (e) {
+            console.error(`Error fetching library: ${e.message}`);
+        }
+    };
+    fetchGallery();
+    return () => {
+        if (pollingRef.current) clearInterval(pollingRef.current);
+    };
   }, []);
 
-  const handleLibraryResize = handleMouseDown((e) => setPanelSizes(p => ({ ...p, library: Math.max(MIN_LIBRARY_WIDTH, e.clientX) })));
-  const handleLogResize = handleMouseDown((e) => setPanelSizes(p => ({ ...p, log: Math.max(MIN_LOG_HEIGHT, window.innerHeight - e.clientY) })));
-  const handleMainSplitterResize = handleMouseDown((e) => {
-    const container = document.querySelector('.side-by-side');
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      setPanelSizes(p => ({...p, mainSplit: Math.max(10, Math.min(90, ((e.clientX - rect.left) / rect.width) * 100))}));
-    }
-  });
-
-  const addLogMessage = (text, type = 'info') => setLogMessages(prev => [...prev, { time: formatTime(), text, type }]);
-  const handleSelectImage = (image) => {
-    if (isProcessing) return;
-    setSelectedImage(image);
-    setOutputImageUrl(null);
-    setError('');
-    setLogMessages([{ time: formatTime(), text: `Source image selected: ${image.filename}` }]);
-    setMobileView('workbench');
+  const handleBack = () => {
+    setState('view', 'gallery');
+    setState('selectedImage', null);
+    setState('outputImage', null);
+    setState('isProcessing', false);
+    setState('logMessages', []);
     if (pollingRef.current) clearInterval(pollingRef.current);
   };
 
-  useEffect(() => {
-    const fetchGallery = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/gallery`);
-        if (!response.ok) throw new Error(`Network error (${response.status})`);
-        setGalleryImages(await response.json());
-      } catch (e) {
-        addLogMessage(`Error fetching library: ${e.message}`, 'error');
-        setError('Could not load image library.');
-      }
-    };
-    fetchGallery();
-    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
-  }, []);
-
-  const pollJobStatus = (jobId) => {
+  const pollJobStatus = useCallback((jobId) => {
     if (pollingRef.current) clearInterval(pollingRef.current);
-
     pollingRef.current = setInterval(async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/job-status/${jobId}`);
-        if (!res.ok) return; // Silently ignore failed polls, wait for next one
+        if (!res.ok) return; 
         const data = await res.json();
 
         if (data.status === 'completed') {
           clearInterval(pollingRef.current);
-          setOutputImageUrl(data.result);
           addLogMessage('--- Transformation Complete ---', 'success');
-          setIsProcessing(false);
-          setMobileView('workbench');
+          setState('outputImage', data.result);
+          setState('isProcessing', false);
+          setState('view', 'comparison');
+
         } else if (data.status === 'failed') {
           clearInterval(pollingRef.current);
           throw new Error(data.error || 'Job failed for an unknown reason.');
         }
       } catch (err) {
         addLogMessage(`Polling failed: ${err.message}`, 'error');
-        setError('An error occurred while checking job status.');
-        setIsProcessing(false);
+        setState('isProcessing', false);
         if (pollingRef.current) clearInterval(pollingRef.current);
       }
     }, POLLING_INTERVAL);
-  };
+  }, []);
 
-  const handleGenerate = async () => {
-    if (!selectedImage) return;
-    setIsProcessing(true);
-    setOutputImageUrl(null);
-    setError('');
-    setMobileView('log');
-    addLogMessage('--- Transformation process started ---', 'system');
+  const handleTransform = useCallback(async () => {
+    if (!state.selectedImage) return;
+
+    setState('isProcessing', true);
+    setState('logMessages', [{time: formatTime(), text: '--- Initiating Transformation Protocol ---', type: 'system'}]);
+    
     try {
-      addLogMessage('Step 1/3: Preparing source image...');
-      const base64Reader = new Promise((resolve, reject) => {
-        fetch(`${API_BASE_URL}/images/${selectedImage.filename}`).then(res => res.blob()).then(blob => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
+        addLogMessage('Step 1/3: Encoding source image...');
+        const base64Reader = new Promise((resolve, reject) => {
+            fetch(`${API_BASE_URL}/images/${state.selectedImage.filename}`).then(res => res.blob()).then(blob => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
         });
-      });
-      const base64Image = await base64Reader;
-      addLogMessage('Source image prepared successfully.');
-      addLogMessage('Step 2/3: Generating AI prompt...');
-      const promptResponse = await fetch(`${API_BASE_URL}/generate-prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Image }) });
-      if (!promptResponse.ok) throw new Error(`AI Prompt Generation failed: ${promptResponse.statusText}`);
-      const promptData = await promptResponse.json();
-      addLogMessage('AI prompt generated.', 'success');
-      addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
-      addLogMessage('Step 3/3: Submitting image generation job...');
-      const transformResponse = await fetch(`${API_BASE_URL}/transform-image`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Image, prompt: promptData.prompt }) });
-      if (!transformResponse.ok) throw new Error(`Job submission failed: ${transformResponse.statusText}`);
-      const { job_id } = await transformResponse.json();
-      addLogMessage(`Job submitted with ID: ${job_id}. Polling for result...`, 'system');
-      pollJobStatus(job_id);
+        const base64Image = await base64Reader;
+        addLogMessage('Source encoded successfully.');
+
+        addLogMessage('Step 2/3: Generating vision prompt...');
+        const promptResponse = await fetch(`${API_BASE_URL}/generate-prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Image }) });
+        if (!promptResponse.ok) throw new Error(`AI Vision Conection failed: ${promptResponse.statusText}`);
+        const promptData = await promptResponse.json();
+        addLogMessage('Vision prompt generated.', 'success');
+        addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
+
+        addLogMessage('Step 3/3: Submitting to FLUX renderer...');
+        const transformResponse = await fetch(`${API_BASE_URL}/transform-image`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Image, prompt: promptData.prompt }) });
+        if (!transformResponse.ok) throw new Error(`FLUX renderer submission failed: ${transformResponse.statusText}`);
+        const { job_id } = await transformResponse.json();
+        addLogMessage(`Job submitted with ID: ${job_id}. Awaiting result...`, 'system');
+        
+        pollJobStatus(job_id);
+
     } catch (err) {
-      addLogMessage(`PROCESS FAILED: ${err.message}`, 'error');
-      setError('An error occurred during the process.');
-      setIsProcessing(false);
+        addLogMessage(`PROCESS FAILED: ${err.message}`, 'error');
+        setState('isProcessing', false);
     }
-  };
+  }, [pollJobStatus]);
 
   return (
-    <div className={`workbench-container mobile-view-${mobileView}`}>
-      <aside className="library-panel" style={{ width: `${panelSizes.library}px`}}>
-        <div className="library-header">Image Library</div>
-        <div className="library-grid">
-          {galleryImages.map(img => <div key={img.filename} className={`grid-item ${selectedImage?.filename === img.filename ? 'selected' : ''}`} onClick={() => handleSelectImage(img)} title={img.filename}>
-            {img.thumbnail ? <img src={`${API_BASE_URL}/thumbnails/${img.thumbnail}`} alt={img.filename} /> : <div className="thumb-placeholder">{img.filename.split('.').pop().toUpperCase()}</div>}
-          </div>)}
-        </div>
-      </aside>
-      <Resizer onMouseDown={handleLibraryResize} direction="vertical" />
-      <main className="main-panel">
-        <div className="main-panel-header">
-            <div className="main-panel-title">
-                {viewMode === 'slider' && <span>Comparison View</span>}
-                {viewMode === 'side-by-side' && <><span>SOURCE</span><span>ALMERE 2075</span></>}
-            </div>
-            <div className="view-mode-toggle">
-                <button className={viewMode === 'slider' ? 'active' : ''} onClick={() => setViewMode('slider')}>Slider</button>
-                <button className={viewMode === 'side-by-side' ? 'active' : ''} onClick={() => setViewMode('side-by-side')}>Side-by-Side</button>
-            </div>
-        </div>
-        <ComparisonPanel beforeSrc={selectedImage ? `${API_BASE_URL}/images/${selectedImage.filename}`: null} afterSrc={outputImageUrl} viewMode={viewMode} panelSplit={panelSizes.mainSplit} onSplitterMouseDown={handleMainSplitterResize} />
-        <Resizer onMouseDown={handleLogResize} direction="horizontal" />
-        <div className="log-container" style={{ height: `${panelSizes.log}px` }}>
-            <ProcessLog messages={logMessages} onGenerate={handleGenerate} isProcessing={isProcessing} disabled={!selectedImage} />
-        </div>
+    <div className="app-container">
+      <header className={`app-header ${appState.view !== 'gallery' ? 'visible' : ''}`}>
+        <button onClick={handleBack} className="back-button">← BACK TO GALLERY</button>
+      </header>
+
+      <main>
+        <GalleryView images={galleryImages} isVisible={appState.view === 'gallery'} />
+        <TransformView 
+            image={appState.selectedImage} 
+            isVisible={appState.view === 'transform'} 
+            isProcessing={appState.isProcessing}
+            onTransform={handleTransform}
+        />
+        <ComparisonView
+            originalImage={appState.selectedImage} 
+            outputImage={appState.outputImage} 
+            isVisible={appState.view === 'comparison'} 
+            mode={appState.comparisonMode}
+            onModeChange={(mode) => setState('comparisonMode', mode)}
+        />
       </main>
-      <MobileNav activeView={mobileView} setActiveView={setMobileView} disabled={!selectedImage} />
-      {error && <div className="error-toast">{error}</div>}
+
+      <LogPanel messages={appState.logMessages} isVisible={appState.isProcessing} />
     </div>
   );
 }
