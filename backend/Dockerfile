@@ -3,6 +3,9 @@
 # Use an official Node.js runtime as a parent image
 FROM node:18-alpine
 
+# Install system dependencies required by the 'sharp' library for image processing
+RUN apk add --no-cache vips-dev build-base
+
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
@@ -20,3 +23,4 @@ EXPOSE 3000
 
 # Define the command to run your app
 CMD [ "npm", "start" ]
+

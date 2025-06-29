@@ -18,8 +18,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const generatedPrompt = document.getElementById("generated-prompt");
   const loader = document.getElementById("loader");
   const galleryContainer = document.querySelector(".gallery-thumbnails");
-  // FIX: Use environment variable for the backend URL
+
+  // FIX: Add check for the environment variable to provide a clear error message.
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+  if (!BACKEND_URL) {
+      const errorMsg = "CRITICAL ERROR: VITE_BACKEND_URL is not set. The application cannot contact the backend. Please check that the frontend/.env file exists and is correct.";
+      console.error(errorMsg);
+      // Display error directly on the page so it's impossible to miss.
+      galleryContainer.innerHTML = `<p style="color: red; font-weight: bold; text-align: center;">${errorMsg}</p>`;
+      return; // Stop execution
+  }
+
   let uploadedImageBase64 = null;
 
   uploadButton.addEventListener("click", () => imageUpload.click());
@@ -30,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
   generateButton.addEventListener("click", handleGeneration);
   galleryContainer.addEventListener("click", handleExampleImageClick);
 
-  // FIX: Populate gallery from a static array instead of backend endpoint
+  // Load gallery from the new backend endpoint
   populateExampleGallery();
 
   function handleImageUpload(event) {
@@ -44,8 +53,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function handleExampleImageClick(event) {
-    if (event.target.classList.contains("thumbnail")) {
-      const imageUrl = event.target.src;
+    const thumbnail = event.target;
+    if (thumbnail.classList.contains("thumbnail")) {
+      // Get the full-size image URL from the data attribute
+      const imageUrl = thumbnail.dataset.fullImageUrl;
+      if (!imageUrl) return;
+
       try {
         // To show loading state while fetching the example
         originalImage.style.display = "none";
@@ -169,22 +182,49 @@ document.addEventListener("DOMContentLoaded", () => {
     return data;
   }
 
-  function populateExampleGallery() {
-    const images = [
-      "example-1.jpg",
-      "example-2.webp",
-      "example-3.webp",
-      "example-4.jpg",
-      "example-5.webp",
-      "example-6.jpg",
-    ];
-    galleryContainer.innerHTML = ""; // Clear existing
-    images.forEach((imageName) => {
-      const img = document.createElement("img");
-      img.src = `/img/${imageName}`;
-      img.alt = `Example image ${imageName}`;
-      img.classList.add("thumbnail");
-      galleryContainer.appendChild(img);
-    });
+  async function populateExampleGallery() {
+    console.log("LOG: Attempting to populate gallery...");
+    try {
+      const apiUrl = `${BACKEND_URL}/images`;
+      console.log(`LOG: Fetching image list from ${apiUrl}`);
+      const response = await fetch(apiUrl);
+      console.log("LOG: Response from /api/images:", response);
+
+      if (!response.ok) {
+        throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+      } 
+
+      const imageNames = await response.json();
+      console.log("LOG: Received data from backend:", imageNames);
+      
+      if (!Array.isArray(imageNames)) {
+        throw new Error("Backend response is not a valid array.");
+      }
+      
+      if (imageNames.length === 0) {
+        console.warn("LOG: Received empty list from backend. Gallery will be empty.");
+      }
+
+      galleryContainer.innerHTML = ""; // Clear existing
+
+      imageNames.forEach((imageName) => {
+        console.log(`LOG: Creating thumbnail element for: ${imageName}`);
+        const img = document.createElement("img");
+        
+        // The thumbnail URL is served from the backend
+        img.src = `${BACKEND_URL}/thumbnails/${imageName}`;
+        img.alt = `Example image ${imageName}`;
+        img.classList.add("thumbnail");
+        
+        // Store the full image URL in a data attribute for later
+        img.dataset.fullImageUrl = `${BACKEND_URL}/images/${imageName}`;
+
+        galleryContainer.appendChild(img);
+      });
+    } catch (error) {
+      console.error("LOG: CRITICAL - Could not load example gallery.", error);
+      galleryContainer.innerHTML =
+        `<p style="color: red;">Error: Could not load images. Check browser console (F12) for details.</p>`;
+    }
   }
 });

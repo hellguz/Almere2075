@@ -3,9 +3,51 @@ const fetch = require("node-fetch");
 const cors = require("cors");
 const Replicate = require("replicate");
 require("dotenv").config();
+const fs = require("fs").promises;
+const path = require("path");
+const sharp = require("sharp");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// --- Image Processing Setup ---
+const IMAGES_DIR = path.join(__dirname, "images");
+const THUMBNAILS_DIR = path.join(__dirname, "thumbnails");
+const THUMBNAIL_WIDTH = 240; // width in pixels
+
+// Function to generate thumbnails
+const generateThumbnails = async () => {
+  try {
+    await fs.mkdir(THUMBNAILS_DIR, { recursive: true });
+    console.log("LOG: Thumbnails directory is ready.");
+    const files = await fs.readdir(IMAGES_DIR);
+    console.log(`LOG: Found ${files.length} items in images directory.`);
+
+    for (const file of files) {
+      const imagePath = path.join(IMAGES_DIR, file);
+      const thumbPath = path.join(THUMBNAILS_DIR, file);
+
+      try {
+        await fs.access(thumbPath); // Check if thumbnail already exists
+      } catch {
+        // If it doesn't exist, create it
+        await sharp(imagePath)
+          .resize(THUMBNAIL_WIDTH)
+          .toFile(thumbPath);
+        console.log(`LOG: Generated thumbnail for ${file}`);
+      }
+    }
+  } catch (error) {
+    console.error("LOG: Error generating thumbnails:", error);
+    // If the images directory doesn't exist, we can ignore it.
+    if (error.code !== 'ENOENT') {
+      throw error;
+    } else {
+        console.warn("LOG: 'images' directory not found. Skipping thumbnail generation.");
+    }
+  }
+};
+
 
 // FIX: Stricter CORS policy for production
 const allowedOrigins = [
@@ -99,7 +141,40 @@ The architectural style will be completely new, but it will occupy the exact sam
 **Example 5:** "Replace the yellow brick building on the left with a 'Community Repair Hub' that matches the original's volume, featuring a large, open glass garage door revealing a brightly lit workshop. The building on the right is transformed into a 'Kinetic Timber & Glass Residence' of the same shape. The entire cobblestone courtyard, including the parked van, is replaced by a miniature 'Edible Streetscape,' a community garden with raised planters made of recycled plastic, filled with herbs and vegetables. Add a new resident from the timber building kneeling to tend to a planter, while inside the workshop, another person is visibly repairing an e-bike. The style is a lively, high-detail architectural photograph, preserving the tree branches at the top left and the overcast sky, capturing the rich textures of the garden and the tools in the workshop."
 `;
 
-app.post("/generate-prompt", async (req, res) => {
+// --- API Endpoints ---
+
+// LOG: Add a logging middleware for all /api requests
+app.use("/api", (req, res, next) => {
+  console.log(`LOG: Received API request: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// Serve static files from the thumbnails and images directories
+app.use("/api/thumbnails", express.static(THUMBNAILS_DIR));
+app.use("/api/images", express.static(IMAGES_DIR));
+
+// Endpoint to get the list of available images
+app.get("/api/images", async (req, res) => {
+  try {
+    console.log("LOG: Endpoint /api/images hit.");
+    const files = await fs.readdir(IMAGES_DIR);
+    const imageFiles = files.filter((file) =>
+      /\.(jpg|jpeg|png|webp)$/i.test(file)
+    );
+    console.log(`LOG: Found ${imageFiles.length} valid images. Sending list.`);
+    res.json(imageFiles);
+  } catch (error) {
+    console.error("LOG: ERROR in /api/images endpoint:", error);
+    if (error.code === 'ENOENT') {
+      return res.json([]); // Return empty array if directory doesn't exist
+    }
+    res.status(500).json({ error: "Could not list image directory." });
+  }
+});
+
+
+// FIX: The route path must now include /api
+app.post("/api/generate-prompt", async (req, res) => {
   const { imageBase64 } = req.body;
   if (!imageBase64)
     return res.status(400).json({ error: "Image data is required." });
@@ -152,7 +227,9 @@ app.post("/generate-prompt", async (req, res) => {
     res.status(500).json({ error: `OpenAI Error: ${error.message}` });
   }
 });
-app.post("/transform-image", async (req, res) => {
+
+// FIX: The route path must now include /api
+app.post("/api/transform-image", async (req, res) => {
   const { imageBase64, prompt } = req.body;
   if (!imageBase64 || !prompt)
     return res.status(400).json({ error: "Image and prompt are required." });
@@ -192,7 +269,9 @@ app.post("/transform-image", async (req, res) => {
   }
 });
 
-app.listen(PORT, () =>
-  console.log(`Server is running on http://localhost:${PORT}`)
-);
-
+// Generate thumbnails on server start, then start listening
+generateThumbnails().then(() => {
+    app.listen(PORT, () =>
+        console.log(`Server is running on http://localhost:${PORT}`)
+    );
+});
