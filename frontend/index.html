@@ -16,7 +16,11 @@
             <p>Transform a photo into a vision of a sustainable future.</p>
         </header>
 
-        
+        <div class="example-gallery-container">
+            <h3>Click an example to start</h3>
+            <div class="gallery-thumbnails">
+                </div>
+        </div>
 
         <main class="content">
             <div class="image-comparison-container">
@@ -28,14 +32,14 @@
                             <span>Click to upload image</span>
                         </div>
                         <img id="original-image" alt="Original" style="display: none;">
-                     </div>
+                    </div>
                 </div>
                 <div class="card image-card" id="transformed-card">
                     <div class="card-header">Transformed Image</div>
                     <div class="image-content-wrapper">
-                         <div class="image-placeholder" id="transformed-image-placeholder">
+                        <div class="image-placeholder" id="transformed-image-placeholder">
                            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10A10 10 0 0 0 12 2Z"/><path d="m16.24 7.76-1.82 1.82a4 4 0 0 0-5.66 5.66l1.82 1.82"/><path d="m7.76 16.24 1.82-1.82a4 4 0 0 0 5.66-5.66l-1.82-1.82"/></svg>
-                             <span>Awaiting transformation</span>
+                            <span>Awaiting transformation</span>
                         </div>
                         <div class="loader-container" id="loader">
                             <div class="loader"></div>
@@ -61,3 +65,4 @@
     <script type="module" src="/script.js?v=1.1"></script>
 </body>
 </html>
+

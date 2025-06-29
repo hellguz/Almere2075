@@ -1,4 +1,4 @@
-// frontend/script.js (Added logic to stop on AI refusal)
+// frontend/script.js (Corrected)
 
 document.addEventListener("DOMContentLoaded", () => {
   const imageUpload = document.getElementById("image-upload");
@@ -10,8 +10,6 @@ document.addEventListener("DOMContentLoaded", () => {
     "original-image-placeholder"
   );
 
-
-  
   const transformedImage = document.getElementById("transformed-image");
   const transformedImagePlaceholder = document.getElementById(
     "transformed-image-placeholder"
@@ -22,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const galleryContainer = document.querySelector(".gallery-thumbnails");
   // FIX: Use environment variable for the backend URL
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
-
   let uploadedImageBase64 = null;
 
   uploadButton.addEventListener("click", () => imageUpload.click());
@@ -32,6 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
   imageUpload.addEventListener("change", handleImageUpload);
   generateButton.addEventListener("click", handleGeneration);
   galleryContainer.addEventListener("click", handleExampleImageClick);
+
+  // FIX: Populate gallery from a static array instead of backend endpoint
+  populateExampleGallery();
 
   function handleImageUpload(event) {
     const file = event.target.files[0];
@@ -53,7 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
         originalImagePlaceholder.querySelector("span").textContent =
           "Loading example...";
         generateButton.disabled = true;
-
         const base64Data = await loadImageAsBase64(imageUrl);
         displayOriginalImage(base64Data);
       } catch (error) {
@@ -168,5 +167,24 @@ document.addEventListener("DOMContentLoaded", () => {
       throw new Error(data.error || "An unknown error occurred on the server.");
     }
     return data;
+  }
+
+  function populateExampleGallery() {
+    const images = [
+      "example-1.jpg",
+      "example-2.webp",
+      "example-3.webp",
+      "example-4.jpg",
+      "example-5.webp",
+      "example-6.jpg",
+    ];
+    galleryContainer.innerHTML = ""; // Clear existing
+    images.forEach((imageName) => {
+      const img = document.createElement("img");
+      img.src = `/img/${imageName}`;
+      img.alt = `Example image ${imageName}`;
+      img.classList.add("thumbnail");
+      galleryContainer.appendChild(img);
+    });
   }
 });

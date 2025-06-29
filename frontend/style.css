@@ -31,7 +31,8 @@ body {
     margin: 0;
     padding: var(--main-gap);
     display: flex;
-    flex-direction: column; /* Changed to column for gallery */
+    flex-direction: column;
+    /* Changed to column for gallery */
     align-items: center;
 }
 
@@ -106,7 +107,8 @@ body {
 
 
 .content {
-    flex-grow: 1; /* Allows this main section to fill available vertical space */
+    flex-grow: 1;
+    /* Allows this main section to fill available vertical space */
     min-height: 0;
     /* Crucial fix for flexbox children to prevent overflow */
     display: flex;
@@ -136,7 +138,8 @@ body {
 }
 
 .image-comparison-container {
-    flex-grow: 1; /* Make the image area fill the space in .content */
+    flex-grow: 1;
+    /* Make the image area fill the space in .content */
     min-height: 0;
     /* Another crucial flexbox fix */
     display: grid;
@@ -233,8 +236,10 @@ body {
     line-height: 1.5;
     margin: 0;
     max-height: 110px; /* Limit height to prevent layout shift */
-    overflow-y: auto; /* Add scroll for long prompts */
-    padding-right: 10px; /* Space for scrollbar */
+    overflow-y: auto;
+    /* Add scroll for long prompts */
+    padding-right: 10px;
+    /* Space for scrollbar */
 }
 
 .controls-container {
