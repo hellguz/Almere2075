@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Development-specific docker-compose file.
 # To run: docker-compose -f docker-compose.dev.yml up --build
 # This setup enables hot-reloading for both frontend and backend.

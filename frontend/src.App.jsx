@@ -25,6 +25,7 @@ const AppState = {
   logMessages: [],
   finalPrompt: '',
 };
+
 const state = AppState;
 
 // --- Helper Functions ---
@@ -35,10 +36,12 @@ const subscribe = (callback) => {
   listeners.add(callback);
   return () => listeners.delete(callback);
 };
+
 const setState = (key, value) => {
   state[key] = value;
   listeners.forEach((listener) => listener());
 };
+
 const addLogMessage = (text, type = 'info') => {
     const newLog = { time: formatTime(), text, type };
     setState('logMessages', [...state.logMessages, newLog]);
@@ -47,62 +50,63 @@ const addLogMessage = (text, type = 'info') => {
 // --- 3D Gallery Component ---
 
 const ImagePlane = ({ texture, position, scale, onClick }) => {
-    const groupRef = useRef();
+    const mesh = useRef();
     const originalPosition = useMemo(() => new Vector2(position[0], position[1]), [position]);
-    // The 'scale' prop from GalleryGrid is the size of the square cell.
-    const cellScale = useMemo(() => new Vector2(scale[0], scale[1]), [scale]);
+    const baseScale = useMemo(() => new Vector2(scale[0], scale[1]), [scale]);
 
-    // Calculate the scale of the inner plane to preserve image aspect ratio within the cell
-    const imagePlaneScale = useMemo(() => {
-        const imageAspect = texture.image.width / texture.image.height;
-        const cellAspect = cellScale.x / cellScale.y; // This will be ~1
+    // This texture is cloned and configured to fit within the plane without distortion.
+    const textureClone = useMemo(() => {
+        const t = texture.clone();
+        t.needsUpdate = true;
+        const planeAspect = baseScale.x / baseScale.y; // Should be 1 for squares
+        const imageAspect = t.image.width / t.image.height;
+        
+        t.repeat.set(1, 1);
+        t.offset.set(0, 0);
 
-        if (imageAspect > cellAspect) {
-            // Image is wider than cell, fit to cell width
-            return [cellScale.x, cellScale.x / imageAspect, 1];
+        if (planeAspect > imageAspect) {
+            // Plane is wider than image (pillarbox)
+            t.repeat.x = imageAspect / planeAspect;
+            t.offset.x = (1 - t.repeat.x) / 2;
         } else {
-            // Image is taller than cell, fit to cell height
-            return [cellScale.y * imageAspect, cellScale.y, 1];
+            // Plane is taller than image (letterbox)
+            t.repeat.y = planeAspect / imageAspect;
+            t.offset.y = (1 - t.repeat.y) / 2;
         }
-    }, [texture, cellScale]);
+        return t;
+    }, [texture, baseScale]);
+
 
     useFrame(({ viewport, mouse }) => {
-        if (!groupRef.current) return;
+        if (!mesh.current) return;
 
         const mouseVec = new Vector2(mouse.x * viewport.width / 2, mouse.y * viewport.height / 2);
-        const planeVec = new Vector2(groupRef.current.position.x, groupRef.current.position.y);
+        const planeVec = new Vector2(mesh.current.position.x, mesh.current.position.y);
         
         const dist = mouseVec.distanceTo(planeVec);
         const influence = Math.pow(1 - Math.min(dist / (MOUSE_INFLUENCE_RADIUS * viewport.width), 1.0), 2.0);
         
-        // The scaleFactor now animates the group, which acts as the cell container
         const scaleFactor = 1 + (MAX_MAGNIFICATION - 1) * influence;
         
-        groupRef.current.scale.lerp({ x: scaleFactor, y: scaleFactor, z: 1 }, 0.1);
+        mesh.current.scale.lerp({ x: baseScale.x * scaleFactor, y: baseScale.y * scaleFactor, z: 1 }, 0.1);
         
-        // The displacement animation also applies to the group
         const displacement = new Vector2().subVectors(planeVec, mouseVec).normalize().multiplyScalar(influence * 0.4);
-        groupRef.current.position.lerp({ x: originalPosition.x + displacement.x, y: originalPosition.y + displacement.y, z: influence * 0.5 }, 0.1);
+        mesh.current.position.lerp({ x: originalPosition.x + displacement.x, y: originalPosition.y + displacement.y, z: influence * 0.5 }, 0.1);
     });
 
     return (
-        // The group is the interactable 'cell'. It's positioned and animated.
-        <group
-            ref={groupRef}
+        <mesh
+            ref={mesh}
             position={position}
+            scale={scale}
+            onClick={() => onClick(texture)}
         >
-            {/* The visible mesh, correctly proportioned */}
-            <mesh scale={imagePlaneScale}>
-                <planeGeometry args={[1, 1]} />
-                <meshBasicMaterial map={texture} toneMapped={false} />
-            </mesh>
-            {/* The invisible click target, filling the cell */}
-            <mesh onClick={() => onClick(texture)} scale={[cellScale.x, cellScale.y, 1]} visible={false}>
-                <planeGeometry args={[1, 1]} />
-            </mesh>
-        </group>
+            <planeGeometry args={[1, 1]} />
+            <meshBasicMaterial map={textureClone} toneMapped={false} />
+        </mesh>
     );
 };
+
 
 const GalleryGrid = ({ images, onImageClick }) => {
     const textures = useLoader(TextureLoader, images.map(img => `${API_BASE_URL}/thumbnails/${img.thumbnail}`));
@@ -142,7 +146,7 @@ const GalleryGrid = ({ images, onImageClick }) => {
             
             const x = -totalGridWidth / 2 + c * (cellSize + gapWorldUnits) + cellSize / 2;
             const y = totalGridHeight / 2 - r * (cellSize + gapWorldUnits) - cellSize / 2;
-
+            
             items.push({
                 index: i,
                 texture: textures[i],
@@ -161,7 +165,6 @@ const GalleryGrid = ({ images, onImageClick }) => {
         </group>
     );
 };
-
 
 const GalleryView = ({ images, isVisible }) => {
     const [showInstructions, setShowInstructions] = useState(true);
@@ -188,7 +191,7 @@ const GalleryView = ({ images, isVisible }) => {
             addLogMessage(`Source selected: ${fullImage.filename}`);
         }
     };
-
+    
     return (
         <div className={`fullscreen-canvas-container ${isVisible ? 'visible' : ''} ${!isVisible ? 'in-background' : ''}`}>
              <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
@@ -232,7 +235,6 @@ const LogPanel = ({ messages, isVisible }) => {
 
 const TransformView = ({ image, isVisible, isProcessing, onTransform }) => {
     if (!image) return null;
-
     return (
         <div className={`transform-view ${isVisible ? 'visible' : ''}`}>
             <div className="main-image-container">
@@ -260,7 +262,6 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
     };
 
     if (!originalImage || !outputImage) return null;
-
     return (
         <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
             <div className="comparison-header" onMouseEnter={() => setSliderActive(false)} onMouseLeave={() => setSliderActive(true)}>
@@ -305,7 +306,7 @@ function App() {
   const pollingRef = useRef(null);
 
   useEffect(() => subscribe(() => setAppState({ ...state })), []);
-
+  
   useEffect(() => {
     const fetchGallery = async () => {
         try {
