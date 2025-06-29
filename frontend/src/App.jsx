@@ -248,10 +248,11 @@ const TransformView = ({ image, isVisible, isProcessing, onTransform }) => {
     );
 };
 
-const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mode, onModeChange }) => {
+const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mode }) => {
     const sliderContainerRef = useRef(null);
     const [sliderActive, setSliderActive] = useState(true);
     const [clipPosition, setClipPosition] = useState(50);
+    const [isPromptExpanded, setIsPromptExpanded] = useState(false);
 
     const handleMouseMove = (e) => {
         if (!sliderActive || !sliderContainerRef.current) return;
@@ -263,13 +264,6 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
 
     return (
         <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
-            <div className="comparison-header" onMouseEnter={() => setSliderActive(false)} onMouseLeave={() => setSliderActive(true)}>
-                <div className="view-mode-toggle">
-                    <button className={mode === 'slider' ? 'active' : ''} onClick={() => onModeChange('slider')}>Slider</button>
-                    <button className={mode === 'side-by-side' ? 'active' : ''} onClick={() => onModeChange('side-by-side')}>Side-by-Side</button>
-                </div>
-            </div>
-
             {mode === 'side-by-side' && (
                 <div className="comparison-view side-by-side">
                     <div className="image-panel"><div className="image-header">SOURCE</div><img src={`${API_BASE_URL}/images/${originalImage.filename}`} alt="Original" /></div>
@@ -278,7 +272,7 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
             )}
             
             {mode === 'slider' && (
-                <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleMouseMove}>
+                <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleMouseMove} onMouseEnter={() => setSliderActive(true)} onMouseLeave={() => setSliderActive(false)}>
                     <div className="image-panel"><img src={`${API_BASE_URL}/images/${originalImage.filename}`} alt="Original" /></div>
                     <div className="image-panel after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}><img src={outputImage} alt="Almere 2075" /></div>
                     <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
@@ -286,10 +280,17 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
             )}
 
             {finalPrompt && (
-                <div className="prompt-panel">
-                    <div className="prompt-header">GENERATED PROMPT</div>
-                    <div className="prompt-content">
-                        {finalPrompt}
+                <div
+                    className={`prompt-container ${isPromptExpanded ? 'expanded' : ''}`}
+                    onMouseEnter={() => setIsPromptExpanded(true)}
+                    onMouseLeave={() => setIsPromptExpanded(false)}
+                >
+                    <div className="prompt-button">PROMPT</div>
+                    <div className="prompt-panel-expandable">
+                        <div className="prompt-header">GENERATED PROMPT</div>
+                        <div className="prompt-content">
+                            {finalPrompt}
+                        </div>
                     </div>
                 </div>
             )}
@@ -404,7 +405,18 @@ function App() {
   return (
     <div className="app-container">
       <header className={`app-header ${appState.view !== 'gallery' ? 'visible' : ''}`}>
-        <button onClick={handleBack} className="back-button">← BACK TO GALLERY</button>
+        <div className="header-left">
+            <button onClick={handleBack} className="back-button">← BACK TO GALLERY</button>
+        </div>
+        <div className="header-center">
+            {appState.view === 'comparison' && (
+                <div className="view-mode-toggle">
+                    <button className={appState.comparisonMode === 'slider' ? 'active' : ''} onClick={() => setState('comparisonMode', 'slider')}>Slider</button>
+                    <button className={appState.comparisonMode === 'side-by-side' ? 'active' : ''} onClick={() => setState('comparisonMode', 'side-by-side')}>Side-by-Side</button>
+                </div>
+            )}
+        </div>
+        <div className="header-right" />
       </header>
 
       <main>
@@ -421,7 +433,6 @@ function App() {
             finalPrompt={appState.finalPrompt}
             isVisible={appState.view === 'comparison'} 
             mode={appState.comparisonMode}
-            onModeChange={(mode) => setState('comparisonMode', mode)}
         />
       </main>
 
