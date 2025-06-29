@@ -1,0 +1,983 @@
+<./.env>
+# Almere 2075 App Environment Variables
+
+# Backend API Keys
+# Important: Replace these with your actual keys
+OPENAI_API_KEY="OPENAI_API_KEY_REDACTED"
+REPLICATE_API_KEY="REPLICATE_API_KEY_REDACTED"
+
+# The base URL of the application, used for constructing image URLs if needed
+APP_URL="https://almere.i-am-hellguz.uk"
+
+# Docker Compose Settings
+# The external port mapping for Nginx
+NGINX_HOST_PORT=2075
+
+<./.gitignore>
+# General
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+
+# Node / Frontend
+/frontend/node_modules
+/frontend/dist
+/frontend/.pnp
+/frontend/.pnp.js
+/frontend/coverage
+/frontend/.vite
+
+# Python / Backend
+/backend/__pycache__/
+/backend/*.pyc
+/backend/.venv
+/backend/.pytest_cache
+/backend/instance
+
+<./README.md>
+# Almere 2075 App
+
+This application generates futuristic, sustainable architectural concepts for locations in Almere based on user-uploaded images.
+
+## Architecture
+
+- **Frontend:** React (Vite + JS)
+- **Backend:** FastAPI (Python)
+- **Proxy:** Nginx
+- **Containerization:** Docker & Docker Compose
+
+## How to Run
+
+1.  **Prerequisites:**
+    * Docker
+    * Docker Compose
+
+2.  **API Keys:**
+    * Create a `.env` file in the root directory by copying `.env.example`.
+    * Fill in your `OPENAI_API_KEY` and `REPLICATE_API_KEY`.
+
+3.  **Example Images:**
+    * Place your example JPEG or PNG images inside the `./backend/images/` directory. The application will automatically generate thumbnails on first run. For example, add `almere1.jpg` and `almere2.jpg`.
+
+4.  **Build and Run:**
+    * Open your terminal in the project root and run:
+        ```bash
+        docker-compose up --build
+        ```
+
+5.  **Access the Application:**
+    * Open your web browser and navigate to `http://localhost:2075`.
+
+<./docker-compose.yml>
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: almere-proxy
+    ports:
+      - "${NGINX_HOST_PORT:-2075}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - almere-net
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: almere-backend
+    env_file: .env
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/images:/app/images
+      - ./backend/thumbnails:/app/thumbnails
+    networks:
+      - almere-net
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: almere-frontend
+    environment:
+      - VITE_API_BASE_URL=/api
+    networks:
+      - almere-net
+    expose:
+      - "5173"
+    restart: unless-stopped
+
+networks:
+  almere-net:
+    driver: bridge
+
+<./nginx/nginx.conf>
+events {
+    worker_connections 1024;
+}
+
+http {
+    include mime.types;
+    default_type application/octet-stream;
+    sendfile on;
+    keepalive_timeout 65;
+
+    # Upstream for the backend API
+    upstream backend {
+        server backend:8000;
+    }
+
+    # Upstream for the frontend dev server
+    upstream frontend {
+        server frontend:5173;
+    }
+
+    server {
+        listen 80;
+        server_name localhost;
+
+        # Route API requests to the backend
+        location /api/ {
+            proxy_pass http://backend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        # Route root and other requests to the frontend
+        location / {
+            proxy_pass http://frontend;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            
+            # WebSocket headers for Vite HMR
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
+    }
+}
+
+<./backend/Dockerfile>
+# Use an official Python runtime as a parent image
+FROM python:3.10-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the requirements file into the container at /app
+COPY ./requirements.txt /app/
+
+# Install any needed packages specified in requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application's code into the container at /app
+COPY . /app
+
+# Command to run the application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+<./backend/requirements.txt>
+fastapi
+uvicorn
+python-dotenv
+openai
+replicate
+Pillow
+aiofiles
+python-multipart
+
+<./backend/app/main.py>
+import os
+import base64
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
+from pathlib import Path
+import aiofiles
+from PIL import Image
+import openai
+import replicate
+from dotenv import load_dotenv
+
+from .models import GeneratePromptRequest, TransformImageRequest
+from .ai_prompts import system_prompt_for_flux
+
+# Load environment variables
+load_dotenv()
+
+# --- Configuration ---
+THUMBNAIL_SIZE = (400, 400)
+IMAGES_DIR = Path("/app/images")
+THUMBNAILS_DIR = Path("/app/thumbnails")
+ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png'}
+
+# API Clients
+openai.api_key = os.getenv("OPENAI_API_KEY")
+replicate_client = replicate.Client(api_token=os.getenv("REPLICATE_API_KEY"))
+
+# --- Helper Functions ---
+def create_thumbnail(image_path: Path):
+    try:
+        if not THUMBNAILS_DIR.exists():
+            THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
+        
+        thumbnail_path = THUMBNAILS_DIR / image_path.name
+        if thumbnail_path.exists():
+            return
+
+        with Image.open(image_path) as img:
+            img.thumbnail(THUMBNAIL_SIZE)
+            # Ensure the image is in RGB format for saving as JPEG
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            img.save(thumbnail_path, "JPEG")
+            print(f"Created thumbnail for {image_path.name}")
+
+    except Exception as e:
+        print(f"Error creating thumbnail for {image_path.name}: {e}")
+
+# --- FastAPI Lifespan Events ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # On startup: Create thumbnails for example images
+    print("Application starting up...")
+    if not IMAGES_DIR.exists():
+        print(f"Images directory not found: {IMAGES_DIR}")
+    else:
+        print(f"Scanning for images in {IMAGES_DIR}...")
+        for image_file in IMAGES_DIR.iterdir():
+            if image_file.is_file() and image_file.suffix.lower() in ALLOWED_EXTENSIONS:
+                create_thumbnail(image_file)
+    yield
+    # On shutdown
+    print("Application shutting down.")
+
+
+# --- FastAPI App Initialization ---
+app = FastAPI(lifespan=lifespan)
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for simplicity in this setup
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static directories
+app.mount("/api/images", StaticFiles(directory=IMAGES_DIR), name="images")
+app.mount("/api/thumbnails", StaticFiles(directory=THUMBNAILS_DIR), name="thumbnails")
+
+# --- API Endpoints ---
+@app.get("/api")
+async def root():
+    return {"message": "Almere 2075 Backend is running"}
+
+@app.get("/api/images")
+async def get_example_images():
+    """Fetches a list of filenames for the example images."""
+    if not IMAGES_DIR.exists():
+        return []
+    try:
+        image_files = [
+            f.name for f in IMAGES_DIR.iterdir() 
+            if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS
+        ]
+        return image_files
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/generate-prompt")
+async def generate_prompt(request: GeneratePromptRequest):
+    """Receives a base64 image and generates a descriptive prompt via OpenAI."""
+    if not openai.api_key:
+        raise HTTPException(status_code=500, detail="OpenAI API key not configured.")
+    
+    try:
+        response = openai.chat.completions.create(
+            model="gpt-4-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt_for_flux},
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text", 
+                            "text": "Generate a prompt for this image based on the system instructions."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": request.imageBase64},
+                        },
+                    ],
+                },
+            ],
+            max_tokens=500,
+        )
+        prompt = response.choices[0].message.content.strip()
+        return {"prompt": prompt}
+    except Exception as e:
+        print(f"Error calling OpenAI: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate prompt from AI.")
+
+@app.post("/api/transform-image")
+async def transform_image(request: TransformImageRequest):
+    """Receives a base64 image and a prompt, then generates a new image via Replicate."""
+    if not os.getenv("REPLICATE_API_KEY"):
+         raise HTTPException(status_code=500, detail="Replicate API key not configured.")
+
+    try:
+        output = replicate_client.run(
+            "black-forest-labs/flux-kontext-pro:17a73e3378377c8e922f361735e589984e86749080775ab93a123a6fe4090263",
+            input={
+                "prompt": request.prompt,
+                "image": request.imageBase64
+            }
+        )
+        if not output or not isinstance(output, list) or len(output) == 0:
+            raise HTTPException(status_code=500, detail="Replicate API returned no image.")
+            
+        return {"transformedImageUrl": output[0]}
+    except Exception as e:
+        print(f"Error calling Replicate: {e}")
+        raise HTTPException(status_code=500, detail="Failed to transform image with AI.")
+
+<./backend/app/models.py>
+from pydantic import BaseModel, HttpUrl
+
+class GeneratePromptRequest(BaseModel):
+    imageBase64: str # data:image/jpeg;base64,...
+
+class TransformImageRequest(BaseModel):
+    imageBase64: str
+    prompt: str
+
+<./backend/app/ai_prompts.py>
+system_prompt_for_flux = """
+You are the Almere 2075 Cinematic Architect. Your purpose is to take a user-submitted photograph of a location in modern-day Almere, Netherlands, and write ONE single, highly-detailed, creative prompt for the `FLUX.1-Kontext` image generation model. This prompt will be used to transform the photo into a cinematic architectural concept image of that same location in the year 2075.
+
+Your output MUST be ONLY the creative prompt and nothing else. No introductions, no explanations, no apologies, no extra text. Just the prompt.
+
+**Core Mandate & Strict Rules:**
+
+1.  **PRESERVE CONTEXT:** You MUST preserve the original photo's core composition. This includes the camera angle, perspective, time of day, lighting, weather, and season. If there are people in the original photo, they MUST be preserved in their original positions and activities unless your new narrative requires changing them. The goal is recognizability.
+2.  **LIVELY, NOT STERILE:** The final image should feel like "lively architectural photography," not a sterile, empty CG render. Use descriptive words that imply texture, material warmth, and human activity. Describe the quality of light (e.g., "warm late-afternoon sun," "soft overcast light").
+3.  **TELL A STORY:** Add one or two new people to the scene. These new people should be engaged in a plausible activity that tells a story about the new futuristic elements you've introduced. For example, a resident tending to their balcony vegetable garden on a modular pod building, or children launching a toy boat in a flood-adaptive plaza.
+4.  **GREEN IMPERATIVE:** All architecture and infrastructure you introduce must be interwoven with significant green, living elements. This is non-negotiable. Every prompt must describe features like green walls, rooftop gardens, integrated trees, or water-purifying plants.
+5.  **VISUALIZE THE THREAT:** The new architecture exists for a reason: climate change, specifically rising sea levels. Your prompt must subtly visualize the solution. Instead of a dry asphalt street, describe the ground as a shallow, clear canal for autonomous water taxis, or a "Sponge Park" with permeable surfaces and rain gardens. This hints at the constant presence and management of water.
+6.  **SURGICAL REPLACEMENT:** This is the most important rule. Do NOT redesign the entire scene. Instead, choose one or two key buildings from the original photo and surgically replace them with new architectural concepts from the palette below. The new building(s) must occupy the exact same spatial volume as the building(s) they replace. Surrounding buildings that you are NOT replacing should be described as being "retrofitted with green roofs and living walls" but otherwise left architecturally intact. This contrast between old and new is crucial.
+7.  **TRANSFORM THE GROUND:** The ground plane (street, sidewalk, pavement) MUST always be transformed. Replace it with a concept from the "Green & Living Infrastructure" or "Technology" palettes. This is a key part of visualizing the city's adaptation.
+
+**CONCEPT PALETTE (Your building blocks):**
+
+* **Architectural Typologies (Choose 1-2 to replace existing buildings):**
+    * **Kinetic Timber & Glass Residences:** Buildings with facades of warm, cross-laminated timber and smart glass panels that can dynamically open and close. Balconies are deep, filled with planters and small trees.
+    * **Modular Pod Housing:** Stacked, prefabricated housing modules with personalized facades. Some pods jut out, creating a playful, irregular form. Emphasize integration with shared vertical gardens.
+    * **Amphibious Buildings:** Structures on buoyant foundations that can rise and fall with water levels, connected by flexible sky-bridges.
+    * **Community Repair Hubs:** Open-plan, ground-floor workshops with glass walls, showing people repairing electronics, furniture, and bicycles.
+    * **Biocycle Hubs:** Buildings with visible glass pipes and tanks, part of a neighborhood-scale system for composting, waste recycling, and water purification.
+    * **Vertical Farm Towers:** Sleek, tall structures with transparent facades revealing rows of hydroponic and aeroponic farming in action.
+
+* **Green & Living Infrastructure (Incorporate liberally):**
+    * **Sponge Parks:** Permeable, soft-ground plazas with native grasses, rain gardens, and bioswales instead of concrete or asphalt.
+    * **Rooftop Greenhouses:** Glass geodesic domes and rectangular greenhouses on top of both new and old buildings, glowing from within.
+    * **Edible Streetscapes:** Replacing decorative bushes with fruit-bearing shrubs, herbs, and vegetable patches along walkways.
+    * **Cascading Water Features:** Integrated water features that are part of the building's greywater filtration system, with water flowing over rocks and through beds of reeds and water lilies.
+    * **Flood-Adaptive Plazas:** Public squares with tiered levels and stepped seating that can be submerged during high water, with waterproof materials.
+    * **Sky-Park Farms:** Elevated green spaces and farms connected by walkways between buildings.
+
+* **Technology & Narrative Elements (Add 1-2 for storytelling):**
+    * **Elevated Mobility Systems:** Lightweight, silent electric pods or trams gliding on elevated tracks between buildings.
+    * **Autonomous Drones:** Small delivery drones zipping between buildings or dropping packages to balconies.
+    * **Autonomous Water Transport:** Sleek, electric "water taxis" or cargo barges navigating the canals that have replaced streets.
+    * **Integrated Greywater Filtration:** Visible water channels and planting beds on building facades that clean wastewater.
+    * **Urban Mining:** Small, robotic cranes on older buildings, carefully dismantling facades for reusable materials.
+    * **Floating Classrooms:** Small, transparent pods on the water where groups of children are learning.
+
+**Example Prompts (Follow this style and level of detail):**
+
+* *Based on an image of a generic 1980s apartment block:* "Lively architectural photography of a street in Almere in 2075, preserving the original photo's late-afternoon sun and camera angle. The central, brutalist-style apartment building has been surgically replaced by a **Kinetic Timber & Glass Residence**. Its facade is a warm, dynamic grid of cross-laminated timber and smart glass, with several large panels slid open to the air. Deep balconies overflow with lush greenery and tomato plants. On one balcony, a resident is watering their plants. The asphalt street in the foreground is transformed into a **Sponge Park**, a soft landscape of native grasses and a winding bioswale filled with pebbles and reeds. A young couple walks along a permeable gravel path through the park. The older buildings to the left and right are retrofitted with green roofs and climbing ivy."
+
+* *Based on an image of a commercial street with shops:* "Cinematic architectural photograph of a commercial street in Almere in 2075, matching the original photo's bright, overcast lighting and eye-level perspective. The two-story retail block on the right is replaced by a **Community Repair Hub**. Its ground floor has floor-to-ceiling glass walls, revealing a busy workshop inside where people are fixing appliances. Above, it's topped with a **Rooftop Greenhouse**, its glass panels misted from the humidity within. The street itself is now a shallow, pristine canal. A silent, autonomous **water taxi** glides across the water. A new person, a technician, is kneeling at the edge of the canal, inspecting an integrated water quality sensor. The historic building on the left is preserved but now has an intricate **living wall** of ferns and mosses."
+
+* *Based on an image of a waterfront with modern housing:* "Lively architectural photo, Almere 2075, maintaining the original's wide-angle view and clear morning light. The blocky, white apartment complex is surgically replaced with **Modular Pod Housing**. The stacked pods have varying textures—some reclaimed wood, some colourful recycled plastic panels. A family is visible on their extended balcony, which is a hub of activity with a small **Sky-Park Farm** extension. The concrete promenade is now a **Flood-Adaptive Plaza** with wide, wooden steps leading down to the water, where children are playing. Small **autonomous delivery drones** zip quietly overhead. The adjacent buildings are retrofitted with cascading green walls that incorporate **integrated greywater filtration**."
+"""
+
+<./frontend/Dockerfile>
+# Stage 1: Build the React application
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Stage 2: Serve the application with a production-ready server (or use a multi-stage build with Nginx)
+# For development purposes with Vite, we'll use a simpler setup.
+# The `nginx` service will handle serving static files in a real production deployment.
+# This Dockerfile is for the development environment orchestrated by Docker Compose.
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+EXPOSE 5173
+# The --host flag is crucial for making the dev server accessible within the Docker network
+CMD ["npm", "run", "dev", "--", "--host"]
+
+
+<./frontend/package.json>
+{
+  "name": "almere-2075-frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@vitejs/plugin-react": "^4.2.1",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.34.1",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.6",
+    "vite": "^5.2.0"
+  }
+}
+
+<./frontend/vite.config.js>
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5173,
+    // hmr (hot module replacement) configuration for running inside docker
+    // and behind a reverse proxy
+    hmr: {
+      clientPort: 2075 // The port Nginx is exposed on
+    }
+  }
+})
+
+<./frontend/.gitignore>
+# See root .gitignore file
+
+<./frontend/index.html>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Almere 2075</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+<./frontend/public/vite.svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <path fill="#646cff" d="M50,0 L100,25 L100,75 L50,100 L0,75 L0,25 Z" />
+  <text x="50" y="60" font-size="40" fill="white" text-anchor="middle" font-family="Arial, sans-serif">A75</text>
+</svg>
+
+<./frontend/src/main.jsx>
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)
+
+<./frontend/src/index.css>
+:root {
+  --primary-color: #4a90e2;
+  --secondary-color: #50e3c2;
+  --dark-color: #282c34;
+  --light-color: #f8f9fa;
+  --text-color: #333;
+  --border-radius: 8px;
+  --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-family);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--light-color);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+header {
+  background: var(--dark-color);
+  color: white;
+  padding: 1rem 2rem;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+main {
+  padding: 1.5rem;
+  flex-grow: 1;
+  max-width: 1400px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.controls-section {
+  background: white;
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+  margin-bottom: 2rem;
+}
+
+.gallery-container {
+  margin-bottom: 1.5rem;
+}
+
+.gallery-container h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 0.5rem;
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+}
+
+.gallery-item {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.gallery-item:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.upload-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.file-upload-label {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: center;
+}
+
+.file-upload-label:hover {
+  background-color: #357abd;
+}
+
+#file-upload {
+  display: none;
+}
+
+.generate-button {
+  padding: 0.75rem 2rem;
+  background-color: var(--secondary-color);
+  color: var(--dark-color);
+  border: none;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.generate-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.generate-button:not(:disabled):hover {
+  background-color: #48c9b0;
+  transform: translateY(-2px);
+}
+
+.results-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+.image-display, .prompt-display {
+  background: white;
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.image-display h3, .prompt-display h3 {
+  margin-top: 0;
+  color: var(--primary-color);
+}
+
+.image-container {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-color: #f0f0f0;
+  border-radius: var(--border-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #ddd;
+}
+
+.image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-container p {
+  color: #888;
+}
+
+.prompt-content {
+  background-color: #f9f9f9;
+  border: 1px solid #eee;
+  border-radius: var(--border-radius);
+  padding: 1rem;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  color: white;
+}
+
+.spinner {
+  border: 8px solid #f3f3f3;
+  border-top: 8px solid var(--secondary-color);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+}
+
+.loading-overlay p {
+  margin-top: 1rem;
+  font-size: 1.2rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  color: #d9534f;
+  background-color: #f2dede;
+  border: 1px solid #ebccd1;
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  margin-top: 1rem;
+}
+
+
+footer {
+  text-align: center;
+  padding: 1rem;
+  margin-top: 2rem;
+  background-color: var(--dark-color);
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (min-width: 1024px) {
+  .results-section {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+<./frontend/src/App.jsx>
+import { useState, useEffect } from 'react';
+import './App.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+
+// Loading Spinner Component
+const LoadingIndicator = () => (
+  <div className="loading-overlay">
+    <div className="spinner"></div>
+    <p>Generating your vision of Almere 2075... This may take a minute.</p>
+  </div>
+);
+
+// Main App Component
+function App() {
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [originalImage, setOriginalImage] = useState(null); // Will hold the Blob URL
+  const [originalImageFile, setOriginalImageFile] = useState(null); // Will hold the File object
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [transformedImageUrl, setTransformedImageUrl] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Fetch gallery images on component mount
+  useEffect(() => {
+    const fetchGalleryImages = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/images`);
+        if (!response.ok) throw new Error('Failed to fetch gallery');
+        const data = await response.json();
+        setGalleryImages(data);
+      } catch (err) {
+        setError('Could not load example gallery. Please try again later.');
+        console.error(err);
+      }
+    };
+    fetchGalleryImages();
+  }, []);
+
+  // Convert a File object to a Base64 string
+  const toBase64 = file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setOriginalImage(URL.createObjectURL(file));
+      setOriginalImageFile(file);
+      setTransformedImageUrl('');
+      setGeneratedPrompt('');
+      setError('');
+    }
+  };
+
+  const handleGalleryClick = async (imageName) => {
+    try {
+      const imageUrl = `${API_BASE_URL}/images/${imageName}`;
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error(`Could not load image: ${imageName}`);
+      const imageBlob = await response.blob();
+      const imageFile = new File([imageBlob], imageName, { type: imageBlob.type });
+      
+      setOriginalImage(URL.createObjectURL(imageFile));
+      setOriginalImageFile(imageFile);
+      setTransformedImageUrl('');
+      setGeneratedPrompt('');
+      setError('');
+    } catch (err) {
+      setError(err.message);
+      console.error(err);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!originalImageFile) {
+      setError('Please select an image first.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+    setGeneratedPrompt('');
+    setTransformedImageUrl('');
+
+    try {
+      // 1. Convert image to Base64
+      const base64Image = await toBase64(originalImageFile);
+
+      // 2. Generate the prompt
+      const promptResponse = await fetch(`${API_BASE_URL}/generate-prompt`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64Image }),
+      });
+
+      if (!promptResponse.ok) {
+        const errData = await promptResponse.json();
+        throw new Error(`Failed to generate prompt: ${errData.detail || promptResponse.statusText}`);
+      }
+      const promptData = await promptResponse.json();
+      setGeneratedPrompt(promptData.prompt);
+
+      // 3. Transform the image using the new prompt
+      const transformResponse = await fetch(`${API_BASE_URL}/transform-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: base64Image, prompt: promptData.prompt }),
+      });
+      
+      if (!transformResponse.ok) {
+        const errData = await transformResponse.json();
+        throw new Error(`Failed to transform image: ${errData.detail || transformResponse.statusText}`);
+      }
+      const transformData = await transformResponse.json();
+      setTransformedImageUrl(transformData.transformedImageUrl);
+
+    } catch (err) {
+      setError(`An error occurred: ${err.message}`);
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  return (
+    <div className="app-container">
+      {isLoading && <LoadingIndicator />}
+      <header>
+        <h1>Almere 2075 Vision Generator</h1>
+      </header>
+
+      <main>
+        <section className="controls-section">
+          <div className="gallery-container">
+            <h3>Start with an example</h3>
+            <div className="gallery">
+              {galleryImages.length > 0 ? (
+                galleryImages.map(img => (
+                  <img
+                    key={img}
+                    src={`${API_BASE_URL}/thumbnails/${img}`}
+                    alt={`Example view of Almere - ${img}`}
+                    className="gallery-item"
+                    onClick={() => handleGalleryClick(img)}
+                  />
+                ))
+              ) : (
+                <p>No example images found.</p>
+              )}
+            </div>
+          </div>
+          
+          <div className="upload-actions">
+            <label htmlFor="file-upload" className="file-upload-label">Or Upload Your Own Image</label>
+            <input id="file-upload" type="file" accept="image/png, image/jpeg" onChange={handleImageUpload} />
+            <button className="generate-button" onClick={handleGenerate} disabled={!originalImage || isLoading}>
+              {isLoading ? 'Generating...' : 'Generate Transformation'}
+            </button>
+          </div>
+          {error && <p className="error-message">{error}</p>}
+        </section>
+
+        <section className="results-section">
+          <div className="image-display">
+            <h3>Original Image</h3>
+            <div className="image-container">
+              {originalImage ? <img src={originalImage} alt="Original upload" /> : <p>Select an example or upload an image to begin.</p>}
+            </div>
+          </div>
+          <div className="image-display">
+            <h3>Almere 2075 Vision</h3>
+            <div className="image-container">
+              {transformedImageUrl ? <img src={transformedImageUrl} alt="Transformed Almere 2075 vision" /> : <p>Your transformed image will appear here.</p>}
+            </div>
+          </div>
+        </section>
+
+        {generatedPrompt && (
+          <section className="prompt-display">
+            <h3>Generated AI Prompt</h3>
+            <div className="prompt-content">
+              {generatedPrompt}
+            </div>
+          </section>
+        )}
+      </main>
+
+      <footer>
+        <p>Almere 2075 Concept Visualizer</p>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
