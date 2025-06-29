@@ -1,10 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 // --- Configuration ---
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const MIN_LIBRARY_WIDTH = 200;
+const MIN_LOG_HEIGHT = 100;
 
-// --- Helper Functions & Components ---
+// --- Helper Components ---
 const formatTime = () => new Date().toLocaleTimeString('en-GB');
+
+const Resizer = ({ onMouseDown, direction = 'vertical' }) => (
+  <div
+    className={`resizer ${direction}`}
+    onMouseDown={onMouseDown}
+  />
+);
 
 const ProcessLog = ({ messages, onGenerate, isProcessing, disabled }) => {
   const logEndRef = useRef(null);
@@ -14,7 +23,7 @@ const ProcessLog = ({ messages, onGenerate, isProcessing, disabled }) => {
 
   return (
     <div className="process-log-wrapper">
-      <div className="log-header">PROCESS LOG</div>
+      <div className="log-header">Process Log</div>
       <div className="log-content">
         {messages.map((msg, i) => (
           <p key={i} className={`log-message ${msg.type || ''}`}>
@@ -37,48 +46,69 @@ const ProcessLog = ({ messages, onGenerate, isProcessing, disabled }) => {
   );
 };
 
-const ComparisonPanel = ({ beforeSrc, afterSrc }) => {
-  const [clipPosition, setClipPosition] = useState(50);
-  const containerRef = useRef(null);
+const ComparisonPanel = ({ beforeSrc, afterSrc, viewMode, panelSplit, onSplitterMouseDown }) => {
+    const sliderContainerRef = useRef(null);
+    const [clipPosition, setClipPosition] = useState(50);
 
-  const handleMouseMove = (e) => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const percentage = (x / rect.width) * 100;
-      setClipPosition(Math.max(0, Math.min(100, percentage)));
+    const handleSliderMouseMove = (e) => {
+        if (sliderContainerRef.current) {
+            const rect = sliderContainerRef.current.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const percentage = (x / rect.width) * 100;
+            setClipPosition(Math.max(0, Math.min(100, percentage)));
+        }
+    };
+
+    const hasContent = beforeSrc || afterSrc;
+
+    if (!hasContent) {
+        return (
+            <div className="comparison-panel">
+                <div className="placeholder">Select an image from the library to begin.</div>
+            </div>
+        )
     }
-  };
 
-  const hasContent = beforeSrc || afterSrc;
+    if (viewMode === 'side-by-side') {
+        return (
+            <div className="comparison-panel side-by-side">
+                <div className="image-panel" style={{ width: `calc(${panelSplit}% - 1px)`}}>
+                    <div className="image-header">SOURCE</div>
+                    <div className="image-container">
+                       {beforeSrc && <img src={beforeSrc} alt="Source" />}
+                    </div>
+                </div>
+                <Resizer onMouseDown={onSplitterMouseDown} direction="vertical" />
+                <div className="image-panel" style={{ width: `calc(${100 - panelSplit}% - 1px)`}}>
+                    <div className="image-header">ALMERE 2075</div>
+                     <div className="image-container">
+                       {afterSrc && <img src={afterSrc} alt="Almere 2075" />}
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
-  return (
-    <div className="comparison-panel" ref={containerRef} onMouseMove={afterSrc ? handleMouseMove : null}>
-      {!hasContent && <div className="placeholder">Select an image from the library to begin.</div>}
-      
-      {beforeSrc && (
-        <div className="image-container">
-          <img src={beforeSrc} alt="Source" />
-          <div className="label-overlay before-label">SOURCE</div>
+    return (
+        <div className="comparison-panel slider-mode" ref={sliderContainerRef} onMouseMove={afterSrc ? handleSliderMouseMove : null}>
+            <div className="image-container">
+                <img src={beforeSrc} alt="Source" />
+                <div className="label-overlay before-label">SOURCE</div>
+            </div>
+            {afterSrc && (
+                <>
+                    <div className="image-container after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
+                        <img src={afterSrc} alt="Almere 2075" />
+                        <div className="label-overlay after-label">ALMERE 2075</div>
+                    </div>
+                    <div className="slider-line" style={{ left: `${clipPosition}%` }}>
+                        <div className="slider-handle"></div>
+                    </div>
+                </>
+            )}
         </div>
-      )}
-
-      {afterSrc && (
-        <div className="image-container after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
-          <img src={afterSrc} alt="Almere 2075" />
-          <div className="label-overlay after-label">ALMERE 2075</div>
-        </div>
-      )}
-
-      {afterSrc && (
-         <div className="slider-line" style={{ left: `${clipPosition}%` }}>
-            <div className="slider-handle"></div>
-         </div>
-      )}
-    </div>
-  );
+    );
 };
-
 
 // --- Main Workbench Component ---
 
@@ -87,25 +117,44 @@ function App() {
   const [galleryImages, setGalleryImages] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [outputImageUrl, setOutputImageUrl] = useState(null);
-  const [logMessages, setLogMessages] = useState([{ time: formatTime(), text: 'Workbench initialized. Please select an image from the library.' }]);
+  const [logMessages, setLogMessages] = useState([{ time: formatTime(), text: 'Workbench initialized. Please select an image.' }]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [viewMode, setViewMode] = useState('slider');
+  const [panelSizes, setPanelSizes] = useState({ library: 240, log: 200, mainSplit: 50 });
 
-  // Initial gallery fetch
-  useEffect(() => {
-    const fetchGallery = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/gallery`);
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        setGalleryImages(data);
-      } catch (e) {
-        addLogMessage(`Error fetching image library: ${e.message}`, 'error');
-        setError('Could not load image library. Please refresh.');
-      }
+  // --- Resizing Logic ---
+  // A simplified and more direct implementation of the drag handlers.
+  const handleMouseDown = useCallback((onDrag) => (startEvent) => {
+    startEvent.preventDefault();
+    const onMove = (moveEvent) => onDrag(moveEvent);
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
     };
-    fetchGallery();
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
   }, []);
+
+  const handleLibraryResize = handleMouseDown((e) => {
+    setPanelSizes(p => ({ ...p, library: Math.max(MIN_LIBRARY_WIDTH, e.clientX) }));
+  });
+
+  const handleLogResize = handleMouseDown((e) => {
+    const newHeight = window.innerHeight - e.clientY;
+    setPanelSizes(p => ({ ...p, log: Math.max(MIN_LOG_HEIGHT, newHeight) }));
+  });
+  
+  const handleMainSplitterResize = handleMouseDown((e) => {
+    const container = document.querySelector('.side-by-side');
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const position = e.clientX - rect.left;
+      const percentage = (position / rect.width) * 100;
+      setPanelSizes(p => ({...p, mainSplit: Math.max(10, Math.min(90, percentage))}));
+    }
+  });
+
 
   // --- Core Functions ---
   const addLogMessage = (text, type = 'info') => {
@@ -120,14 +169,29 @@ function App() {
     setLogMessages([{ time: formatTime(), text: `Source image selected: ${image.filename}` }]);
   };
 
+  // Initial gallery fetch - Correctly placed in useEffect
+  useEffect(() => {
+    const fetchGallery = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/gallery`);
+        if (!response.ok) throw new Error(`Network response was not ok (${response.status})`);
+        const data = await response.json();
+        setGalleryImages(data);
+      } catch (e) {
+        addLogMessage(`Error fetching image library: ${e.message}`, 'error');
+        setError('Could not load image library. Please refresh.');
+      }
+    };
+    fetchGallery();
+  }, []);
+
+
   const handleGenerate = async () => {
     if (!selectedImage) return;
-
     setIsProcessing(true);
     setOutputImageUrl(null);
     setError('');
     addLogMessage('--- Transformation process started ---', 'system');
-
     try {
       addLogMessage('Step 1/3: Preparing source image...');
       const base64Reader = new Promise((resolve, reject) => {
@@ -142,8 +206,7 @@ function App() {
       });
       const base64Image = await base64Reader;
       addLogMessage('Source image prepared successfully.');
-
-      addLogMessage('Step 2/3: Generating AI prompt via GPT-4... (Est. 5-10 seconds)');
+      addLogMessage('Step 2/3: Generating AI prompt... (Est. 5-10 seconds)');
       const promptResponse = await fetch(`${API_BASE_URL}/generate-prompt`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -153,8 +216,7 @@ function App() {
       const promptData = await promptResponse.json();
       addLogMessage('AI prompt generated.', 'success');
       addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
-
-      addLogMessage('Step 3/3: Generating futuristic vision via FLUX.1... (Est. 30-45 seconds)');
+      addLogMessage('Step 3/3: Generating futuristic vision... (Est. 30-45 seconds)');
       const transformResponse = await fetch(`${API_BASE_URL}/transform-image`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,13 +224,11 @@ function App() {
       });
       if (!transformResponse.ok) throw new Error(`AI Image Generation failed: ${transformResponse.statusText}`);
       const transformData = await transformResponse.json();
-      
       setOutputImageUrl(transformData.transformedImageUrl);
       addLogMessage('--- Transformation Complete ---', 'success');
-
     } catch (err) {
       addLogMessage(`PROCESS FAILED: ${err.message}`, 'error');
-      setError('An error occurred during the process. See log for details.');
+      setError('An error occurred. See log for details.');
     } finally {
       setIsProcessing(false);
     }
@@ -176,8 +236,8 @@ function App() {
 
   return (
     <div className="workbench-container">
-      <aside className="library-panel">
-        <div className="library-header">IMAGE LIBRARY</div>
+      <aside className="library-panel" style={{ width: `${panelSizes.library}px`}}>
+        <div className="library-header">Image Library</div>
         <div className="library-grid">
           {galleryImages.map(img => (
             <div
@@ -195,18 +255,31 @@ function App() {
           ))}
         </div>
       </aside>
-
+      <Resizer onMouseDown={handleLibraryResize} direction="vertical" />
       <main className="main-panel">
+        <div className="main-panel-header">
+            <span>Comparison View</span>
+            <div className="view-mode-toggle">
+                <button className={viewMode === 'slider' ? 'active' : ''} onClick={() => setViewMode('slider')}>Slider</button>
+                <button className={viewMode === 'side-by-side' ? 'active' : ''} onClick={() => setViewMode('side-by-side')}>Side-by-Side</button>
+            </div>
+        </div>
         <ComparisonPanel 
             beforeSrc={selectedImage ? `${API_BASE_URL}/images/${selectedImage.filename}`: null}
             afterSrc={outputImageUrl}
+            viewMode={viewMode}
+            panelSplit={panelSizes.mainSplit}
+            onSplitterMouseDown={handleMainSplitterResize}
         />
-        <ProcessLog 
-            messages={logMessages} 
-            onGenerate={handleGenerate}
-            isProcessing={isProcessing}
-            disabled={!selectedImage}
-        />
+        <Resizer onMouseDown={handleLogResize} direction="horizontal" />
+        <div className="log-container" style={{ height: `${panelSizes.log}px` }}>
+            <ProcessLog 
+                messages={logMessages} 
+                onGenerate={handleGenerate}
+                isProcessing={isProcessing}
+                disabled={!selectedImage}
+            />
+        </div>
         {error && <div className="error-toast">{error}</div>}
       </main>
     </div>
@@ -214,4 +287,3 @@ function App() {
 }
 
 export default App;
-

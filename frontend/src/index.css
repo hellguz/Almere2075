@@ -1,4 +1,4 @@
-/* --- WORKBENCH UX REDESIGN V2 (From Scratch) --- */
+/* --- WORKBENCH UX REDESIGN V3 (Resizable Panels) --- */
 
 /* 1. Foundational Styles */
 :root {
@@ -6,13 +6,13 @@
   --font-family: 'Inter', -apple-system, sans-serif;
   --font-monospace: 'SF Mono', 'Fira Code', 'Roboto Mono', monospace;
 
-  /* Color Palette (Scientific, functional, high-contrast) */
-  --color-background: #f4f5f7; /* Light grey canvas */
-  --color-surface: #ffffff;    /* White for panels */
+  /* Color Palette */
+  --color-background: #f4f5f7;
+  --color-surface: #ffffff;
   --color-border: #dfe1e6;
   --color-text-primary: #172b4d;
   --color-text-secondary: #6b778c;
-  --color-accent: #0052cc; /* A professional, scientific blue */
+  --color-accent: #0052cc;
   --color-accent-hover: #0065ff;
   --color-success: #00875a;
   --color-error: #de350b;
@@ -29,6 +29,7 @@ html, body {
   background-color: var(--color-background);
   color: var(--color-text-primary);
   font-size: 14px;
+  user-select: none; /* Prevent text selection during drag */
 }
 
 /* 2. Main Workbench Layout */
@@ -38,7 +39,6 @@ html, body {
 }
 
 .library-panel {
-  width: 240px;
   flex-shrink: 0;
   background: var(--color-surface);
   border-right: 1px solid var(--color-border);
@@ -51,11 +51,34 @@ html, body {
   display: flex;
   flex-direction: column;
   padding: 16px;
-  gap: 16px;
+  gap: 8px;
+  min-width: 0;
 }
 
-/* 3. Library Panel Styles */
-.library-header, .log-header {
+.log-container {
+    flex-shrink: 0;
+}
+
+/* 3. Resizer Handles */
+.resizer {
+  flex-shrink: 0;
+  background: var(--color-background);
+  transition: background-color 0.2s ease;
+}
+.resizer.vertical {
+  width: 5px;
+  cursor: ew-resize;
+}
+.resizer.horizontal {
+  height: 5px;
+  cursor: ns-resize;
+}
+.resizer:hover {
+  background: var(--color-accent-hover);
+}
+
+/* 4. Library Panel Styles */
+.library-header, .log-header, .image-header {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -69,7 +92,7 @@ html, body {
 .library-grid {
   padding: 8px;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   gap: 8px;
   overflow-y: auto;
 }
@@ -105,7 +128,40 @@ html, body {
   font-weight: 500;
 }
 
-/* 4. Comparison Panel Styles */
+/* 5. Main Panel & Comparison Styles */
+.main-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 8px 8px 8px;
+    flex-shrink: 0;
+}
+.main-panel-header span {
+    font-size: 14px;
+    font-weight: 600;
+}
+.view-mode-toggle {
+    display: flex;
+    background: #dfe1e6;
+    border-radius: 4px;
+    padding: 2px;
+}
+.view-mode-toggle button {
+    background: transparent;
+    border: none;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--color-text-secondary);
+}
+.view-mode-toggle button.active {
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
 .comparison-panel {
   flex-grow: 1;
   position: relative;
@@ -113,18 +169,43 @@ html, body {
   border: 1px solid var(--color-border);
   border-radius: 4px;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.comparison-panel.slider-mode {
   cursor: ew-resize;
 }
+.comparison-panel.side-by-side {
+    justify-content: space-between;
+}
+
+.image-panel {
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+}
+.image-header {
+    background: #fafbfc;
+}
+
 .comparison-panel .image-container {
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
 }
+.slider-mode .image-container {
+    position: absolute;
+    top: 0; left: 0;
+}
+
 .comparison-panel .image-container img {
   max-width: 100%;
   max-height: 100%;
@@ -136,7 +217,6 @@ html, body {
 .placeholder {
   color: var(--color-text-secondary);
 }
-
 .label-overlay {
   position: absolute;
   top: 8px;
@@ -149,12 +229,8 @@ html, body {
   border-radius: 4px;
   z-index: 5;
 }
-.before-label {
-  left: 8px;
-}
-.after-label {
-  right: 8px;
-}
+.before-label { left: 8px; }
+.after-label { right: 8px; }
 
 .slider-line {
   position: absolute;
@@ -193,15 +269,15 @@ html, body {
   transform: rotate(180deg);
 }
 
-/* 5. Process Log & Controls Styles */
+/* 6. Process Log & Controls Styles */
 .process-log-wrapper {
-  height: 200px;
   flex-shrink: 0;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 .log-content {
   flex-grow: 1;
@@ -263,14 +339,14 @@ html, body {
 }
 
 .error-toast {
-    position: absolute;
-    bottom: 220px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 12px 24px;
-    background: var(--color-error);
-    color: white;
-    border-radius: 4px;
-    z-index: 100;
-    font-weight: 500;
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  background: var(--color-error);
+  color: white;
+  border-radius: 4px;
+  z-index: 100;
+  font-weight: 500;
 }
