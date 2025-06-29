@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: almere-proxy
+    ports:
+      - "${NGINX_HOST_PORT:-2075}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - almere-net
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: almere-backend
+    env_file: .env
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/images:/app/images
+      - ./backend/thumbnails:/app/thumbnails
+    networks:
+      - almere-net
+    expose:
+      - "8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: almere-frontend
+    environment:
+      - VITE_API_BASE_URL=/api
+    networks:
+      - almere-net
+    expose:
+      - "5173"
+    restart: unless-stopped
+
+networks:
+  almere-net:
+    driver: bridge
+

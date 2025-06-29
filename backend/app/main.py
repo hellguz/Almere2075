@@ -1,4 +1,3 @@
-<./backend/app/main.py>
 import os
 import base64
 from fastapi import FastAPI, HTTPException, Request
