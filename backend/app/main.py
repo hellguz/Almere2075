@@ -24,7 +24,7 @@ job_store = {}
 load_dotenv()
 
 # --- Configuration ---
-THUMBNAIL_SIZE = (800, 800)
+THUMBNAIL_SIZE = (400, 400)
 IMAGES_DIR = Path("/app/images")
 THUMBNAILS_DIR = Path("/app/thumbnails")
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp', '.webm'}
