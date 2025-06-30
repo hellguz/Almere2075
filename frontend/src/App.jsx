@@ -376,7 +376,7 @@ function App() {
         if (!promptResponse.ok) throw new Error(`AI Vision Conection failed: ${promptResponse.statusText}`);
         const promptData = await promptResponse.json();
         addLogMessage('Vision prompt generated.', 'success');
-        addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
+        addLogMessage(`Prompt: "${promptData.prompt}"`, 'success');
         setState('finalPrompt', promptData.prompt);
 
         addLogMessage('Step 3/3: Submitting to FLUX renderer...');
