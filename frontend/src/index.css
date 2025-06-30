@@ -27,12 +27,12 @@
   --light-color-system: #007AFF;  /* Standard blue */
   --light-color-data: #555555;
 
-  --cursor-pointer-color: var(--color-accent-white); /* White for dark theme */
-  --custom-cursor: url('/crosshair.svg') 12 12, auto;
+  --cursor-pointer-color: #FFFF00; /* Always Yellow */
+  --custom-cursor: url('/crosshair.svg') 24 24, auto; /* Updated hotspot for 48x48 SVG */
 }
 
 body.light-theme {
-  --cursor-pointer-color: var(--light-color-accent-black); /* Black for light theme */
+  /* --cursor-pointer-color: var(--light-color-accent-black); */ /* Removed: No longer theme dependent */
   --color-background: var(--light-color-background);
   --color-text-primary: var(--light-color-text-primary);
   --color-text-secondary: var(--light-color-text-secondary);
