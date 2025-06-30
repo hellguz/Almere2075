@@ -32,7 +32,7 @@ const LOG_PANEL_HEIGHT = '500px';
 // --- Global State ---
 const AppState = {
   view: 'gallery',
-  comparisonMode: 'side-by-side',
+  comparisonMode: 'slider', // 'slider' or 'side-by-side'
   selectedImage: null,
   outputImage: null,
   isProcessing: false,
