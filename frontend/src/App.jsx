@@ -55,11 +55,7 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
 
     const imagePlaneScale = useMemo(() => {
         const imageAspect = texture.image.width / texture.image.height;
-        if (imageAspect > 1) { // Landscape
-            return [baseSize, baseSize / imageAspect, 1];
-        } else { // Portrait or Square
-            return [baseSize * imageAspect, baseSize, 1];
-        }
+        return [imageAspect > 1 ? baseSize : baseSize * imageAspect, imageAspect > 1 ? baseSize / imageAspect : baseSize, 1];
     }, [texture, baseSize]);
 
     useFrame(({ viewport, mouse }) => {
@@ -71,8 +67,7 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
         const directionVec = new Vector2().subVectors(homePos2D, mouseVec);
         const dist = directionVec.length();
         
-        // The radius of influence is the entire screen
-        const influenceRadius = Math.max(viewport.width, viewport.height) / 2;
+        const influenceRadius = Math.max(viewport.width, viewport.height);
         const normalizedDist = Math.min(dist / influenceRadius, 1.0);
 
         // --- Position: Apply the fisheye distortion ---
@@ -82,7 +77,7 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
         // --- Scale & Z-Depth: Based on proximity ---
         const proximity = 1 - normalizedDist;
         const targetScale = MIN_SCALE + Math.pow(proximity, 2) * (MAX_SCALE - MIN_SCALE);
-        const targetZ = (proximity - 0.5) * 2 * Z_LIFT;
+        const targetZ = proximity * Z_LIFT;
         
         // --- Animate ---
         meshRef.current.position.lerp(new Vector3(targetPosition.x, targetPosition.y, targetZ), DAMPING);
@@ -90,8 +85,8 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
     });
 
     return (
-        <group ref={meshRef} position={homePosition}>
-             <mesh scale={imagePlaneScale} onClick={() => onImageClick(texture)}>
+        <group ref={meshRef} position={homePosition} onClick={() => onImageClick(texture)}>
+             <mesh scale={imagePlaneScale}>
                 <planeGeometry args={[1, 1]} />
                 <meshBasicMaterial map={texture} toneMapped={false} />
             </mesh>
@@ -104,30 +99,52 @@ const DynamicGallery = ({ images, onImageClick }) => {
     const { viewport } = useThree();
 
     const grid = useMemo(() => {
-        if (!textures.length) return [];
+        if (!textures.length || viewport.width === 0) return [];
+        
         const imageCount = images.length;
+        const { width, height } = viewport;
         
         const items = [];
-        const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-        const maxRadius = Math.min(viewport.width, viewport.height) / 1.8; // Use 1.8 to allow stretching
-        const baseSize = maxRadius / Math.sqrt(imageCount) * 0.8;
+        const tempPoints = [];
 
+        // --- Generate a stable, screen-filling hexagonal grid ---
+        const density = 0.9; 
+        const areaPerImage = (width * height) / (imageCount / density); // Corrected density calculation
+        const hexRadius = Math.sqrt(areaPerImage / (1.5 * Math.sqrt(3)));
+        const hexHeight = hexRadius * Math.sqrt(3);
+        const horizSpacing = hexRadius * 1.5;
+        const numCols = Math.ceil(width / horizSpacing) + 2;
+        const numRows = Math.ceil(height / (hexHeight / 2)) + 2;
+        
+        let index = 0;
+        for (let r = 0; r < numRows; r++) {
+            for (let c = 0; c < numCols; c++) {
+                if (index >= imageCount) break;
+                const xOffset = (r % 2 === 0) ? 0 : horizSpacing / 2;
+                const x = c * horizSpacing + xOffset;
+                const y = r * (hexHeight / 2);
+                tempPoints.push(new Vector2(x, y));
+                index++;
+            }
+            if (index >= imageCount) break;
+        }
+
+        // --- NEW: Calculate the geometric center of the generated points ---
+        const center = tempPoints.reduce((acc, p) => acc.add(p), new Vector2(0,0)).multiplyScalar(1 / tempPoints.length);
+
+        // --- Create final items, offsetting each by the calculated center ---
         for (let i = 0; i < imageCount; i++) {
-            const radius = Math.sqrt(i / imageCount) * maxRadius;
-            const angle = i * goldenAngle;
-
-            const x = radius * Math.cos(angle) * (viewport.width / viewport.height); // Stretch to viewport aspect ratio
-            const y = radius * Math.sin(angle);
-            
+            const point = tempPoints[i];
             items.push({
                 index: i,
                 texture: textures[i],
-                homePosition: [x, y, 0],
-                baseSize: baseSize,
+                homePosition: [point.x - center.x, -(point.y - center.y), 0], // Invert Y-axis for screen coords
+                baseSize: hexRadius * 1.05,
             });
         }
+
         return items;
-    }, [textures, viewport.width, viewport.height]);
+    }, [images, textures, viewport.width, viewport.height]);
 
     return (
         <group>
@@ -376,6 +393,7 @@ function App() {
         if (!promptResponse.ok) throw new Error(`AI Vision Conection failed: ${promptResponse.statusText}`);
         const promptData = await promptResponse.json();
         addLogMessage('Vision prompt generated.', 'success');
+        addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
         addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
         setState('finalPrompt', promptData.prompt);
 
