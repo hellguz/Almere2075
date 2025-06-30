@@ -118,6 +118,7 @@ html, body, #root {
 .fullscreen-canvas-container canvas {
     cursor: none; /* Hide cursor for a more direct interaction feel */
     border-radius: 8px;
+    touch-action: none; /* Prevent default touch actions like scrolling page */
 }
 .gallery-instructions {
     position: absolute;
@@ -479,7 +480,8 @@ html, body, #root {
 .log-message.system span:last-child { font-weight: bold; color: var(--color-system);
 }
 .log-message.success span:last-child { color: var(--color-success); }
-.log-message.error span:last-child { color: var(--color-error); font-weight: bold; }
+.log-message.error span:last-child { color: var(--color-error); font-weight: bold;
+}
 .log-message.data {
   color: var(--color-data);
   font-style: italic;
