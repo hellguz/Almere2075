@@ -132,7 +132,7 @@ async def generate_prompt(request: GeneratePromptRequest):
         standardized_data_url = f"data:image/png;base64,{base64.b64encode(output_buffer.getvalue()).decode('utf-8')}"
 
         response = openai.chat.completions.create(
-            model="gpt-4.1-2025-04-14",
+            model="gpt-4.1-mini-2025-04-14",
             messages=[
                 {"role": "system", "content": system_prompt_for_flux},
                 {"role": "user", "content": [{"type": "text", "text": "Generate a prompt for this image."}, {"type": "image_url", "image_url": {"url": standardized_data_url}}]},
