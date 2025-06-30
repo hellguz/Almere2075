@@ -21,7 +21,8 @@ RUN chown -R app:app /app
 USER app
 
 # Command to run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-
+# --- MODIFIED: Increased the number of worker processes to 4 ---
+# This allows the server to handle multiple long-running AI tasks concurrently
+# without blocking new incoming requests, improving performance under load.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
 

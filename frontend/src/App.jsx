@@ -250,15 +250,22 @@ const TransformView = ({ image, isVisible, isProcessing, onTransform }) => {
 
 const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mode }) => {
     const sliderContainerRef = useRef(null);
-    const [sliderActive, setSliderActive] = useState(true);
+    const [sliderActive, setSliderActive] = useState(false);
     const [clipPosition, setClipPosition] = useState(50);
+    // --- MODIFIED: Changed prompt visibility to be based on a click state for mobile-friendliness ---
     const [isPromptExpanded, setIsPromptExpanded] = useState(false);
+    const togglePrompt = () => setIsPromptExpanded(!isPromptExpanded);
+
 
     const handleMouseMove = (e) => {
         if (!sliderActive || !sliderContainerRef.current) return;
         const rect = sliderContainerRef.current.getBoundingClientRect();
-        setClipPosition(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)));
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        setClipPosition(Math.max(0, Math.min(100, ((x - rect.left) / rect.width) * 100)));
     };
+    
+    const handleInteractionStart = () => setSliderActive(true);
+    const handleInteractionEnd = () => setSliderActive(false);
 
     if (!originalImage || !outputImage) return null;
 
@@ -272,7 +279,17 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
             )}
             
             {mode === 'slider' && (
-                <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleMouseMove} onMouseEnter={() => setSliderActive(true)} onMouseLeave={() => setSliderActive(false)}>
+                 <div 
+                    className="comparison-view slider-mode" 
+                    ref={sliderContainerRef} 
+                    onMouseMove={handleMouseMove}
+                    onTouchMove={handleMouseMove}
+                    onMouseDown={handleInteractionStart}
+                    onTouchStart={handleInteractionStart}
+                    onMouseUp={handleInteractionEnd}
+                    onTouchEnd={handleInteractionEnd}
+                    onMouseLeave={handleInteractionEnd}
+                >
                     <div className="image-panel"><img src={`${API_BASE_URL}/images/${originalImage.filename}`} alt="Original" /></div>
                     <div className="image-panel after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}><img src={outputImage} alt="Almere 2075" /></div>
                     <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
@@ -280,19 +297,21 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
             )}
 
             {finalPrompt && (
-                <div
-                    className={`prompt-container ${isPromptExpanded ? 'expanded' : ''}`}
-                    onMouseEnter={() => setIsPromptExpanded(true)}
-                    onMouseLeave={() => setIsPromptExpanded(false)}
-                >
-                    <div className="prompt-button">PROMPT</div>
-                    <div className="prompt-panel-expandable">
-                        <div className="prompt-header">GENERATED PROMPT</div>
-                        <div className="prompt-content">
-                            {finalPrompt}
+                <>
+                    <div className={`prompt-container ${isPromptExpanded ? 'expanded' : ''}`}>
+                        <div className="prompt-button" onClick={togglePrompt}>
+                            {isPromptExpanded ? 'HIDE' : 'SHOW'} PROMPT
+                        </div>
+                        <div className="prompt-panel-expandable">
+                            <div className="prompt-header">GENERATED PROMPT</div>
+                            <div className="prompt-content">
+                                {finalPrompt}
+                            </div>
                         </div>
                     </div>
-                </div>
+                    {/* --- ADDED: Overlay for mobile to easily close the prompt panel --- */}
+                    {isPromptExpanded && <div className="prompt-overlay" onClick={togglePrompt}></div>}
+                </>
             )}
         </div>
     );
@@ -442,3 +461,4 @@ function App() {
 }
 
 export default App;
+
