@@ -14,14 +14,14 @@ const GALLERY_CONFIG = {
   SCALE_CURVE: 7,          // The power of the scaling curve. Higher numbers create a sharper drop-off in size.
 
   // --- Visual Appearance ---
-  MAX_SCALE: 5.0,          // Maximum size of the focused image.
+  MAX_SCALE: 3.0,          // Maximum size of the focused image.
   MIN_SCALE: 1,            // Minimum size of the peripheral images.
   GRID_DENSITY: 1.05,      // How tightly packed the initial grid is. < 1 means larger images, > 1 means smaller, denser images.
   
   // --- Animation Physics ---
   Z_LIFT: 2.0,             // How much the focused image "pops" towards the viewer.
-  DISTORTION_POWER: 0.7,   // The power of the fisheye lens distortion. < 1 expands the center, > 1 compresses it.
-  DAMPING: 0.03,           // The "springiness" of the animation. Lower values are more fluid and gentle.
+  DISTORTION_POWER: 0.8,   // The power of the fisheye lens distortion. < 1 expands the center, > 1 compresses it.
+  DAMPING: 0.33,           // The "springiness" of the animation. Lower values are more fluid and gentle.
 };
 
 
