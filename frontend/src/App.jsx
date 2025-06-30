@@ -370,6 +370,27 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
 };
 
 
+// --- Theme Toggle Component ---
+const ThemeToggle = () => {
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+
+  useEffect(() => {
+    document.body.classList.remove('light-theme', 'dark-theme');
+    document.body.classList.add(`${theme}-theme`);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
+
+  return (
+    <button onClick={toggleTheme} className="theme-toggle-button">
+      {theme === 'light' ? '🌙' : '☀️'}
+    </button>
+  );
+};
+
 // --- Main App Component ---
 function App() {
   const [appState, setAppState] = useState(state);
@@ -473,9 +494,17 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* ThemeToggle is placed outside the main header flow for independent visibility */}
+      <div className="theme-toggle-container">
+        <ThemeToggle />
+      </div>
+
       <header className={`app-header ${appState.view !== 'gallery' ? 'visible' : ''}`}>
         <div className="header-left">
+          {/* Conditionally render back button based on view */}
+          {appState.view !== 'gallery' && (
             <button onClick={handleBack} className="back-button">← RETURN TO GALLERY</button>
+          )}
         </div>
         <div className="header-center">
             {appState.view === 'comparison' && (
@@ -485,7 +514,8 @@ function App() {
                 </div>
             )}
          </div>
-        <div className="header-right" />
+         {/* header-right is kept for structure but might be empty if toggle is external */}
+         <div className="header-right"></div>
       </header>
 
       <main>
