@@ -8,7 +8,7 @@ const POLLING_INTERVAL = 1000;
 
 // --- Gallery Constants ---
 const MAX_SCALE = 6;             // Scale of the most focused image
-const MIN_SCALE = 0.8;              // Scale of the most distant images
+const MIN_SCALE = 1;              // Scale of the most distant images
 const Z_LIFT = 0.5;                 // How far the z-axis is affected
 const DAMPING = 0.075;              // Animation "snappiness" (lower is smoother/heavier)
 const DISTORTION_POWER = 0.6;       // How much the grid distorts. < 1 expands center, > 1 compresses it.
