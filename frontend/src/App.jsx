@@ -10,8 +10,8 @@ const POLLING_INTERVAL = 1000;
 // Using the values you provided.
 const GALLERY_CONFIG = {
   // --- Focus & Falloff Controls ---
-  FALLOFF_RADIUS: 5.0,     // The radius of the "magnifying glass" effect. Smaller numbers create a tighter, more focused lens.
-  SCALE_CURVE: 5,          // The power of the scaling curve. Higher numbers create a sharper drop-off in size.
+  FALLOFF_RADIUS: 8.0,     // The radius of the "magnifying glass" effect. Smaller numbers create a tighter, more focused lens.
+  SCALE_CURVE: 7,          // The power of the scaling curve. Higher numbers create a sharper drop-off in size.
 
   // --- Visual Appearance ---
   MAX_SCALE: 5.0,          // Maximum size of the focused image.
@@ -20,8 +20,8 @@ const GALLERY_CONFIG = {
   
   // --- Animation Physics ---
   Z_LIFT: 2.0,             // How much the focused image "pops" towards the viewer.
-  DISTORTION_POWER: 0.5,   // The power of the fisheye lens distortion. < 1 expands the center, > 1 compresses it.
-  DAMPING: 0.04,           // The "springiness" of the animation. Lower values are more fluid and gentle.
+  DISTORTION_POWER: 0.7,   // The power of the fisheye lens distortion. < 1 expands the center, > 1 compresses it.
+  DAMPING: 0.03,           // The "springiness" of the animation. Lower values are more fluid and gentle.
 };
 
 
