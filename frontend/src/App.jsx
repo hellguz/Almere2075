@@ -7,16 +7,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const POLLING_INTERVAL = 1000;
 
 // --- Gallery Configuration ---
-// Adjust these values to fine-tune the gallery's look and feel.
+// Using the values you provided.
 const GALLERY_CONFIG = {
   // --- Focus & Falloff Controls ---
   FALLOFF_RADIUS: 5.0,     // The radius of the "magnifying glass" effect. Smaller numbers create a tighter, more focused lens.
-  SCALE_CURVE: 5,        // The power of the scaling curve. Higher numbers create a sharper drop-off in size.
+  SCALE_CURVE: 5,          // The power of the scaling curve. Higher numbers create a sharper drop-off in size.
 
   // --- Visual Appearance ---
-  MAX_SCALE: 6.0,          // Maximum size of the focused image.
-  MIN_SCALE: 1,          // Minimum size of the peripheral images.
-  GRID_DENSITY: 0.75,      // How tightly packed the initial grid is. < 1 means larger images, > 1 means smaller, denser images.
+  MAX_SCALE: 5.0,          // Maximum size of the focused image.
+  MIN_SCALE: 1,            // Minimum size of the peripheral images.
+  GRID_DENSITY: 1.05,      // How tightly packed the initial grid is. < 1 means larger images, > 1 means smaller, denser images.
   
   // --- Animation Physics ---
   Z_LIFT: 2.0,             // How much the focused image "pops" towards the viewer.
@@ -86,7 +86,6 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
         const distortedDist = Math.pow(normalizedDist, GALLERY_CONFIG.DISTORTION_POWER) * influenceRadius;
         const targetPosition = new Vector2().addVectors(mouseVec, directionVec.normalize().multiplyScalar(distortedDist));
         
-        // If outside the radius, the target position is just its home position.
         if (dist > influenceRadius) {
             targetPosition.copy(homePos2D);
         }
@@ -121,41 +120,36 @@ const DynamicGallery = ({ images, onImageClick }) => {
         const { width, height } = viewport;
         
         const items = [];
-        const tempPoints = [];
-
-        // --- Generate a stable, screen-filling hexagonal grid ---
-        const density = GALLERY_CONFIG.GRID_DENSITY; 
-        const areaPerImage = (width * height) / (imageCount / density);
-        const hexRadius = Math.sqrt(areaPerImage / (1.5 * Math.sqrt(3)));
-        const hexHeight = hexRadius * Math.sqrt(3);
-        const horizSpacing = hexRadius * 1.5;
-        const numCols = Math.ceil(width / horizSpacing) + 2;
-        const numRows = Math.ceil(height / hexHeight) + 2;
         
-        let index = 0;
-        for (let r = 0; r < numRows; r++) {
-            for (let c = 0; c < numCols; c++) {
-                if (index >= imageCount) break;
-                
-                const xOffset = (r % 2) === 0 ? 0 : horizSpacing / 2;
-                const x = c * horizSpacing + xOffset;
-                const y = r * hexHeight;
+        // --- Simplified & Robust Hexagonal Grid Generation ---
+        const tempPoints = [];
+        const hexSize = Math.sqrt((width * height) / (imageCount * 1.5 * Math.sqrt(3))) / GALLERY_CONFIG.GRID_DENSITY;
+        const hexWidth = Math.sqrt(3) * hexSize;
+        const hexHeight = 2 * hexSize;
+        
+        const cols = Math.ceil(width / hexWidth);
+        const rows = Math.ceil(height / (hexHeight * 0.75));
 
-                tempPoints.push(new Vector2(x, y));
-                index++;
+        for (let row = 0; row < rows + 2; row++) {
+            for (let col = 0; col < cols + 2; col++) {
+                 tempPoints.push(new Vector2(
+                    col * hexWidth + (row % 2 === 1 ? hexWidth / 2 : 0),
+                    row * hexHeight * 0.75
+                ));
             }
-            if (index >= imageCount) break;
         }
 
-        const center = tempPoints.reduce((acc, p) => acc.add(p), new Vector2(0,0)).multiplyScalar(1 / tempPoints.length);
+        const center = tempPoints.slice(0, imageCount)
+                               .reduce((acc, p) => acc.add(p), new Vector2(0,0))
+                               .multiplyScalar(1 / imageCount);
 
         for (let i = 0; i < imageCount; i++) {
             const point = tempPoints[i];
             items.push({
                 index: i,
                 texture: textures[i],
-                homePosition: [point.x - center.x, -(point.y - center.y), 0],
-                baseSize: hexRadius * 1.15,
+                homePosition: [point.x - center.x, point.y - center.y, 0],
+                baseSize: (hexWidth / Math.sqrt(3)) * 1.1,
             });
         }
 
