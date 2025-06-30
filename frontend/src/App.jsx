@@ -7,11 +7,12 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const POLLING_INTERVAL = 1000;
 
 // --- Gallery Constants ---
-const MAX_SCALE = 6;             // Scale of the most focused image
-const MIN_SCALE = 0.8;              // Scale of the most distant images
-const Z_LIFT = 0.5;                 // How far the z-axis is affected
-const DAMPING = 0.075;              // Animation "snappiness" (lower is smoother/heavier)
-const DISTORTION_POWER = 0.6;       // How much the grid distorts. < 1 expands center, > 1 compresses it.
+const FALLOFF_RADIUS = 4.0;         // NEW: The radius of the focus area. Smaller is a tighter "lens".
+const MAX_SCALE = 4.0;              // Scale of the most focused image.
+const MIN_SCALE = 1;              // Scale of the most distant images.
+const Z_LIFT = 2.0;                 // How far the z-axis is affected.
+const DAMPING = 0.05;               // Animation "snappiness" (lower is smoother/heavier).
+const DISTORTION_POWER = 0.45;      // The "fisheye" lens strength. < 1 expands the center.
 
 // --- UI Layout ---
 const LOG_PANEL_WIDTH = '550px';
@@ -67,15 +68,23 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
         const directionVec = new Vector2().subVectors(homePos2D, mouseVec);
         const dist = directionVec.length();
         
-        const influenceRadius = Math.max(viewport.width, viewport.height);
+        // Use the new, controllable FALLOFF_RADIUS constant
+        const influenceRadius = FALLOFF_RADIUS;
         const normalizedDist = Math.min(dist / influenceRadius, 1.0);
 
         // --- Position: Apply the fisheye distortion ---
+        // The distortion is now localized within the falloff radius
         const distortedDist = Math.pow(normalizedDist, DISTORTION_POWER) * influenceRadius;
         const targetPosition = new Vector2().addVectors(mouseVec, directionVec.normalize().multiplyScalar(distortedDist));
         
+        // If outside the radius, the target position is just its home position.
+        if (dist > influenceRadius) {
+            targetPosition.copy(homePos2D);
+        }
+
         // --- Scale & Z-Depth: Based on proximity ---
         const proximity = 1 - normalizedDist;
+        // The scaling curve is sharpened to accentuate the focus
         const targetScale = MIN_SCALE + Math.pow(proximity, 2) * (MAX_SCALE - MIN_SCALE);
         const targetZ = proximity * Z_LIFT;
         
@@ -109,36 +118,38 @@ const DynamicGallery = ({ images, onImageClick }) => {
 
         // --- Generate a stable, screen-filling hexagonal grid ---
         const density = 0.9; 
-        const areaPerImage = (width * height) / (imageCount / density); // Corrected density calculation
+        const areaPerImage = (width * height) / (imageCount / density);
         const hexRadius = Math.sqrt(areaPerImage / (1.5 * Math.sqrt(3)));
         const hexHeight = hexRadius * Math.sqrt(3);
         const horizSpacing = hexRadius * 1.5;
         const numCols = Math.ceil(width / horizSpacing) + 2;
         const numRows = Math.ceil(height / (hexHeight / 2)) + 2;
-        
+        const totalGridWidth = (numCols - 1) * horizSpacing;
+        const totalGridHeight = (numRows - 1) * (hexHeight / 2);
+        const startX = -totalGridWidth / 2;
+        const startY = totalGridHeight / 2;
+
         let index = 0;
         for (let r = 0; r < numRows; r++) {
             for (let c = 0; c < numCols; c++) {
                 if (index >= imageCount) break;
                 const xOffset = (r % 2 === 0) ? 0 : horizSpacing / 2;
-                const x = c * horizSpacing + xOffset;
-                const y = r * (hexHeight / 2);
+                const x = startX + c * horizSpacing + xOffset;
+                const y = startY - r * (hexHeight / 2);
                 tempPoints.push(new Vector2(x, y));
                 index++;
             }
             if (index >= imageCount) break;
         }
 
-        // --- NEW: Calculate the geometric center of the generated points ---
         const center = tempPoints.reduce((acc, p) => acc.add(p), new Vector2(0,0)).multiplyScalar(1 / tempPoints.length);
 
-        // --- Create final items, offsetting each by the calculated center ---
         for (let i = 0; i < imageCount; i++) {
             const point = tempPoints[i];
             items.push({
                 index: i,
                 texture: textures[i],
-                homePosition: [point.x - center.x, -(point.y - center.y), 0], // Invert Y-axis for screen coords
+                homePosition: [point.x - center.x, -(point.y - center.y), 0],
                 baseSize: hexRadius * 1.05,
             });
         }
@@ -393,7 +404,6 @@ function App() {
         if (!promptResponse.ok) throw new Error(`AI Vision Conection failed: ${promptResponse.statusText}`);
         const promptData = await promptResponse.json();
         addLogMessage('Vision prompt generated.', 'success');
-        addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
         addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
         setState('finalPrompt', promptData.prompt);
 
