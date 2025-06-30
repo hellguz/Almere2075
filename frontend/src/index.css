@@ -6,29 +6,30 @@
   --font-monospace: 'Roboto Mono', 'Fira Code', monospace;
 
   /* Dark Theme (Default) */
-  --color-background: #000000; /* Deeper black for more contrast */
+  --color-background: #000000;
   --color-text-primary: #F5F5F7; /* Softer white */
   --color-text-secondary: #86868B;
   --color-accent-white: #FFFFFF;
   --color-accent-glow: rgba(255, 255, 255, 0.5);
   --color-success: #32D74B;
   --color-error: #FF453A;
-  --color-system: #0A84FF; /* Adjusted for better visibility on dark */
-  --color-data: #A1A1A6; /* Adjusted for better visibility on dark */
+  --color-system: #0A84FF;
+  --color-data: #A1A1A6;
 
   /* Light Theme Variables */
   --light-color-background: #FFFFFF;
-  --light-color-text-primary: #1D1D1F; /* Near black for strong readability */
+  --light-color-text-primary: #1D1D1F;
   --light-color-text-secondary: #6E6E73;
   --light-color-accent-black: #000000;
   --light-color-accent-glow: rgba(0, 0, 0, 0.15);
-  --light-color-success: #28A745; /* Standard green */
+  --light-color-success: #28A745;
   --light-color-error: #DC3545;   /* Standard red */
-  --light-color-system: #007AFF;  /* Standard blue */
+  --light-color-system: #007AFF;
   --light-color-data: #555555;
 
   --cursor-pointer-color: #FFFF00; /* Always Yellow */
-  --custom-cursor: url('/crosshair.svg') 24 24, auto; /* Updated hotspot for 48x48 SVG */
+  /* --- MODIFIED: Use a URL-encoded data URI to force the correct cursor and avoid caching issues. --- */
+  --custom-cursor: url("data:image/svg+xml,%3Csvg width='48' height='48' viewBox='0 0 48 48' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M24 6V22M24 26V42M42 24H26M22 24H6' stroke='%23FFFF00' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 24 24, auto;
 }
 
 body.light-theme {
@@ -93,10 +94,10 @@ html, body, #root {
 
 /* We need to ensure interactive elements like buttons and text inputs revert to their standard cursors */
 button, input, textarea, select, a, .slider-mode {
-  cursor: revert; /* Or specify, e.g., 'pointer' for buttons, 'text' for inputs */
+  cursor: revert;
 }
 .slider-mode {
-  cursor: ew-resize; /* Keep the specific cursor for slider */
+  cursor: ew-resize;
 }
 
 
@@ -127,7 +128,8 @@ button, input, textarea, select, a, .slider-mode {
 
 .header-left { flex: 1 0 0; text-align: left; }
 .header-center { flex: 1 0 0; text-align: center; display: flex; justify-content: center; }
-.header-right { flex: 1 0 0; display: flex; justify-content: flex-end; align-items: center; }
+.header-right { flex: 1 0 0; display: flex;
+  justify-content: flex-end; align-items: center; }
 
 .back-button {
   background: var(--button-bg, rgba(28, 28, 30, 0.7));
@@ -145,7 +147,7 @@ button, input, textarea, select, a, .slider-mode {
 }
 .back-button:hover {
   background: var(--button-hover-bg, rgba(44, 44, 46, 0.9));
-  color: var(--color-accent-white); /* This will be black in light theme */
+  color: var(--color-accent-white);
   border-color: var(--button-border-color, rgba(255, 255, 255, 0.2));
 }
 
@@ -185,7 +187,7 @@ button, input, textarea, select, a, .slider-mode {
 .fullscreen-canvas-container canvas {
     /* cursor: none; */ /* Removed to allow custom app-container cursor to show */
     border-radius: 8px;
-    touch-action: none; /* Prevent default touch actions like scrolling page */
+    touch-action: none;
 }
 .gallery-instructions {
     position: absolute;
@@ -231,7 +233,7 @@ button, input, textarea, select, a, .slider-mode {
     max-height: 100%;
     object-fit: contain;
     box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-    border-radius: 8px; /* Softer radius */
+    border-radius: 8px;
 }
 .transform-controls {
     position: absolute;
@@ -251,7 +253,7 @@ button, input, textarea, select, a, .slider-mode {
     border: none;
     border-radius: 30px;
     cursor: pointer;
-    box-shadow: 0 0 20px var(--color-accent-glow), inset 0 0 5px var(--color-accent-glow); /* Use glow for inset too */
+    box-shadow: 0 0 20px var(--color-accent-glow), inset 0 0 5px var(--color-accent-glow);
     transition: all 0.2s ease;
 }
 .transform-controls button:hover {
@@ -273,7 +275,8 @@ button, input, textarea, select, a, .slider-mode {
 
 @keyframes scan {
     0% { transform: translateY(0vh); }
-    50% { transform: translateY(100vh); }
+    50% { transform: translateY(100vh);
+    }
     100% { transform: translateY(0vh); }
 }
 
@@ -402,7 +405,7 @@ button, input, textarea, select, a, .slider-mode {
     left: 0;
     right: 0;
     bottom: 0;
-    background: var(--color-accent-glow); /* Use theme glow for overlay */
+    background: var(--color-accent-glow);
     z-index: 55;
 }
 
@@ -432,7 +435,7 @@ button, input, textarea, select, a, .slider-mode {
 
 .prompt-button:hover {
     transform: scale(1.05);
-    border-color: var(--prompt-button-border, rgba(255, 255, 255, 0.4)); /* Ensure hover uses themed border */
+    border-color: var(--prompt-button-border, rgba(255, 255, 255, 0.4));
 }
 
 .prompt-panel-expandable {
@@ -486,7 +489,8 @@ button, input, textarea, select, a, .slider-mode {
 }
 .prompt-content::-webkit-scrollbar { width: 6px; }
 .prompt-content::-webkit-scrollbar-track { background: transparent; }
-.prompt-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg, rgba(255, 255, 255, 0.2)); border-radius: 3px; }
+.prompt-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg, rgba(255, 255, 255, 0.2)); border-radius: 3px;
+}
 .prompt-content::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg, rgba(255, 255, 255, 0.4)); }
 
 
@@ -517,9 +521,9 @@ button, input, textarea, select, a, .slider-mode {
 /* Styles for Theme Toggle Button */
 .theme-toggle-container {
   position: fixed;
-  top: 15px; /* Align with header padding */
+  top: 15px;
   right: 30px; /* Align with header padding */
-  z-index: 1001; /* Above app-header */
+  z-index: 1001;
 }
 
 .theme-toggle-button {
@@ -548,7 +552,7 @@ button, input, textarea, select, a, .slider-mode {
   text-transform: uppercase;
   color: var(--color-text-secondary);
   padding: 12px 16px;
-  border-bottom: 1px solid var(--log-panel-border, rgba(255, 255, 255, 0.1)); /* Use same as panel border */
+  border-bottom: 1px solid var(--log-panel-border, rgba(255, 255, 255, 0.1));
   flex-shrink: 0;
 }
 
@@ -561,10 +565,12 @@ button, input, textarea, select, a, .slider-mode {
   color: var(--color-text-primary); /* Ensure log text uses theme color */
 }
 
-.log-content::-webkit-scrollbar { width: 6px; }
+.log-content::-webkit-scrollbar { width: 6px;
+}
 .log-content::-webkit-scrollbar-track { background: transparent; }
 .log-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg, rgba(255, 255, 255, 0.2));
-  border-radius: 3px; }
+  border-radius: 3px;
+}
 .log-content::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg, rgba(255, 255, 255, 0.4)); }
 
 .log-message {
