@@ -4,14 +4,14 @@
 :root {
   --font-family: 'Inter', -apple-system, sans-serif;
   --font-monospace: 'Roboto Mono', 'Fira Code', monospace;
-  --color-background: #0A0A0A;
-  --color-text-primary: #EAEAEA;
-  --color-text-secondary: #888888;
+  --color-background: #000000; /* Deeper black for more contrast */
+  --color-text-primary: #F5F5F7; /* Softer white */
+  --color-text-secondary: #86868B;
   --color-accent-white: #FFFFFF;
   --color-accent-glow: rgba(255, 255, 255, 0.5);
-  --color-success: #34C759;
+  --color-success: #32D74B;
   --color-error: #FF453A;
-  --color-system: #5E5CE6;
+  --color-system: #64D2FF;
   --color-data: #636366;
 }
 
@@ -63,23 +63,23 @@ html, body, #root {
 .header-right { flex: 1 0 0; }
 
 .back-button {
-  background: rgba(28, 28, 30, 0.6);
+  background: rgba(28, 28, 30, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 20px;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.5px;
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   transition: all 0.2s ease;
 }
 .back-button:hover {
-  background: rgba(40, 40, 40, 0.8);
-  color: var(--color-text-primary);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(44, 44, 46, 0.9);
+  color: var(--color-accent-white);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 /* 3. Views Container */
@@ -108,15 +108,16 @@ html, body, #root {
 .fullscreen-canvas-container.in-background {
   opacity: 1;
   visibility: visible;
-  filter: blur(20px) brightness(0.3);
+  filter: blur(20px) brightness(0.2);
   transform: scale(1.05);
   transition: filter 0.8s ease, transform 0.8s ease;
-  z-index: 5; /* Behind other views but above body */
+  z-index: 5;
 }
 
 /* 4. Gallery View */
 .fullscreen-canvas-container canvas {
-    cursor: pointer;
+    cursor: none; /* Hide cursor for a more direct interaction feel */
+    border-radius: 8px;
 }
 .gallery-instructions {
     position: absolute;
@@ -124,19 +125,20 @@ html, body, #root {
     left: 50%;
     transform: translateX(-50%);
     color: var(--color-text-secondary);
-    font-weight: 600;
-    letter-spacing: 1px;
+    font-weight: 500;
+    letter-spacing: 0.8px;
     font-size: 14px;
     padding: 10px 20px;
-    background: rgba(28, 28, 30, 0.6);
+    background: rgba(28, 28, 30, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
     z-index: 10;
     opacity: 1;
     transition: opacity 1s ease 1s;
     pointer-events: none;
     text-align: center;
+    text-transform: uppercase;
 }
 .gallery-instructions.fade-out {
     opacity: 0;
@@ -160,8 +162,8 @@ html, body, #root {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-    border-radius: 4px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    border-radius: 8px; /* Softer radius */
 }
 .transform-controls {
     position: absolute;
@@ -171,20 +173,20 @@ html, body, #root {
 }
 .transform-controls button {
     font-size: 1.2rem;
-    font-weight: 700;
-    letter-spacing: 1px;
+    font-weight: 600; /* Slightly less bold */
+    letter-spacing: 0.5px;
     color: var(--color-background);
     background: var(--color-accent-white);
     padding: 20px 40px;
     border: none;
-    border-radius: 12px;
+    border-radius: 30px;
     cursor: pointer;
     box-shadow: 0 0 20px var(--color-accent-glow), inset 0 0 5px rgba(0, 0, 0, 0.2);
     transition: all 0.2s ease;
 }
 .transform-controls button:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 30px var(--color-accent-glow), inset 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 40px var(--color-accent-glow), inset 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .scanline {
@@ -192,9 +194,9 @@ html, body, #root {
     top: 0;
     left: 0;
     width: 100%;
-    height: 2px;
+    height: 3px;
     background: var(--color-accent-white);
-    box-shadow: 0 0 15px 1px var(--color-accent-glow);
+    box-shadow: 0 0 20px 2px var(--color-accent-glow);
     animation: scan 20s infinite ease-in-out;
     z-index: 10;
 }
@@ -218,33 +220,33 @@ html, body, #root {
 
 .view-mode-toggle {
     display: flex;
-    background: rgba(28, 28, 30, 0.6);
+    background: rgba(28, 28, 30, 0.7);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    border-radius: 20px;
     padding: 4px;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
 }
 .view-mode-toggle button {
     background: transparent;
     border: none;
     padding: 8px 16px;
     font-size: 13px;
-    font-weight: 600;
-    border-radius: 6px;
+    font-weight: 500;
+    border-radius: 16px;
     cursor: pointer;
     color: var(--color-text-secondary);
     transition: all 0.2s ease;
 }
 .view-mode-toggle button.active {
-    background: rgba(255, 255, 255, 0.9);
-    color: var(--color-background);
+    background: #333;
+    color: var(--color-text-primary);
 }
 .comparison-view {
     flex-grow: 1;
     display: flex;
     gap: 20px;
     min-height: 0;
-    position: relative; /* Crucial for slider absolute children */
+    position: relative;
 }
 .comparison-view.side-by-side .image-panel {
     display: flex;
@@ -266,11 +268,11 @@ html, body, #root {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    border-radius: 4px;
+    border-radius: 8px;
 }
 .image-header {
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 500;
     color: var(--color-text-secondary);
     letter-spacing: 1px;
     text-transform: uppercase;
@@ -278,7 +280,7 @@ html, body, #root {
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(10,10,10,0.5);
+    background: rgba(10,10,10,0.6);
     padding: 4px 12px;
     border-radius: 0 0 8px 8px;
 }
@@ -294,7 +296,6 @@ html, body, #root {
     height: 100%;
 }
 .slider-mode .image-header {
-    /* Hide the individual headers in slider mode */
     display: none;
 }
 .after-image {
@@ -304,10 +305,10 @@ html, body, #root {
     position: absolute;
     top: 0;
     height: 100%;
-    width: 3px;
+    width: 2px;
     background: var(--color-accent-white);
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    transform: translateX(-1.5px);
+    transform: translateX(-1px);
     pointer-events: none;
     z-index: 4;
 }
@@ -315,15 +316,14 @@ html, body, #root {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--color-accent-white);
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--color-accent-white);
     border-radius: 50%;
-    background: rgba(10, 10, 10, 0.5);
-    backdrop-filter: blur(5px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
     transform: translate(-50%, -50%);
 }
-
 .prompt-overlay {
     display: none;
     position: fixed;
@@ -343,18 +343,18 @@ html, body, #root {
 }
 
 .prompt-button {
-  background: rgba(40, 40, 42, 0.8);
+  background: rgba(44, 44, 46, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--color-text-primary);
   padding: 10px 20px;
-  border-radius: 8px;
+  border-radius: 20px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 13px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   transition: all 0.3s ease;
   transform-origin: bottom right;
 }
@@ -366,15 +366,15 @@ html, body, #root {
 
 .prompt-panel-expandable {
     position: absolute;
-    bottom: calc(100% + 10px); /* Position above the button */
+    bottom: calc(100% + 10px);
     right: 0;
     width: 450px;
     height: 200px;
-    background: rgba(28, 28, 30, 0.7);
+    background: rgba(28, 28, 30, 0.8);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
+    border-radius: 16px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     opacity: 0;
     transform: translateY(10px) scale(0.98);
     transform-origin: bottom right;
@@ -428,11 +428,11 @@ html, body, #root {
   max-width: calc(100% - 40px);
   height: var(--panel-height);
   max-height: 60vh;
-  background: rgba(28, 28, 30, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
+  background: rgba(28, 28, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   z-index: 50;
@@ -488,16 +488,12 @@ html, body, #root {
 }
 
 
-/* --- 8. MODIFIED: Responsive Design for Mobile & Tablets --- */
+/* 8. Responsive Design */
 @media (max-width: 768px) {
     .app-header {
         padding: 10px 15px;
     }
-    .back-button {
-        padding: 6px 12px;
-        font-size: 12px;
-    }
-    .view-mode-toggle button {
+    .back-button, .view-mode-toggle button {
         padding: 6px 12px;
         font-size: 12px;
     }
@@ -518,9 +514,8 @@ html, body, #root {
     }
 
     .comparison-view.side-by-side .image-panel {
-        /* In column layout, let them have their natural aspect ratio height */
         flex-grow: 1;
-        min-height: 100px; /* prevent collapse */
+        min-height: 100px;
     }
 
     .image-header {
@@ -536,7 +531,7 @@ html, body, #root {
         max-width: none;
         height: 40vh;
         max-height: 300px;
-        transform: translateY(calc(100% + 30px)); /* Slide from bottom */
+        transform: translateY(calc(100% + 30px));
     }
     .process-log-wrapper.visible {
         transform: translateY(0);

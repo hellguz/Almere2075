@@ -1,24 +1,26 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { TextureLoader, Vector2 } from 'three';
+import { TextureLoader, Vector3, Vector2 } from 'three';
 
 // --- Configuration ---
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const POLLING_INTERVAL = 1000; // ms
+const POLLING_INTERVAL = 1000;
 
-// --- Constants for Gallery Grid ---
-const GAP_PX = 5; // The desired gap between images in pixels
-const MAX_MAGNIFICATION = 3.0;
-const MOUSE_INFLUENCE_RADIUS = 0.3;
+// --- Gallery Constants ---
+const MAX_SCALE = 6;             // Scale of the most focused image
+const MIN_SCALE = 0.8;              // Scale of the most distant images
+const Z_LIFT = 0.5;                 // How far the z-axis is affected
+const DAMPING = 0.075;              // Animation "snappiness" (lower is smoother/heavier)
+const DISTORTION_POWER = 0.6;       // How much the grid distorts. < 1 expands center, > 1 compresses it.
 
-// --- Constants for UI Layout ---
+// --- UI Layout ---
 const LOG_PANEL_WIDTH = '550px';
 const LOG_PANEL_HEIGHT = '500px';
 
 // --- Global State ---
 const AppState = {
-  view: 'gallery', // gallery, transform, comparison
-  comparisonMode: 'side-by-side', // slider, side-by-side
+  view: 'gallery',
+  comparisonMode: 'side-by-side',
   selectedImage: null,
   outputImage: null,
   isProcessing: false,
@@ -44,124 +46,97 @@ const addLogMessage = (text, type = 'info') => {
     setState('logMessages', [...state.logMessages, newLog]);
 };
 
-// --- 3D Gallery Component ---
 
-const ImagePlane = ({ texture, position, scale, onClick }) => {
-    const groupRef = useRef();
-    const originalPosition = useMemo(() => new Vector2(position[0], position[1]), [position]);
-    // The 'scale' prop from GalleryGrid is the size of the square cell.
-    const cellScale = useMemo(() => new Vector2(scale[0], scale[1]), [scale]);
+// --- Dynamic Gallery Components ---
 
-    // Calculate the scale of the inner plane to preserve image aspect ratio within the cell
+const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
+    const meshRef = useRef();
+    const homeVec = useMemo(() => new Vector3(...homePosition), [homePosition]);
+
     const imagePlaneScale = useMemo(() => {
         const imageAspect = texture.image.width / texture.image.height;
-        const cellAspect = cellScale.x / cellScale.y; // This will be ~1
-
-        if (imageAspect > cellAspect) {
-            // Image is wider than cell, fit to cell width
-            return [cellScale.x, cellScale.x / imageAspect, 1];
-        } else {
-            // Image is taller than cell, fit to cell height
-            return [cellScale.y * imageAspect, cellScale.y, 1];
+        if (imageAspect > 1) { // Landscape
+            return [baseSize, baseSize / imageAspect, 1];
+        } else { // Portrait or Square
+            return [baseSize * imageAspect, baseSize, 1];
         }
-    }, [texture, cellScale]);
+    }, [texture, baseSize]);
 
     useFrame(({ viewport, mouse }) => {
-        if (!groupRef.current) return;
+        if (!meshRef.current) return;
 
         const mouseVec = new Vector2(mouse.x * viewport.width / 2, mouse.y * viewport.height / 2);
-        const planeVec = new Vector2(groupRef.current.position.x, groupRef.current.position.y);
+        const homePos2D = new Vector2(homeVec.x, homeVec.y);
+
+        const directionVec = new Vector2().subVectors(homePos2D, mouseVec);
+        const dist = directionVec.length();
         
-        const dist = mouseVec.distanceTo(planeVec);
-        const influence = Math.pow(1 - Math.min(dist / (MOUSE_INFLUENCE_RADIUS * viewport.width), 1.0), 2.0);
+        // The radius of influence is the entire screen
+        const influenceRadius = Math.max(viewport.width, viewport.height) / 2;
+        const normalizedDist = Math.min(dist / influenceRadius, 1.0);
+
+        // --- Position: Apply the fisheye distortion ---
+        const distortedDist = Math.pow(normalizedDist, DISTORTION_POWER) * influenceRadius;
+        const targetPosition = new Vector2().addVectors(mouseVec, directionVec.normalize().multiplyScalar(distortedDist));
         
-        // The scaleFactor now animates the group, which acts as the cell container
-        const scaleFactor = 1 + (MAX_MAGNIFICATION - 1) * influence;
+        // --- Scale & Z-Depth: Based on proximity ---
+        const proximity = 1 - normalizedDist;
+        const targetScale = MIN_SCALE + Math.pow(proximity, 2) * (MAX_SCALE - MIN_SCALE);
+        const targetZ = (proximity - 0.5) * 2 * Z_LIFT;
         
-        groupRef.current.scale.lerp({ x: scaleFactor, y: scaleFactor, z: 1 }, 0.1);
-        
-        // The displacement animation also applies to the group
-        const displacement = new Vector2().subVectors(planeVec, mouseVec).normalize().multiplyScalar(influence * 0.4);
-        groupRef.current.position.lerp({ x: originalPosition.x + displacement.x, y: originalPosition.y + displacement.y, z: influence * 0.5 }, 0.1);
+        // --- Animate ---
+        meshRef.current.position.lerp(new Vector3(targetPosition.x, targetPosition.y, targetZ), DAMPING);
+        meshRef.current.scale.lerp(new Vector3(targetScale, targetScale, 1), DAMPING);
     });
 
     return (
-        // The group is the interactable 'cell'. It's positioned and animated.
-        <group
-            ref={groupRef}
-            position={position}
-        >
-            {/* The visible mesh, correctly proportioned */}
-            <mesh scale={imagePlaneScale}>
+        <group ref={meshRef} position={homePosition}>
+             <mesh scale={imagePlaneScale} onClick={() => onImageClick(texture)}>
                 <planeGeometry args={[1, 1]} />
                 <meshBasicMaterial map={texture} toneMapped={false} />
-            </mesh>
-            {/* The invisible click target, filling the cell */}
-            <mesh onClick={() => onClick(texture)} scale={[cellScale.x, cellScale.y, 1]} visible={false}>
-                <planeGeometry args={[1, 1]} />
             </mesh>
         </group>
     );
 };
 
-const GalleryGrid = ({ images, onImageClick }) => {
+const DynamicGallery = ({ images, onImageClick }) => {
     const textures = useLoader(TextureLoader, images.map(img => `${API_BASE_URL}/thumbnails/${img.thumbnail}`));
-    const { size, viewport } = useThree();
+    const { viewport } = useThree();
 
     const grid = useMemo(() => {
-        if (!textures.length || size.width === 0) return [];
-
-        const imageCount = textures.length;
-        const gapWorldUnits = (GAP_PX / size.width) * viewport.width;
-
-        let bestGrid = { cols: 0, rows: 0, cellSize: 0 };
-
-        // Find the grid layout that maximizes the size of the square cells
-        for (let c = 1; c <= imageCount; c++) {
-            const r = Math.ceil(imageCount / c);
-            
-            const cellSizeFromWidth = (viewport.width - (c + 1) * gapWorldUnits) / c;
-            const cellSizeFromHeight = (viewport.height - (r + 1) * gapWorldUnits) / r;
-            
-            const cellSize = Math.min(cellSizeFromWidth, cellSizeFromHeight);
-
-            if (cellSize > bestGrid.cellSize) {
-                bestGrid = { cols: c, rows: r, cellSize: cellSize };
-            }
-        }
-
-        const items = [];
-        const { cols, rows, cellSize } = bestGrid;
+        if (!textures.length) return [];
+        const imageCount = images.length;
         
-        const totalGridWidth = cols * cellSize + Math.max(0, cols - 1) * gapWorldUnits;
-        const totalGridHeight = rows * cellSize + Math.max(0, rows - 1) * gapWorldUnits;
+        const items = [];
+        const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+        const maxRadius = Math.min(viewport.width, viewport.height) / 1.8; // Use 1.8 to allow stretching
+        const baseSize = maxRadius / Math.sqrt(imageCount) * 0.8;
 
         for (let i = 0; i < imageCount; i++) {
-            const c = i % cols;
-            const r = Math.floor(i / cols);
-            
-            const x = -totalGridWidth / 2 + c * (cellSize + gapWorldUnits) + cellSize / 2;
-            const y = totalGridHeight / 2 - r * (cellSize + gapWorldUnits) - cellSize / 2;
+            const radius = Math.sqrt(i / imageCount) * maxRadius;
+            const angle = i * goldenAngle;
 
+            const x = radius * Math.cos(angle) * (viewport.width / viewport.height); // Stretch to viewport aspect ratio
+            const y = radius * Math.sin(angle);
+            
             items.push({
                 index: i,
                 texture: textures[i],
-                position: [x, y, 0],
-                scale: [cellSize, cellSize, 1], // All cells are uniform squares
+                homePosition: [x, y, 0],
+                baseSize: baseSize,
             });
         }
         return items;
-    }, [textures, viewport.width, viewport.height, size.width]);
+    }, [textures, viewport.width, viewport.height]);
 
     return (
         <group>
             {grid.map(item => (
-                <ImagePlane key={item.index} {...item} onClick={onImageClick} />
+                <ImageNode key={item.index} {...item} onImageClick={onImageClick} />
             ))}
         </group>
     );
 };
-
 
 const GalleryView = ({ images, isVisible }) => {
     const [showInstructions, setShowInstructions] = useState(true);
@@ -192,11 +167,11 @@ const GalleryView = ({ images, isVisible }) => {
     return (
         <div className={`fullscreen-canvas-container ${isVisible ? 'visible' : ''} ${!isVisible ? 'in-background' : ''}`}>
              <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
-                MOVE MOUSE TO EXPLORE. CLICK AN IMAGE TO BEGIN.
+                FOCUS TO EXPLORE. CLICK TO BEGIN.
             </div>
-            <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
+            <Canvas orthographic camera={{ position: [0, 0, 10], zoom: 100 }}>
                 <ambientLight intensity={3} />
-                {images.length > 0 && <GalleryGrid images={images} onImageClick={handleImageClick} />}
+                {images.length > 0 && <DynamicGallery images={images} onImageClick={handleImageClick} />}
             </Canvas>
         </div>
     );
@@ -252,10 +227,8 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
     const sliderContainerRef = useRef(null);
     const [sliderActive, setSliderActive] = useState(false);
     const [clipPosition, setClipPosition] = useState(50);
-    // --- MODIFIED: Changed prompt visibility to be based on a click state for mobile-friendliness ---
     const [isPromptExpanded, setIsPromptExpanded] = useState(false);
     const togglePrompt = () => setIsPromptExpanded(!isPromptExpanded);
-
 
     const handleMouseMove = (e) => {
         if (!sliderActive || !sliderContainerRef.current) return;
@@ -309,7 +282,6 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
                             </div>
                         </div>
                     </div>
-                    {/* --- ADDED: Overlay for mobile to easily close the prompt panel --- */}
                     {isPromptExpanded && <div className="prompt-overlay" onClick={togglePrompt}></div>}
                 </>
             )}
@@ -405,7 +377,7 @@ function App() {
         const promptData = await promptResponse.json();
         addLogMessage('Vision prompt generated.', 'success');
         addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
-        setState('finalPrompt', promptData.prompt); // Save the prompt
+        setState('finalPrompt', promptData.prompt);
 
         addLogMessage('Step 3/3: Submitting to FLUX renderer...');
         const transformResponse = await fetch(`${API_BASE_URL}/transform-image`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Image, prompt: promptData.prompt }) });
@@ -425,7 +397,7 @@ function App() {
     <div className="app-container">
       <header className={`app-header ${appState.view !== 'gallery' ? 'visible' : ''}`}>
         <div className="header-left">
-            <button onClick={handleBack} className="back-button">← BACK TO GALLERY</button>
+            <button onClick={handleBack} className="back-button">← RETURN TO GALLERY</button>
         </div>
         <div className="header-center">
             {appState.view === 'comparison' && (
@@ -461,4 +433,3 @@ function App() {
 }
 
 export default App;
-
