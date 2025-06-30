@@ -6,13 +6,24 @@ import { TextureLoader, Vector3, Vector2 } from 'three';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const POLLING_INTERVAL = 1000;
 
-// --- Gallery Constants ---
-const FALLOFF_RADIUS = 4.0;         // NEW: The radius of the focus area. Smaller is a tighter "lens".
-const MAX_SCALE = 4.0;              // Scale of the most focused image.
-const MIN_SCALE = 1;              // Scale of the most distant images.
-const Z_LIFT = 2.0;                 // How far the z-axis is affected.
-const DAMPING = 0.05;               // Animation "snappiness" (lower is smoother/heavier).
-const DISTORTION_POWER = 0.45;      // The "fisheye" lens strength. < 1 expands the center.
+// --- Gallery Configuration ---
+// Adjust these values to fine-tune the gallery's look and feel.
+const GALLERY_CONFIG = {
+  // --- Focus & Falloff Controls ---
+  FALLOFF_RADIUS: 5.0,     // The radius of the "magnifying glass" effect. Smaller numbers create a tighter, more focused lens.
+  SCALE_CURVE: 5,        // The power of the scaling curve. Higher numbers create a sharper drop-off in size.
+
+  // --- Visual Appearance ---
+  MAX_SCALE: 6.0,          // Maximum size of the focused image.
+  MIN_SCALE: 1,          // Minimum size of the peripheral images.
+  GRID_DENSITY: 0.75,      // How tightly packed the initial grid is. < 1 means larger images, > 1 means smaller, denser images.
+  
+  // --- Animation Physics ---
+  Z_LIFT: 2.0,             // How much the focused image "pops" towards the viewer.
+  DISTORTION_POWER: 0.5,   // The power of the fisheye lens distortion. < 1 expands the center, > 1 compresses it.
+  DAMPING: 0.04,           // The "springiness" of the animation. Lower values are more fluid and gentle.
+};
+
 
 // --- UI Layout ---
 const LOG_PANEL_WIDTH = '550px';
@@ -68,13 +79,11 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
         const directionVec = new Vector2().subVectors(homePos2D, mouseVec);
         const dist = directionVec.length();
         
-        // Use the new, controllable FALLOFF_RADIUS constant
-        const influenceRadius = FALLOFF_RADIUS;
+        const influenceRadius = GALLERY_CONFIG.FALLOFF_RADIUS;
         const normalizedDist = Math.min(dist / influenceRadius, 1.0);
 
         // --- Position: Apply the fisheye distortion ---
-        // The distortion is now localized within the falloff radius
-        const distortedDist = Math.pow(normalizedDist, DISTORTION_POWER) * influenceRadius;
+        const distortedDist = Math.pow(normalizedDist, GALLERY_CONFIG.DISTORTION_POWER) * influenceRadius;
         const targetPosition = new Vector2().addVectors(mouseVec, directionVec.normalize().multiplyScalar(distortedDist));
         
         // If outside the radius, the target position is just its home position.
@@ -84,13 +93,12 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
 
         // --- Scale & Z-Depth: Based on proximity ---
         const proximity = 1 - normalizedDist;
-        // The scaling curve is sharpened to accentuate the focus
-        const targetScale = MIN_SCALE + Math.pow(proximity, 2) * (MAX_SCALE - MIN_SCALE);
-        const targetZ = proximity * Z_LIFT;
+        const targetScale = GALLERY_CONFIG.MIN_SCALE + Math.pow(proximity, GALLERY_CONFIG.SCALE_CURVE) * (GALLERY_CONFIG.MAX_SCALE - GALLERY_CONFIG.MIN_SCALE);
+        const targetZ = proximity * GALLERY_CONFIG.Z_LIFT;
         
         // --- Animate ---
-        meshRef.current.position.lerp(new Vector3(targetPosition.x, targetPosition.y, targetZ), DAMPING);
-        meshRef.current.scale.lerp(new Vector3(targetScale, targetScale, 1), DAMPING);
+        meshRef.current.position.lerp(new Vector3(targetPosition.x, targetPosition.y, targetZ), GALLERY_CONFIG.DAMPING);
+        meshRef.current.scale.lerp(new Vector3(targetScale, targetScale, 1), GALLERY_CONFIG.DAMPING);
     });
 
     return (
@@ -109,7 +117,6 @@ const DynamicGallery = ({ images, onImageClick }) => {
 
     const grid = useMemo(() => {
         if (!textures.length || viewport.width === 0) return [];
-        
         const imageCount = images.length;
         const { width, height } = viewport;
         
@@ -117,25 +124,23 @@ const DynamicGallery = ({ images, onImageClick }) => {
         const tempPoints = [];
 
         // --- Generate a stable, screen-filling hexagonal grid ---
-        const density = 0.9; 
+        const density = GALLERY_CONFIG.GRID_DENSITY; 
         const areaPerImage = (width * height) / (imageCount / density);
         const hexRadius = Math.sqrt(areaPerImage / (1.5 * Math.sqrt(3)));
         const hexHeight = hexRadius * Math.sqrt(3);
         const horizSpacing = hexRadius * 1.5;
         const numCols = Math.ceil(width / horizSpacing) + 2;
-        const numRows = Math.ceil(height / (hexHeight / 2)) + 2;
-        const totalGridWidth = (numCols - 1) * horizSpacing;
-        const totalGridHeight = (numRows - 1) * (hexHeight / 2);
-        const startX = -totalGridWidth / 2;
-        const startY = totalGridHeight / 2;
-
+        const numRows = Math.ceil(height / hexHeight) + 2;
+        
         let index = 0;
         for (let r = 0; r < numRows; r++) {
             for (let c = 0; c < numCols; c++) {
                 if (index >= imageCount) break;
-                const xOffset = (r % 2 === 0) ? 0 : horizSpacing / 2;
-                const x = startX + c * horizSpacing + xOffset;
-                const y = startY - r * (hexHeight / 2);
+                
+                const xOffset = (r % 2) === 0 ? 0 : horizSpacing / 2;
+                const x = c * horizSpacing + xOffset;
+                const y = r * hexHeight;
+
                 tempPoints.push(new Vector2(x, y));
                 index++;
             }
@@ -150,7 +155,7 @@ const DynamicGallery = ({ images, onImageClick }) => {
                 index: i,
                 texture: textures[i],
                 homePosition: [point.x - center.x, -(point.y - center.y), 0],
-                baseSize: hexRadius * 1.05,
+                baseSize: hexRadius * 1.15,
             });
         }
 
