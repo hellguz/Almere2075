@@ -4,6 +4,8 @@
 :root {
   --font-family: 'Inter', -apple-system, sans-serif;
   --font-monospace: 'Roboto Mono', 'Fira Code', monospace;
+
+  /* Dark Theme (Default) */
   --color-background: #000000; /* Deeper black for more contrast */
   --color-text-primary: #F5F5F7; /* Softer white */
   --color-text-secondary: #86868B;
@@ -11,8 +13,55 @@
   --color-accent-glow: rgba(255, 255, 255, 0.5);
   --color-success: #32D74B;
   --color-error: #FF453A;
-  --color-system: #64D2FF;
-  --color-data: #636366;
+  --color-system: #0A84FF; /* Adjusted for better visibility on dark */
+  --color-data: #A1A1A6; /* Adjusted for better visibility on dark */
+
+  /* Light Theme Variables */
+  --light-color-background: #FFFFFF;
+  --light-color-text-primary: #1D1D1F; /* Near black for strong readability */
+  --light-color-text-secondary: #6E6E73;
+  --light-color-accent-black: #000000;
+  --light-color-accent-glow: rgba(0, 0, 0, 0.15);
+  --light-color-success: #28A745; /* Standard green */
+  --light-color-error: #DC3545;   /* Standard red */
+  --light-color-system: #007AFF;  /* Standard blue */
+  --light-color-data: #555555;
+}
+
+body.light-theme {
+  --color-background: var(--light-color-background);
+  --color-text-primary: var(--light-color-text-primary);
+  --color-text-secondary: var(--light-color-text-secondary);
+  --color-accent-white: var(--light-color-accent-black); /* In light theme, "accent-white" becomes black for contrast */
+  --color-accent-glow: var(--light-color-accent-glow);
+  --color-success: var(--light-color-success);
+  --color-error: var(--light-color-error);
+  --color-system: var(--light-color-system);
+  --color-data: var(--light-color-data);
+
+  /* Specific overrides for components that might need different treatment in light mode */
+  --app-header-bg: rgba(249, 249, 250, 0.7); /* Light, slightly transparent */
+  --button-bg: rgba(230, 230, 230, 0.7);
+  --button-hover-bg: rgba(210, 210, 210, 0.9);
+  --button-border-color: rgba(0, 0, 0, 0.1);
+  --button-active-bg: #C0C0C0;
+  --gallery-instructions-bg: rgba(235, 235, 235, 0.8);
+  --gallery-instructions-border: rgba(0, 0, 0, 0.15);
+  --transform-controls-button-text: var(--light-color-background);
+  --transform-controls-button-bg: var(--light-color-accent-black);
+  --scanline-bg: var(--light-color-accent-black);
+  --scanline-shadow: var(--light-color-accent-glow);
+  --slider-line-bg: var(--light-color-accent-black);
+  --slider-handle-border: var(--light-color-accent-black);
+  --slider-handle-bg: rgba(255, 255, 255, 0.5);
+  --prompt-button-bg: rgba(230, 230, 230, 0.8);
+  --prompt-button-border: rgba(0, 0, 0, 0.2);
+  --prompt-panel-bg: rgba(240, 240, 240, 0.8);
+  --prompt-panel-border: rgba(0, 0, 0, 0.15);
+  --log-panel-bg: rgba(240, 240, 240, 0.8);
+  --log-panel-border: rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb-bg: rgba(0, 0, 0, 0.2);
+  --scrollbar-thumb-hover-bg: rgba(0, 0, 0, 0.4);
 }
 
 html, body, #root {
@@ -46,11 +95,14 @@ html, body, #root {
   z-index: 100;
   opacity: 0;
   transform: translateY(-100%);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  transition: opacity 0.5s ease, transform 0.5s ease, background-color 0.3s ease;
   pointer-events: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background-color: var(--app-header-bg, rgba(10, 10, 10, 0.7)); /* Default dark theme header bg */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 .app-header.visible {
   opacity: 1;
@@ -60,11 +112,11 @@ html, body, #root {
 
 .header-left { flex: 1 0 0; text-align: left; }
 .header-center { flex: 1 0 0; text-align: center; display: flex; justify-content: center; }
-.header-right { flex: 1 0 0; }
+.header-right { flex: 1 0 0; display: flex; justify-content: flex-end; align-items: center; }
 
 .back-button {
-  background: rgba(28, 28, 30, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--button-bg, rgba(28, 28, 30, 0.7));
+  border: 1px solid var(--button-border-color, rgba(255, 255, 255, 0.1));
   color: var(--color-text-primary);
   padding: 8px 16px;
   border-radius: 20px;
@@ -72,14 +124,14 @@ html, body, #root {
   font-weight: 500;
   font-size: 14px;
   letter-spacing: 0.2px;
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px); /* Kept for elements that might float above non-blurred bg */
   -webkit-backdrop-filter: blur(20px);
   transition: all 0.2s ease;
 }
 .back-button:hover {
-  background: rgba(44, 44, 46, 0.9);
-  color: var(--color-accent-white);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--button-hover-bg, rgba(44, 44, 46, 0.9));
+  color: var(--color-accent-white); /* This will be black in light theme */
+  border-color: var(--button-border-color, rgba(255, 255, 255, 0.2));
 }
 
 /* 3. Views Container */
@@ -130,13 +182,13 @@ html, body, #root {
     letter-spacing: 0.8px;
     font-size: 14px;
     padding: 10px 20px;
-    background: rgba(44, 44, 46, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--gallery-instructions-bg, rgba(44, 44, 46, 0.8));
+    border: 1px solid var(--gallery-instructions-border, rgba(255, 255, 255, 0.15));
     border-radius: 20px;
     backdrop-filter: blur(20px);
     z-index: 10;
     opacity: 1;
-    transition: opacity 1s ease 1s;
+    transition: opacity 1s ease 1s, background-color 0.3s ease, border-color 0.3s ease;
     pointer-events: none;
     text-align: center;
     text-transform: uppercase;
@@ -178,18 +230,18 @@ html, body, #root {
     font-size: 1.2rem;
     font-weight: 600; /* Slightly less bold */
     letter-spacing: 0.5px;
-    color: var(--color-background);
-    background: var(--color-accent-white);
+    color: var(--transform-controls-button-text, var(--color-background));
+    background: var(--transform-controls-button-bg, var(--color-accent-white));
     padding: 20px 40px;
     border: none;
     border-radius: 30px;
     cursor: pointer;
-    box-shadow: 0 0 20px var(--color-accent-glow), inset 0 0 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 0 20px var(--color-accent-glow), inset 0 0 5px var(--color-accent-glow); /* Use glow for inset too */
     transition: all 0.2s ease;
 }
 .transform-controls button:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 40px var(--color-accent-glow), inset 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 40px var(--color-accent-glow), inset 0 0 10px var(--color-accent-glow);
 }
 
 .scanline {
@@ -198,8 +250,8 @@ html, body, #root {
     left: 0;
     width: 100%;
     height: 3px;
-    background: var(--color-accent-white);
-    box-shadow: 0 0 20px 2px var(--color-accent-glow);
+    background: var(--scanline-bg, var(--color-accent-white));
+    box-shadow: 0 0 20px 2px var(--scanline-shadow, var(--color-accent-glow));
     animation: scan 20s infinite ease-in-out;
     z-index: 10;
 }
@@ -223,8 +275,8 @@ html, body, #root {
 
 .view-mode-toggle {
     display: flex;
-    background: rgba(28, 28, 30, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--button-bg, rgba(28, 28, 30, 0.7));
+    border: 1px solid var(--button-border-color, rgba(255, 255, 255, 0.1));
     border-radius: 20px;
     padding: 4px;
     backdrop-filter: blur(20px);
@@ -241,7 +293,7 @@ html, body, #root {
     transition: all 0.2s ease;
 }
 .view-mode-toggle button.active {
-    background: #333;
+    background: var(--button-active-bg, #333);
     color: var(--color-text-primary);
 }
 .comparison-view {
@@ -283,9 +335,10 @@ html, body, #root {
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(10,10,10,0.6);
+    background: var(--app-header-bg, rgba(10,10,10,0.6)); /* Similar to header */
     padding: 4px 12px;
     border-radius: 0 0 8px 8px;
+    color: var(--color-text-secondary); /* Ensure this uses theme color */
 }
 /* Slider Mode Specifics */
 .slider-mode {
@@ -309,8 +362,8 @@ html, body, #root {
     top: 0;
     height: 100%;
     width: 2px;
-    background: var(--color-accent-white);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    background: var(--slider-line-bg, var(--color-accent-white));
+    box-shadow: 0 0 10px var(--color-accent-glow); /* Use theme glow */
     transform: translateX(-1px);
     pointer-events: none;
     z-index: 4;
@@ -321,9 +374,9 @@ html, body, #root {
     left: 50%;
     width: 44px;
     height: 44px;
-    border: 2px solid var(--color-accent-white);
+    border: 2px solid var(--slider-handle-border, var(--color-accent-white));
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--slider-handle-bg, rgba(0, 0, 0, 0.5));
     backdrop-filter: blur(10px);
     transform: translate(-50%, -50%);
 }
@@ -334,7 +387,7 @@ html, body, #root {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.6);
+    background: var(--color-accent-glow); /* Use theme glow for overlay */
     z-index: 55;
 }
 
@@ -346,8 +399,8 @@ html, body, #root {
 }
 
 .prompt-button {
-  background: rgba(44, 44, 46, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--prompt-button-bg, rgba(44, 44, 46, 0.8));
+  border: 1px solid var(--prompt-button-border, rgba(255, 255, 255, 0.2));
   color: var(--color-text-primary);
   padding: 10px 20px;
   border-radius: 20px;
@@ -364,7 +417,7 @@ html, body, #root {
 
 .prompt-button:hover {
     transform: scale(1.05);
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: var(--prompt-button-border, rgba(255, 255, 255, 0.4)); /* Ensure hover uses themed border */
 }
 
 .prompt-panel-expandable {
@@ -373,8 +426,8 @@ html, body, #root {
     right: 0;
     width: 450px;
     height: 200px;
-    background: rgba(28, 28, 30, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--prompt-panel-bg, rgba(28, 28, 30, 0.8));
+    border: 1px solid var(--prompt-panel-border, rgba(255, 255, 255, 0.15));
     border-radius: 16px;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -418,8 +471,8 @@ html, body, #root {
 }
 .prompt-content::-webkit-scrollbar { width: 6px; }
 .prompt-content::-webkit-scrollbar-track { background: transparent; }
-.prompt-content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
-.prompt-content::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+.prompt-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg, rgba(255, 255, 255, 0.2)); border-radius: 3px; }
+.prompt-content::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg, rgba(255, 255, 255, 0.4)); }
 
 
 /* 7. Process Log */
@@ -431,8 +484,8 @@ html, body, #root {
   max-width: calc(100% - 40px);
   height: var(--panel-height);
   max-height: 60vh;
-  background: rgba(28, 28, 30, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--log-panel-bg, rgba(28, 28, 30, 0.8));
+  border: 1px solid var(--log-panel-border, rgba(255, 255, 255, 0.15));
   border-radius: 16px;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -440,10 +493,37 @@ html, body, #root {
   flex-direction: column;
   z-index: 50;
   transform: translateX(calc(100% + 40px));
-  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s ease, border-color 0.3s ease;
 }
 .process-log-wrapper.visible {
   transform: translateX(0);
+}
+
+/* Styles for Theme Toggle Button */
+.theme-toggle-container {
+  position: fixed;
+  top: 15px; /* Align with header padding */
+  right: 30px; /* Align with header padding */
+  z-index: 1001; /* Above app-header */
+}
+
+.theme-toggle-button {
+  background: var(--button-bg, rgba(28, 28, 30, 0.7));
+  border: 1px solid var(--button-border-color, rgba(255, 255, 255, 0.1));
+  color: var(--color-text-primary);
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 18px; /* For emoji icons */
+  line-height: 1;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: all 0.2s ease;
+}
+
+.theme-toggle-button:hover {
+  background: var(--button-hover-bg, rgba(44, 44, 46, 0.9));
+  border-color: var(--button-border-color, rgba(255, 255, 255, 0.2));
 }
 
 .log-header {
@@ -453,7 +533,7 @@ html, body, #root {
   text-transform: uppercase;
   color: var(--color-text-secondary);
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--log-panel-border, rgba(255, 255, 255, 0.1)); /* Use same as panel border */
   flex-shrink: 0;
 }
 
@@ -463,13 +543,14 @@ html, body, #root {
   padding: 8px 16px;
   font-family: var(--font-monospace);
   font-size: 13px;
+  color: var(--color-text-primary); /* Ensure log text uses theme color */
 }
 
 .log-content::-webkit-scrollbar { width: 6px; }
 .log-content::-webkit-scrollbar-track { background: transparent; }
-.log-content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2);
+.log-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg, rgba(255, 255, 255, 0.2));
   border-radius: 3px; }
-.log-content::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+.log-content::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg, rgba(255, 255, 255, 0.4)); }
 
 .log-message {
   margin: 4px 0;
