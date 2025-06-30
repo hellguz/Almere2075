@@ -66,7 +66,6 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isTouch }) =
         const imageAspect = texture.image.width / texture.image.height;
         return [imageAspect > 1 ? baseSize : baseSize * imageAspect, imageAspect > 1 ? baseSize / imageAspect : baseSize, 1];
     }, [texture, baseSize]);
-
     useEffect(() => {
         if (isTouch && meshRef.current) {
             // Reset position and scale when touch is detected
@@ -74,7 +73,6 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isTouch }) =
             meshRef.current.scale.set(1, 1, 1);
         }
     }, [isTouch, homePosition]);
-
     useFrame(({ viewport, mouse }) => {
         if (!meshRef.current || isTouch) return; // Disable effect on touch devices
 
@@ -167,6 +165,26 @@ const DynamicGallery = ({ images, onImageClick, isTouch, panOffset }) => {
     );
 };
 
+// Error Fix: This new component sits inside the Canvas to bridge events
+// and provide the main component with necessary canvas state like viewport and size.
+const GalleryEvents = ({ handlePointerDown, handlePointerMove, handlePointerUp }) => {
+    const { viewport, size } = useThree();
+
+    // Wrap the original move handler to inject viewport and size
+    const moveHandler = (e) => {
+        handlePointerMove(e, viewport, size);
+    };
+
+    return (
+        <group
+            onPointerDown={handlePointerDown}
+            onPointerMove={moveHandler}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+        />
+    );
+};
+
 const GalleryView = ({ images, isVisible }) => {
     const [showInstructions, setShowInstructions] = useState(true);
     const [isTouchDevice, setIsTouchDevice] = useState(false);
@@ -176,7 +194,6 @@ const GalleryView = ({ images, isVisible }) => {
         startCoords: { x: 0, y: 0 },
         lastOffset: { x: 0, y: 0 },
     });
-
     useEffect(() => {
       const handleInteraction = () => setShowInstructions(false);
       window.addEventListener('mousemove', handleInteraction, { once: true });
@@ -188,23 +205,26 @@ const GalleryView = ({ images, isVisible }) => {
         clearTimeout(timer);
       };
     }, []);
-
     const handlePointerDown = (e) => {
         if (e.pointerType === 'touch') {
             if (!isTouchDevice) setIsTouchDevice(true);
+            const x = e.nativeEvent.touches?.[0]?.clientX ?? e.clientX;
+            const y = e.nativeEvent.touches?.[0]?.clientY ?? e.clientY;
             panState.current.isPanning = true;
-            panState.current.startCoords = { x: e.clientX, y: e.clientY };
+            panState.current.startCoords = { x, y };
             panState.current.lastOffset = panOffset;
         }
     };
-
-    const handlePointerMove = (e) => {
+    
+    // Error Fix: The handler now receives viewport and size from the GalleryEvents component.
+    const handlePointerMove = (e, viewport, size) => {
         if (panState.current.isPanning) {
-            // Get viewport and size directly from the event object
-            const { viewport, size } = e;
-            // Convert pixel delta to world units for orthographic camera
-            const dx = (e.clientX - panState.current.startCoords.x) * (viewport.width / size.width);
-            const dy = (e.clientY - panState.current.startCoords.y) * (viewport.height / size.height);
+            const x = e.nativeEvent.touches?.[0]?.clientX ?? e.clientX;
+            const y = e.nativeEvent.touches?.[0]?.clientY ?? e.clientY;
+            if (x === undefined || y === undefined || panState.current.startCoords.x === undefined) return;
+            
+            const dx = (x - panState.current.startCoords.x) * (viewport.width / size.width);
+            const dy = (y - panState.current.startCoords.y) * (viewport.height / size.height);
             setPanOffset({
                 x: panState.current.lastOffset.x + dx,
                 y: panState.current.lastOffset.y - dy, // Y is inverted in screen vs world
@@ -213,9 +233,11 @@ const GalleryView = ({ images, isVisible }) => {
     };
 
     const handlePointerUp = (e) => {
-        panState.current.isPanning = false;
+        if (panState.current.isPanning) {
+            panState.current.isPanning = false;
+            panState.current.startCoords = { x: 0, y: 0 };
+        }
     };
-
 
     const handleImageClick = (texture) => {
         if (isTouchDevice && panState.current.isPanning) return;
@@ -234,15 +256,14 @@ const GalleryView = ({ images, isVisible }) => {
              <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
                 {isTouchDevice ? 'DRAG TO EXPLORE. TAP TO BEGIN.' : 'FOCUS TO EXPLORE. CLICK TO BEGIN.'}
             </div>
-            <Canvas 
-                orthographic camera={{ position: [0, 0, 10], zoom: 100 }}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerLeave={handlePointerUp}
-            >
+             <Canvas orthographic camera={{ position: [0, 0, 10], zoom: 100 }}>
                  <ambientLight intensity={3} />
                 {images.length > 0 && <DynamicGallery images={images} onImageClick={handleImageClick} isTouch={isTouchDevice} panOffset={panOffset} />}
+                <GalleryEvents
+                    handlePointerDown={handlePointerDown}
+                    handlePointerMove={handlePointerMove}
+                    handlePointerUp={handlePointerUp}
+                />
             </Canvas>
         </div>
     );
@@ -264,7 +285,7 @@ const LogPanel = ({ messages, isVisible }) => {
       <div className="log-header">PROCESS LOG</div>
       <div className="log-content">
         {messages.map((msg, i) => (
-          <p key={i} className={`log-message ${msg.type || ''}`}>
+          <p key={i} className={`log-message ${msg.type || 'info'}`}>
             <span>{msg.time}</span>
             <span>{msg.text}</span>
           </p>
@@ -297,7 +318,6 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
     const [clipPosition, setClipPosition] = useState(50);
     const [isPromptExpanded, setIsPromptExpanded] = useState(false);
     const togglePrompt = () => setIsPromptExpanded(!isPromptExpanded);
-
     const handleSliderMove = (e) => {
         if (!sliderContainerRef.current) return;
         const rect = sliderContainerRef.current.getBoundingClientRect();
@@ -312,7 +332,7 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
             {mode === 'side-by-side' && (
                 <div className="comparison-view side-by-side">
                     <div className="image-panel"><div className="image-header">SOURCE</div><img src={`${API_BASE_URL}/images/${originalImage.filename}`} alt="Original" /></div>
-                    <div className="image-panel"><div className="image-header">ALMERE 2075</div><img src={outputImage} alt="Transformed" /></div>
+                     <div className="image-panel"><div className="image-header">ALMERE 2075</div><img src={outputImage} alt="Transformed" /></div>
                 </div>
             )}
             
@@ -329,7 +349,7 @@ const ComparisonView = ({ originalImage, outputImage, finalPrompt, isVisible, mo
                 </div>
             )}
 
-            {finalPrompt && (
+             {finalPrompt && (
                 <>
                     <div className={`prompt-container ${isPromptExpanded ? 'expanded' : ''}`}>
                         <div className="prompt-button" onClick={togglePrompt}>
@@ -420,22 +440,22 @@ function App() {
         addLogMessage('Step 1/3: Encoding source image...');
         const base64Reader = new Promise((resolve, reject) => {
             fetch(`${API_BASE_URL}/images/${state.selectedImage.filename}`).then(res => res.blob()).then(blob => {
-                 const reader = new FileReader();
+                  const reader = new FileReader();
                 reader.onload = () => resolve(reader.result);
                 reader.onerror = reject;
                 reader.readAsDataURL(blob);
             });
         });
         const base64Image = await base64Reader;
-         addLogMessage('Source encoded successfully.');
+          addLogMessage('Source encoded successfully.');
 
         addLogMessage('Step 2/3: Generating vision prompt...');
         const promptResponse = await fetch(`${API_BASE_URL}/generate-prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Image }) });
         if (!promptResponse.ok) throw new Error(`AI Vision Conection failed: ${promptResponse.statusText}`);
         const promptData = await promptResponse.json();
-        addLogMessage('Vision prompt generated.');
-        addLogMessage(`Prompt: "${promptData.prompt}"`, 'success');
+        addLogMessage('Vision prompt generated.', 'success');
         setState('finalPrompt', promptData.prompt);
+        addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
 
         addLogMessage('Step 3/3: Submitting to FLUX renderer...');
         const transformResponse = await fetch(`${API_BASE_URL}/transform-image`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Image, prompt: promptData.prompt }) });
@@ -459,12 +479,12 @@ function App() {
         </div>
         <div className="header-center">
             {appState.view === 'comparison' && (
-                 <div className="view-mode-toggle">
+                  <div className="view-mode-toggle">
                     <button className={appState.comparisonMode === 'slider' ? 'active' : ''} onClick={() => setState('comparisonMode', 'slider')}>Slider</button>
                     <button className={appState.comparisonMode === 'side-by-side' ? 'active' : ''} onClick={() => setState('comparisonMode', 'side-by-side')}>Side-by-Side</button>
                 </div>
             )}
-        </div>
+         </div>
         <div className="header-right" />
       </header>
 
@@ -475,7 +495,7 @@ function App() {
             isVisible={appState.view === 'transform'} 
             isProcessing={appState.isProcessing}
             onTransform={handleTransform}
-        />
+         />
         <ComparisonView
             originalImage={appState.selectedImage} 
             outputImage={appState.outputImage} 
@@ -491,3 +511,4 @@ function App() {
 }
 
 export default App;
+

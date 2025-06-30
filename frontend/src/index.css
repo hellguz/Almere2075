@@ -125,13 +125,13 @@ html, body, #root {
     top: 40px;
     left: 50%;
     transform: translateX(-50%);
-    color: var(--color-text-secondary);
+    color: var(--color-text-primary);
     font-weight: 500;
     letter-spacing: 0.8px;
     font-size: 14px;
     padding: 10px 20px;
-    background: rgba(28, 28, 30, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(44, 44, 46, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 20px;
     backdrop-filter: blur(20px);
     z-index: 10;
@@ -171,6 +171,8 @@ html, body, #root {
     bottom: 5%;
     left: 50%;
     transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
 }
 .transform-controls button {
     font-size: 1.2rem;
@@ -480,8 +482,7 @@ html, body, #root {
 .log-message.system span:last-child { font-weight: bold; color: var(--color-system);
 }
 .log-message.success span:last-child { color: var(--color-success); }
-.log-message.error span:last-child { color: var(--color-error); font-weight: bold;
-}
+.log-message.error span:last-child { color: var(--color-error); font-weight: bold; }
 .log-message.data {
   color: var(--color-data);
   font-style: italic;
@@ -500,6 +501,11 @@ html, body, #root {
         font-size: 12px;
     }
     
+    .transform-controls {
+        bottom: 12vh;
+        width: 90%;
+    }
+
     .transform-controls button {
         font-size: 1rem;
         padding: 15px 30px;
