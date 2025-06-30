@@ -14,7 +14,7 @@ const GALLERY_CONFIG = {
 
   // --- Visual Appearance ---
   MAX_SCALE: 3.0,          // Maximum size of the focused image.
-  MIN_SCALE: 1,            // Minimum size of the peripheral images.
+  MIN_SCALE: 1.2,            // Minimum size of the peripheral images.
   GRID_DENSITY: 1.05,      // How tightly packed the initial grid is. < 1 means larger images, > 1 means smaller, denser images.
   // --- Animation Physics ---
   Z_LIFT: 2.0,             // How much the focused image "pops" towards the viewer.
@@ -29,7 +29,7 @@ const LOG_PANEL_HEIGHT = '500px';
 // --- Global State ---
 const AppState = {
   view: 'gallery',
-  comparisonMode: 'side-by-side', // 'slider' or 'side-by-side'
+  comparisonMode: 'slider', // 'slider' or 'side-by-side'
   selectedImage: null,
   outputImage: null,
   isProcessing: false,
@@ -433,8 +433,8 @@ function App() {
         const promptResponse = await fetch(`${API_BASE_URL}/generate-prompt`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: base64Image }) });
         if (!promptResponse.ok) throw new Error(`AI Vision Conection failed: ${promptResponse.statusText}`);
         const promptData = await promptResponse.json();
-        addLogMessage('Vision prompt generated.', 'success');
-        addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
+        addLogMessage('Vision prompt generated.');
+        addLogMessage(`Prompt: "${promptData.prompt}"`, 'success');
         setState('finalPrompt', promptData.prompt);
 
         addLogMessage('Step 3/3: Submitting to FLUX renderer...');
