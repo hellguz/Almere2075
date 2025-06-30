@@ -4,21 +4,21 @@ import { TextureLoader, Vector2 } from 'three';
 
 // --- Configuration ---
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-const POLLING_INTERVAL = 2500; // ms
+const POLLING_INTERVAL = 1000; // ms
 
 // --- Constants for Gallery Grid ---
 const GAP_PX = 5; // The desired gap between images in pixels
-const MAX_MAGNIFICATION = 4.0;
+const MAX_MAGNIFICATION = 3.0;
 const MOUSE_INFLUENCE_RADIUS = 0.3;
 
 // --- Constants for UI Layout ---
-const LOG_PANEL_WIDTH = '450px';
-const LOG_PANEL_HEIGHT = '300px';
+const LOG_PANEL_WIDTH = '550px';
+const LOG_PANEL_HEIGHT = '500px';
 
 // --- Global State ---
 const AppState = {
   view: 'gallery', // gallery, transform, comparison
-  comparisonMode: 'slider', // slider, side-by-side
+  comparisonMode: 'side-by-side', // slider, side-by-side
   selectedImage: null,
   outputImage: null,
   isProcessing: false,
