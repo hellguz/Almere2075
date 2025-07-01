@@ -26,7 +26,11 @@
 
 /* Upload button container */
 .main-actions-container {
-    position: absolute; bottom: 30px; left: 50%;
+    position: absolute;
+    /* MODIFIED: Adjusted for safe area on mobile devices */
+    bottom: 30px;
+    bottom: calc(30px + env(safe-area-inset-bottom));
+    left: 50%;
     transform: translateX(-50%); display: flex;
     z-index: 20;
     gap: 15px;

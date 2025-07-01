@@ -4,7 +4,8 @@ import { TextureLoader, Vector2 } from 'three';
 import { API_BASE_URL, GALLERY_CONFIG } from '../../config';
 import ImageNode from './ImageNode';
 
-const DynamicGallery = ({ images, onImageClick, isTouch, panOffset }) => {
+// MODIFIED: Pass panOffset down to ImageNode
+const DynamicGallery = ({ images, onImageClick, panOffset }) => {
     const textures = useLoader(TextureLoader, images.map(img => `${API_BASE_URL}/thumbnails/${img.thumbnail}`));
     const { viewport } = useThree();
 
@@ -29,7 +30,6 @@ const DynamicGallery = ({ images, onImageClick, isTouch, panOffset }) => {
             }
         }
         const center = tempPoints.slice(0, imageCount).reduce((acc, p) => acc.add(p), new Vector2(0,0)).multiplyScalar(1 / imageCount);
-        
         for (let i = 0; i < imageCount; i++) {
             const point = tempPoints[i];
             items.push({
@@ -45,7 +45,7 @@ const DynamicGallery = ({ images, onImageClick, isTouch, panOffset }) => {
     return (
         <group position={[panOffset.x, panOffset.y, 0]}>
             {grid.map(item => (
-                <ImageNode key={item.index} {...item} onImageClick={onImageClick} isTouch={isTouch} />
+                <ImageNode key={item.index} {...item} onImageClick={onImageClick} panOffset={panOffset} />
             ))}
         </group>
     );

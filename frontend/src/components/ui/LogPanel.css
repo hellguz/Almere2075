@@ -1,6 +1,11 @@
 .process-log-wrapper {
-    position: fixed; bottom: 20px; right: 20px;
-    width: 500px; max-width: calc(100% - 40px);
+    position: fixed;
+    /* MODIFIED: Adjusted for safe area */
+    bottom: 20px;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    right: 20px;
+    width: 500px;
+    max-width: calc(100% - 40px);
     height: 400px; /* Fixed height */
     background: var(--liquid-bg);
     border: 1px solid var(--liquid-border);
@@ -16,31 +21,41 @@
     padding: 12px 16px; border-bottom: 1px solid var(--liquid-border); flex-shrink: 0; 
 }
 .log-content { 
-    flex-grow: 1; overflow-y: auto; padding: 8px 16px; 
+    flex-grow: 1; overflow-y: auto;
+    padding: 8px 16px; 
     font-family: var(--font-monospace); font-size: 13px; 
 }
 .log-message { 
-    margin: 4px 0; display: grid; grid-template-columns: 80px 1fr; 
+    margin: 4px 0; display: grid;
+    grid-template-columns: 80px 1fr; 
     gap: 16px; line-height: 1.5; 
 }
 .log-message span:first-child { color: var(--color-text-secondary); }
 .log-message.system { color: var(--color-system); }
-.log-message.success { color: var(--color-success); }
+.log-message.success { color: var(--color-success);
+}
 .log-message.error { color: var(--color-error); font-weight: bold; }
 .log-message.data { 
     color: var(--color-text-primary); font-style: italic; 
-    white-space: pre-wrap; word-break: break-all; 
+    white-space: pre-wrap; word-break: break-all;
 }
 
 /* Scrollbar */
 .log-content::-webkit-scrollbar { width: 6px; }
 .log-content::-webkit-scrollbar-track { background: transparent; }
 .log-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg); border-radius: 3px; }
-.log-content::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg); }
+.log-content::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg);
+}
 
 @media (max-width: 768px) {
-  .process-log-wrapper { 
-      bottom: 10px; right: 10px; width: calc(100% - 20px); height: 30vh; 
+  .process-log-wrapper {
+      /* MODIFIED: Adjusted for safe area and robust positioning */
+      bottom: 10px;
+      bottom: calc(10px + env(safe-area-inset-bottom));
+      right: 10px;
+      left: 10px;
+      width: auto;
+      height: 30vh; 
   }
 }
 

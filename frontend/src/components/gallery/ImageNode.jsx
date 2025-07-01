@@ -1,9 +1,10 @@
-import React, { useMemo, useRef, useEffect } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Vector2, Vector3 } from 'three';
 import { GALLERY_CONFIG } from '../../config';
 
-const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isTouch }) => {
+// MODIFIED: Accept panOffset to synchronize animation and panning coordinates.
+const ImageNode = ({ texture, homePosition, baseSize, onImageClick, panOffset }) => {
     const meshRef = useRef();
     const homeVec = useMemo(() => new Vector3(...homePosition), [homePosition]);
 
@@ -12,27 +13,29 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isTouch }) =
         return [imageAspect > 1 ? baseSize : baseSize * imageAspect, imageAspect > 1 ? baseSize / imageAspect : baseSize, 1];
     }, [texture, baseSize]);
 
-    useEffect(() => {
-        if (isTouch && meshRef.current) {
-            meshRef.current.position.set(...homePosition);
-            meshRef.current.scale.set(1, 1, 1);
-        }
-    }, [isTouch, homePosition]);
-
     useFrame(({ viewport, mouse }) => {
-        if (!meshRef.current || isTouch) return;
+        if (!meshRef.current) return;
 
-        const mouseVec = new Vector2(mouse.x * viewport.width / 2, mouse.y * viewport.height / 2);
+        // Mouse position in world units (relative to the viewport)
+        const mouseWorld = new Vector2(mouse.x * viewport.width / 2, mouse.y * viewport.height / 2);
+
+        // THE FIX: Adjust the mouse position by the pan offset to get its
+        // position in the local coordinate system of the gallery group.
+        const mouseLocal = new Vector2(mouseWorld.x - panOffset.x, mouseWorld.y - panOffset.y);
+
+        // Node's home position (which is already local to the group)
         const homePos2D = new Vector2(homeVec.x, homeVec.y);
 
-        const directionVec = new Vector2().subVectors(homePos2D, mouseVec);
+        // Now, all calculations are in the same local coordinate space.
+        const directionVec = new Vector2().subVectors(homePos2D, mouseLocal);
         const dist = directionVec.length();
         
         const influenceRadius = GALLERY_CONFIG.FALLOFF_RADIUS;
         const normalizedDist = Math.min(dist / influenceRadius, 1.0);
 
+        // Use the local mouse coordinates for the fisheye effect calculation.
         const distortedDist = Math.pow(normalizedDist, GALLERY_CONFIG.DISTORTION_POWER) * influenceRadius;
-        const targetPosition = new Vector2().addVectors(mouseVec, directionVec.normalize().multiplyScalar(distortedDist));
+        const targetPosition = new Vector2().addVectors(mouseLocal, directionVec.normalize().multiplyScalar(distortedDist));
         
         if (dist > influenceRadius) {
             targetPosition.copy(homePos2D);

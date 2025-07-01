@@ -54,8 +54,7 @@
     cursor: ew-resize;
 }
 .slider-mode .image-panel { position: absolute; top: 0; left: 0; }
-.slider-mode .image-panel.after-image { z-index: 2;
-}
+.slider-mode .image-panel.after-image { z-index: 2; }
 .slider-line { 
     position: absolute; top: 0; height: 100%; width: 2px; 
     background: var(--color-accent-white);
@@ -63,8 +62,7 @@
     transform: translateX(-1px); pointer-events: none; z-index: 4; 
 }
 .slider-handle { 
-    position: absolute;
-    top: 50%; left: 50%; width: 44px; height: 44px; 
+    position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; 
     border: 2px solid var(--color-accent-white); border-radius: 50%; 
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px); 
@@ -73,7 +71,11 @@
 
 /* Footer */
 .comparison-footer {
-    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    position: absolute;
+    /* MODIFIED: Adjusted for safe area */
+    bottom: 20px;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+    left: 50%; transform: translateX(-50%);
     width: 90%; max-width: 700px;
     display: flex; justify-content: space-between; align-items: center;
     gap: 15px; background: var(--liquid-bg); padding: 12px 20px;
@@ -86,8 +88,7 @@
 .footer-left { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .info-tags, .info-creator { 
     color: var(--color-text-secondary); font-size: 0.8rem; 
-    white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; 
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
 }
 .info-tags b, .info-creator b { color: var(--color-text-primary); }
 .footer-center { flex: 1.5; display: flex; justify-content: center;
@@ -98,9 +99,10 @@
 .name-input-container input { 
     background: rgba(0,0,0,0.3); border: 1px solid var(--liquid-border); 
     border-right: none;
-    color: white; border-radius: 6px 0 0 6px;
+    color: white;
+    border-radius: 6px 0 0 6px;
     padding: 10px 12px; 
-    font-size: 0.9rem; width: 100%; transition: all 0.2s ease; 
+    font-size: 0.9rem; width: 100%; transition: all 0.2s ease;
 }
 .name-input-container input:focus { border-color: var(--color-system);
 }
@@ -158,7 +160,10 @@
 }
 @media (max-width: 768px) {
   .comparison-footer { 
-      width: calc(100% - 20px); bottom: 10px;
+      width: calc(100% - 20px);
+      /* MODIFIED: Adjusted for safe area */
+      bottom: 10px;
+      bottom: calc(10px + env(safe-area-inset-bottom));
   }
 }
 
