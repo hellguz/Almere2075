@@ -21,6 +21,7 @@
     visibility: visible;
 }
 
+
 /* --- Header Text --- */
 .gallery-info-text {
     flex-shrink: 0; 
@@ -40,24 +41,19 @@
     box-sizing: border-box;
 
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    /* MODIFIED: Changed minmax from 320px to 160px to make cards smaller */
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 24px;
 
     /*
-      ======================================================================
-      === THE DEFINITIVE ROOT CAUSE FIX ===
-      ======================================================================
-      'grid-auto-rows: min-content' is the critical change. It forces each
-      row in the grid to be only as tall as the content inside it. This
-      prevents the cards from stretching vertically to fill the screen and
-      ensures they have a constant height, which finally allows the
-      container to scroll correctly.
+      THE ROOT CAUSE FIX: This packs all grid rows at the top,
+      allowing the content to overflow correctly and create a scrollbar.
     */
     grid-auto-rows: min-content;
 }
 
 
-/* --- Gallery Card --- */
+/* --- Gallery Card & Children --- */
 .gallery-item {
     background: #1c1c1e;
     border-radius: 12px;
@@ -102,33 +98,34 @@
 
 /* --- Card Info Section --- */
 .gallery-item-info {
-    padding: 15px;
+    padding: 10px; /* Reduced padding for smaller cards */
     display: flex;
     flex-wrap: wrap; /* Allows items to wrap on very narrow screens */
     justify-content: space-between;
     align-items: center;
-    gap: 10px;
+    gap: 8px; /* Reduced gap */
 }
 .gallery-item-details {
     flex-grow: 1;
 }
 .gallery-item-tags {
     font-weight: bold;
-    font-size: 0.95rem;
+    font-size: 0.8rem; /* Reduced font size */
 }
 .gallery-item-creator {
     color: var(--color-text-secondary);
-    font-size: 0.85rem;
+    font-size: 0.75rem; /* Reduced font size */
 }
 .like-button {
     background: #333;
     color: white;
     border: 1px solid #555;
-    padding: 10px 15px;
-    border-radius: 8px;
+    padding: 6px 10px; /* Reduced padding */
+    border-radius: 6px; /* Reduced radius */
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0; /* Prevents button from shrinking */
+    font-size: 0.8rem; /* Reduced font size */
 }
 .like-button:hover {
     background: var(--color-system);
@@ -162,15 +159,3 @@
 .gallery-grid-container::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg); border-radius: 3px; }
 .gallery-grid-container::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg); }
 
-
-/* --- Responsive (Unchanged) --- */
-@media (max-width: 768px) {
-  .gallery-grid-container {
-      grid-template-columns: 1fr;
-      justify-items: center;
-  }
-  .gallery-item {
-      width: 100%;
-      max-width: 400px;
-  }
-}
