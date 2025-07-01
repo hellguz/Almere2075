@@ -4,6 +4,7 @@ import io
 import time
 import random
 import mimetypes
+import uuid
 from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -57,7 +58,6 @@ def get_db():
 
 # --- Helper Functions ---
 
-# MODIFIED: Centralized the logic for handling image inputs into a helper function.
 def resolve_image_to_data_url(image_string: str) -> str:
     """
     Accepts a string that is either a Data URL or a relative server path.
@@ -110,7 +110,7 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
     db.commit()
 
     try:
-        # MODIFIED: Use the helper function to ensure we have a valid Data URL for Replicate.
+        # Use the helper function to ensure we have a valid Data URL for Replicate.
         image_data_url = resolve_image_to_data_url(image_string_from_request)
         
         model_name = "black-forest-labs/flux-kontext-pro"
@@ -187,7 +187,7 @@ async def generate_prompt(request: models.GeneratePromptRequest):
     system_prompt = create_system_prompt(selected_tags_ids)
 
     try:
-        # MODIFIED: Use the helper function to prepare the image for OpenAI.
+        # Use the helper function to prepare the image for OpenAI.
         image_data_url = resolve_image_to_data_url(request.imageBase64)
         
         response = openai.chat.completions.create(
@@ -208,8 +208,37 @@ async def generate_prompt(request: models.GeneratePromptRequest):
 async def transform_image(request: models.TransformImageRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     if not os.getenv("REPLICATE_API_KEY"): raise HTTPException(status_code=500, detail="Replicate API key not configured.")
     
+    image_str = request.imageBase64
+    final_image_filename_for_db = request.original_filename
+
+    # FIXED: Handle custom image uploads.
+    # If the input is a data URL, it's a new file. We must save it to disk
+    # to ensure it can be retrieved later for the community gallery.
+    if image_str.startswith('data:'):
+        try:
+            header, encoded = image_str.split(",", 1)
+            mime_type = header.split(":")[1].split(";")[0]
+            extension = mimetypes.guess_extension(mime_type) or '.jpg'
+            image_data = base64.b64decode(encoded)
+            
+            # Generate a unique filename to prevent collisions
+            new_filename = f"{uuid.uuid4()}{extension}"
+            save_path = IMAGES_DIR / new_filename
+            
+            with open(save_path, "wb") as f:
+                f.write(image_data)
+            
+            # Generate a thumbnail for the new image
+            create_thumbnail(save_path)
+            
+            # This new filename is what we store in the database
+            final_image_filename_for_db = new_filename
+        except Exception as e:
+            print(f"Error saving uploaded image: {e}")
+            raise HTTPException(status_code=500, detail="Could not process and save uploaded image.")
+    
     new_generation = db_models.Generation(
-        original_image_filename=request.original_filename,
+        original_image_filename=final_image_filename_for_db,
         prompt_text=request.prompt,
         tags_used=[tag_info['name'] for tag_info in AVAILABLE_TAGS if tag_info['id'] in request.tags],
         status=db_models.JobStatus.PENDING
@@ -233,11 +262,13 @@ async def get_job_status(job_id: str, db: Session = Depends(get_db)):
 
     response = {"status": job.status, "result": None, "error": None, "generation_data": None}
     if job.status == db_models.JobStatus.COMPLETED:
+        # We need to convert the SQLAlchemy object to a Pydantic model.
+        # This can be done by converting to dict or by using from_orm/from_attributes in the Pydantic model.
+        job_data = models.GenerationInfo.from_orm(job)
         response["result"] = job.generated_image_url
-        response["generation_data"] = job
+        response["generation_data"] = job_data
     elif job.status == db_models.JobStatus.FAILED:
         response["error"] = "AI transformation failed. See server logs for details."
-    
     return response
 
 # --- New Endpoints for Gallery, Voting, and Gamification ---

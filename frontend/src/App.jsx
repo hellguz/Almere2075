@@ -21,15 +21,13 @@ const GALLERY_CONFIG = {
 // --- Global State ---
 const AppState = {
   view: 'gallery', // gallery, transform, comparison, community_gallery
-  comparisonMode: 'side-by-side',
-  selectedImage: null, // The source image from the initial gallery
-  sourceImageForTransform: null, // Could be from gallery or a new upload
-  outputImage: null,
+  comparisonMode: 'side-by-side', // Set side-by-side as default
+  sourceImageForTransform: null, // Holds {url, name} for the image being processed
   isProcessing: false,
   logMessages: [],
-  finalPrompt: '',
   jobId: null,
-  generationDetails: null, // Full data of the completed generation
+  generationDetails: null, // Full data of the completed generation from the backend
+  isCommunityItem: false, // Flag to know if the background should be blurred
 };
 const state = AppState;
 
@@ -56,7 +54,6 @@ const fileToDataUrl = (file) => new Promise((resolve, reject) => {
     reader.readAsDataURL(file);
 });
 
-
 // --- Dynamic Gallery Components (for initial image selection) ---
 
 const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isTouch }) => {
@@ -67,12 +64,14 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isTouch }) =
         const imageAspect = texture.image.width / texture.image.height;
         return [imageAspect > 1 ? baseSize : baseSize * imageAspect, imageAspect > 1 ? baseSize / imageAspect : baseSize, 1];
     }, [texture, baseSize]);
+
     useEffect(() => {
         if (isTouch && meshRef.current) {
             meshRef.current.position.set(...homePosition);
             meshRef.current.scale.set(1, 1, 1);
         }
     }, [isTouch, homePosition]);
+
     useFrame(({ viewport, mouse }) => {
         if (!meshRef.current || isTouch) return;
 
@@ -95,6 +94,7 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isTouch }) =
         const proximity = 1 - normalizedDist;
         const targetScale = GALLERY_CONFIG.MIN_SCALE + Math.pow(proximity, GALLERY_CONFIG.SCALE_CURVE) * (GALLERY_CONFIG.MAX_SCALE - GALLERY_CONFIG.MIN_SCALE);
         const targetZ = proximity * GALLERY_CONFIG.Z_LIFT;
+
         meshRef.current.position.lerp(new Vector3(targetPosition.x, targetPosition.y, targetZ), GALLERY_CONFIG.DAMPING);
         meshRef.current.scale.lerp(new Vector3(targetScale, targetScale, 1), GALLERY_CONFIG.DAMPING);
     });
@@ -127,13 +127,14 @@ const DynamicGallery = ({ images, onImageClick, isTouch, panOffset }) => {
 
         for (let row = 0; row < rows + 2; row++) {
             for (let col = 0; col < cols + 2; col++) {
-                 tempPoints.push(new Vector2(
+                tempPoints.push(new Vector2(
                     col * hexWidth + (row % 2 === 1 ? hexWidth / 2 : 0),
                     row * hexHeight * 0.75
                 ));
             }
         }
         const center = tempPoints.slice(0, imageCount).reduce((acc, p) => acc.add(p), new Vector2(0,0)).multiplyScalar(1 / imageCount);
+
         for (let i = 0; i < imageCount; i++) {
             const point = tempPoints[i];
             items.push({
@@ -145,6 +146,7 @@ const DynamicGallery = ({ images, onImageClick, isTouch, panOffset }) => {
         }
         return items;
     }, [images, textures, viewport.width, viewport.height]);
+
     return (
         <group position={[panOffset.x, panOffset.y, 0]}>
             {grid.map(item => (
@@ -167,6 +169,7 @@ const GalleryEvents = ({ handlePointerDown, handlePointerMove, handlePointerUp }
     );
 };
 
+
 // --- UI Components ---
 
 const LogPanel = ({ messages, isVisible }) => {
@@ -174,6 +177,7 @@ const LogPanel = ({ messages, isVisible }) => {
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
   return (
     <div className={`process-log-wrapper ${isVisible ? 'visible' : ''}`}>
       <div className="log-header">PROCESS LOG</div>
@@ -194,20 +198,21 @@ const TagSelector = ({ tags, selectedTags, onTagToggle }) => {
     if (!tags.length) return null;
     return (
         <div className="tag-selector-container">
-            <p className="tag-selector-title">2. Choose concepts to guide the AI</p>
-            <div className="tag-list">
-                {tags.map(tag => (
-                    <button
-                        key={tag.id}
-                        className={`tag-button ${selectedTags.includes(tag.id) ? 'active' : ''}`}
-                        onClick={() => onTagToggle(tag.id)}
-                        title={tag.description}
-                    >
-                        {tag.name}
-                    </button>
-                ))}
+            <p className="tag-selector-title">2. Choose concepts (or leave blank for random)</p>
+            <div className="tag-list-wrapper">
+                <div className="tag-list">
+                    {tags.map(tag => (
+                        <button
+                            key={tag.id}
+                            className={`tag-button ${selectedTags.includes(tag.id) ? 'active' : ''}`}
+                            onClick={() => onTagToggle(tag.id)}
+                            title={tag.description}
+                        >
+                            {tag.name}
+                        </button>
+                    ))}
+                </div>
             </div>
-             <p className="tag-selector-note">Or leave blank for a random selection.</p>
         </div>
     );
 };
@@ -225,7 +230,7 @@ const TransformView = ({ sourceImage, isVisible, isProcessing, onTransform, tags
                 <div className="transform-options">
                     <TagSelector tags={tags} selectedTags={selectedTags} onTagToggle={onTagToggle} />
                     <div className="transform-controls">
-                        <button onClick={onTransform} disabled={isProcessing}>
+                        <button className="transform-action-button" onClick={onTransform} disabled={isProcessing}>
                             {isProcessing ? 'TRANSFORMING...' : '3. TRANSFORM TO ALMERE 2075'}
                         </button>
                     </div>
@@ -236,10 +241,9 @@ const TransformView = ({ sourceImage, isVisible, isProcessing, onTransform, tags
     );
 };
 
-const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onSetName, onHide, isModal = false }) => {
+const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onModeChange, isModal = false, onSetName, onHide }) => {
     const sliderContainerRef = useRef(null);
     const [clipPosition, setClipPosition] = useState(50);
-    const [isPromptExpanded, setIsPromptExpanded] = useState(false);
     const [creatorName, setCreatorName] = useState('');
     const [nameSaved, setNameSaved] = useState(false);
 
@@ -272,6 +276,14 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onSet
 
     return (
         <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
+             {!isModal && (
+                <div className="floating-controls-top">
+                    <div className="view-mode-toggle">
+                        <button className={mode === 'side-by-side' ? 'active' : ''} onClick={() => onModeChange('side-by-side')}>Side-by-Side</button>
+                        <button className={mode === 'slider' ? 'active' : ''} onClick={() => onModeChange('slider')}>Slider</button>
+                    </div>
+                </div>
+            )}
             <div className="comparison-main-area">
                 {mode === 'side-by-side' && (
                     <div className="comparison-view side-by-side">
@@ -287,12 +299,6 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onSet
                     </div>
                 )}
             </div>
-
-            {!isModal && (
-                 <div className="info-text">
-                    Your generation is saved to the Community Gallery. You can enter your name, or remove it from the gallery.
-                </div>
-            )}
            
             <div className="comparison-footer">
                 <div className="footer-left">
@@ -303,39 +309,19 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onSet
                         <b>By:</b> {generationDetails.creator_name || 'Anonymous'}
                     </div>
                 </div>
-
-                <div className="footer-center">
-                    {!isModal && (
-                         <div className="name-input-container">
-                            <input
-                                type="text"
-                                placeholder="Enter your name..."
-                                value={creatorName}
-                                onChange={(e) => setCreatorName(e.target.value)}
-                                disabled={nameSaved}
-                            />
+                {!isModal && (
+                    <div className="footer-center">
+                        <div className="name-input-container">
+                            <input type="text" placeholder="Sign your creation..." value={creatorName} onChange={(e) => setCreatorName(e.target.value)} disabled={nameSaved} />
                             <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()}>
-                                {nameSaved ? 'SAVED' : 'SAVE NAME'}
+                                {nameSaved ? '✓ SAVED' : 'SAVE NAME'}
                             </button>
                         </div>
-                    )}
-                </div>
-
+                    </div>
+                )}
                 <div className="footer-right">
                     {!isModal && (
-                        <button className="hide-button" onClick={onHide}>REMOVE</button>
-                    )}
-                    {generationDetails.prompt_text && (
-                        <div className={`prompt-container ${isPromptExpanded ? 'expanded' : ''}`}>
-                            <div className="prompt-button" onClick={() => setIsPromptExpanded(!isPromptExpanded)}>
-                                {isPromptExpanded ? 'HIDE' : 'SHOW'} PROMPT
-                            </div>
-                            <div className="prompt-panel-expandable">
-                                <div className="prompt-header">GENERATED PROMPT</div>
-                                <div className="prompt-content">{generationDetails.prompt_text}</div>
-                            </div>
-                            {isPromptExpanded && <div className="prompt-overlay" onClick={() => setIsPromptExpanded(false)}></div>}
-                        </div>
+                        <button className="hide-button" onClick={onHide} title="Remove from public gallery">REMOVE</button>
                     )}
                 </div>
             </div>
@@ -345,24 +331,37 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onSet
 
 const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onModalClose }) => {
     const [items, setItems] = useState([]);
-    const [comparisonMode, setComparisonMode] = useState('side-by-side');
+    const [modalComparisonMode, setModalComparisonMode] = useState('side-by-side');
+
+    const fetchGallery = useCallback(async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/public-gallery`);
+            if (!response.ok) throw new Error('Failed to fetch gallery');
+            const data = await response.json();
+            setItems(data);
+        } catch (error) {
+            console.error("Error fetching community gallery:", error);
+        }
+    }, []);
 
     useEffect(() => {
         if (isVisible && !modalItem) {
-            const fetchGallery = async () => {
-                try {
-                    const response = await fetch(`${API_BASE_URL}/public-gallery`);
-                    if (!response.ok) throw new Error('Failed to fetch gallery');
-                    const data = await response.json();
-                    setItems(data);
-                } catch (error) {
-                    console.error("Error fetching community gallery:", error);
-                }
-            };
             fetchGallery();
         }
-    }, [isVisible, modalItem]);
+    }, [isVisible, modalItem, fetchGallery]);
 
+    const handleVoteClick = (e, itemId) => {
+        e.stopPropagation();
+        onVote(itemId).then(() => {
+            // Optimistically update vote count
+            setItems(currentItems => currentItems.map(item => 
+                item.id === itemId ? { ...item, votes: item.votes + 1 } : item
+            ));
+        }).catch(err => {
+            alert(err.message); // Show vote limit error
+        });
+    };
+    
     return (
         <div className={`community-gallery-view ${isVisible ? 'visible' : ''}`}>
             <div className="gallery-info-text">
@@ -370,9 +369,9 @@ const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onMo
             </div>
             <div className="gallery-grid-container">
                 {items.map(item => (
-                    <div key={item.id} className="gallery-item">
-                        <div className="gallery-item-images" onClick={() => onItemSelect(item)}>
-                            <img src={`${API_BASE_URL}/images/${item.original_image_filename}`} alt="Original" className="gallery-item-thumb original"/>
+                    <div key={item.id} className="gallery-item" onClick={() => onItemSelect(item)}>
+                        <div className="gallery-item-images">
+                            <img src={`${API_BASE_URL}/thumbnails/${item.original_image_filename.replace(/\.[^/.]+$/, ".jpeg")}`} alt="Original" className="gallery-item-thumb original"/>
                             <img src={item.generated_image_url} alt="Generated" className="gallery-item-thumb generated"/>
                         </div>
                         <div className="gallery-item-info">
@@ -382,8 +381,8 @@ const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onMo
                             <div className="gallery-item-creator">
                                 by {item.creator_name || 'Anonymous'}
                             </div>
-                            <button className="like-button" onClick={() => onVote(item.id)}>
-                                👍 LIKE ({item.votes})
+                            <button className="like-button" onClick={(e) => handleVoteClick(e, item.id)}>
+                                👍 {item.votes}
                             </button>
                         </div>
                     </div>
@@ -393,23 +392,28 @@ const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onMo
             {modalItem && (
                  <div className="modal-overlay" onClick={onModalClose}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <div className="view-mode-toggle">
+                                <button className={modalComparisonMode === 'side-by-side' ? 'active' : ''} onClick={() => setModalComparisonMode('side-by-side')}>Side-by-Side</button>
+                                <button className={modalComparisonMode === 'slider' ? 'active' : ''} onClick={() => setModalComparisonMode('slider')}>Slider</button>
+                            </div>
+                             <button className="close-modal-button" onClick={onModalClose}>×</button>
+                        </div>
                         <ComparisonView
                             generationDetails={modalItem}
                             isVisible={true}
                             isModal={true}
-                            mode={comparisonMode}
-                            onModeChange={setComparisonMode}
+                            mode={modalComparisonMode}
                         />
-                         <button className="close-modal-button" onClick={onModalClose}>×</button>
                     </div>
-                 </div>
+                </div>
             )}
         </div>
     );
 };
 
 
-const GamificationWidget = ({ isHeaderVisible }) => {
+const GamificationWidget = () => {
     const [stats, setStats] = useState({ happiness_score: 0, target_score: 1000, deadline_iso: '' });
     const [timeLeft, setTimeLeft] = useState('');
 
@@ -426,7 +430,7 @@ const GamificationWidget = ({ isHeaderVisible }) => {
 
     useEffect(() => {
         fetchStats();
-        const interval = setInterval(fetchStats, 15000);
+        const interval = setInterval(fetchStats, 10000); // Poll for new scores
         return () => clearInterval(interval);
     }, [fetchStats]);
 
@@ -450,23 +454,29 @@ const GamificationWidget = ({ isHeaderVisible }) => {
     }, [stats.deadline_iso]);
 
     return (
-        <div className={`gamification-widget ${isHeaderVisible ? 'header-visible' : ''}`}>
-             <div className="info-tooltip">
-                <span>ℹ️</span>
+        <div className="gamification-widget">
+            <div className="info-tooltip">
+                <span>i</span>
                 <div className="info-tooltip-text">
-                    Help make Almere a happier city! Every vote on a generated image in the Community Gallery adds one "Happy Point" to the total score. You can vote once per minute. Let's reach 1000 points before the deadline!
+                    <b>Help Almere get happier!</b>
+                    <br />
+                    Every "👍" vote in the Community Gallery adds 1 Happy Point to the city's score.
+                    Let's reach the goal of <b>1000 points</b> before the deadline on <b>July 13th</b>! You can vote once per minute.
                 </div>
             </div>
-            <div className="happiness-score">
-                <div className="score-title">ALMERE HAPPINESS SCORE</div>
+            <div className="widget-main">
+                <div className="score-display">
+                    <span className="score-value">{stats.happiness_score}</span>
+                    <span className="score-target"> / {stats.target_score}</span>
+                    <span className="score-label">Happy Points</span>
+                </div>
                 <div className="score-bar-container">
                     <div className="score-bar" style={{ width: `${Math.min(100, (stats.happiness_score / stats.target_score) * 100)}%` }}></div>
                 </div>
-                <div className="score-text">{stats.happiness_score} / {stats.target_score} Happy Points</div>
             </div>
-            <div className="countdown-timer">
-                <div className="countdown-title">TIME UNTIL DEADLINE</div>
-                <div className="countdown-text">{timeLeft}</div>
+            <div className="widget-deadline">
+                <div className="countdown-text">{timeLeft || '...'}</div>
+                <div className="countdown-label">Until Deadline</div>
             </div>
         </div>
     );
@@ -482,6 +492,7 @@ function App() {
   const pollingRef = useRef(null);
 
   useEffect(() => subscribe(() => setAppState({ ...state })), []);
+
   useEffect(() => {
     const fetchInitialData = async () => {
         try {
@@ -489,8 +500,8 @@ function App() {
                 fetch(`${API_BASE_URL}/gallery`),
                 fetch(`${API_BASE_URL}/tags`),
             ]);
-            if (!galleryRes.ok) throw new Error(`Network error (${galleryRes.status})`);
-            if (!tagsRes.ok) throw new Error(`Network error (${tagsRes.status})`);
+            if (!galleryRes.ok) throw new Error(`Gallery fetch failed: ${galleryRes.statusText}`);
+            if (!tagsRes.ok) throw new Error(`Tags fetch failed: ${tagsRes.statusText}`);
             
             const images = await galleryRes.json();
             const validImages = images.filter(img => img.thumbnail);
@@ -507,7 +518,7 @@ function App() {
         if (pollingRef.current) clearInterval(pollingRef.current);
     };
   }, []);
-  
+
   const pollJobStatus = useCallback((jobId) => {
     if (pollingRef.current) clearInterval(pollingRef.current);
     pollingRef.current = setInterval(async () => {
@@ -519,7 +530,6 @@ function App() {
         if (data.status === 'completed') {
           clearInterval(pollingRef.current);
           addLogMessage('--- Transformation Complete ---', 'success');
-          setState('outputImage', data.result);
           setState('generationDetails', data.generation_data);
           setState('isProcessing', false);
           setState('view', 'comparison');
@@ -552,8 +562,6 @@ function App() {
         if (!promptResponse.ok) throw new Error(`AI Vision Conection failed: ${promptResponse.statusText}`);
         const promptData = await promptResponse.json();
         addLogMessage('Vision prompt generated.', 'success');
-        addLogMessage(`Prompt: "${promptData.prompt}"`, 'data');
-        setState('finalPrompt', promptData.prompt);
 
         addLogMessage('Step 2/3: Submitting to FLUX renderer...');
         const transformResponse = await fetch(`${API_BASE_URL}/transform-image`, { 
@@ -569,10 +577,11 @@ function App() {
         if (!transformResponse.ok) throw new Error(`FLUX renderer submission failed: ${transformResponse.statusText}`);
         const { job_id } = await transformResponse.json();
         setState('jobId', job_id);
-        addLogMessage(`Job submitted with ID: ${job_id}. Awaiting result...`, 'system');
+        addLogMessage(`Job submitted with ID: ${job_id}.`, 'system');
         
         addLogMessage('Step 3/3: Awaiting result...');
         pollJobStatus(job_id);
+
     } catch (err) {
         addLogMessage(`PROCESS FAILED: ${err.message}`, 'error');
         setState('isProcessing', false);
@@ -580,14 +589,12 @@ function App() {
   }, [pollJobStatus, selectedTags]);
 
   const resetState = () => {
-    setState('selectedImage', null);
     setState('sourceImageForTransform', null);
-    setState('outputImage', null);
     setState('isProcessing', false);
     setState('logMessages', []);
-    setState('finalPrompt', '');
     setState('jobId', null);
     setState('generationDetails', null);
+    setState('isCommunityItem', false);
     setSelectedTags([]);
     if (pollingRef.current) clearInterval(pollingRef.current);
   };
@@ -603,7 +610,7 @@ function App() {
     setState('view', 'transform');
     addLogMessage(`Source selected: ${sourceImage.name}`);
   };
-  
+
   const handleSelectGalleryImage = (texture) => {
     const thumbnailSrc = texture.image.src;
     const thumbnailFilename = thumbnailSrc.split('/').pop();
@@ -622,29 +629,36 @@ function App() {
   };
 
   const handleSetName = useCallback(async (name) => {
-    if (!appState.jobId) return;
+    const jobId = appState.jobId || appState.generationDetails?.id;
+    if (!jobId) return;
     try {
-        await fetch(`${API_BASE_URL}/generations/${appState.jobId}/set-name`, {
+        await fetch(`${API_BASE_URL}/generations/${jobId}/set-name`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })
         });
-        setState('generationDetails', { ...appState.generationDetails, creator_name: name });
+        if (appState.generationDetails) {
+            setState('generationDetails', { ...appState.generationDetails, creator_name: name });
+        }
     } catch (error) {
-        console.error("Failed to set name:", error);
+       console.error("Failed to set name:", error);
     }
   }, [appState.jobId, appState.generationDetails]);
 
   const handleHide = useCallback(async () => {
-    if (!appState.jobId) return;
-    try {
-        await fetch(`${API_BASE_URL}/generations/${appState.jobId}/hide`, { method: 'POST' });
-        alert("This image has been removed from the public gallery.");
-        handleBackToStart();
-    } catch (error) {
-        console.error("Failed to hide generation:", error);
+    const jobId = appState.jobId || appState.generationDetails?.id;
+    if (!jobId) return;
+    if (confirm("Are you sure you want to permanently remove this image from the gallery? This cannot be undone.")) {
+        try {
+            await fetch(`${API_BASE_URL}/generations/${jobId}/hide`, { method: 'POST' });
+            alert("This image has been removed from the public gallery.");
+            handleBackToStart();
+        } catch (error) {
+            console.error("Failed to hide generation:", error);
+            alert("Failed to hide generation. See console for details.");
+        }
     }
-  }, [appState.jobId]);
+  }, [appState.jobId, appState.generationDetails, handleBackToStart]);
 
   const handleVote = useCallback(async (generationId) => {
     try {
@@ -654,29 +668,27 @@ function App() {
             throw new Error(errorData.detail || "Vote failed");
         }
     } catch (error) {
-        alert(error.message);
+        // This rejection will be caught by the caller to show an alert
+        throw error;
     }
   }, []);
 
-  const isHeaderVisible = appState.view !== 'gallery' && !modalItem;
+  const showGalleryBackground = (appState.view === 'transform' || appState.view === 'comparison') && !appState.isCommunityItem;
 
   return (
     <div className="app-container">
-      <header className={`app-header ${isHeaderVisible ? 'visible' : ''}`}>
+      <header className="app-header">
           <div className="header-left">
-             {(appState.view === 'transform' || appState.view === 'comparison' || appState.view === 'community_gallery') && (
+             {(appState.view !== 'gallery') && (
                 <button onClick={handleBackToStart} className="back-button">← BACK TO START</button>
              )}
           </div>
           <div className="header-center">
-            {/* The widget is no longer in the header */}
+            <GamificationWidget />
           </div>
           <div className="header-right">
-            {appState.view === 'comparison' && (
-                <div className="view-mode-toggle">
-                    <button className={appState.comparisonMode === 'slider' ? 'active' : ''} onClick={() => setState('comparisonMode', 'slider')}>Slider</button>
-                    <button className={appState.comparisonMode === 'side-by-side' ? 'active' : ''} onClick={() => setState('comparisonMode', 'side-by-side')}>Side-by-Side</button>
-                </div>
+            {(appState.view === 'gallery') && (
+                <button className="community-gallery-button" onClick={() => setState('view', 'community_gallery')}>COMMUNITY GALLERY</button>
             )}
           </div>
       </header>
@@ -684,10 +696,10 @@ function App() {
       <main>
         <GalleryView 
             images={galleryImages} 
-            isVisible={appState.view === 'gallery'} 
+            isVisible={appState.view === 'gallery' || showGalleryBackground} 
+            isInBackground={showGalleryBackground}
             onImageClick={handleSelectGalleryImage}
             onNewImage={handleStartTransform}
-            onCommunityClick={() => setState('view', 'community_gallery')}
         />
         <TransformView 
             sourceImage={appState.sourceImageForTransform} 
@@ -703,8 +715,9 @@ function App() {
         <ComparisonView
             generationDetails={appState.generationDetails}
             sourceImage={appState.sourceImageForTransform}
-            isVisible={appState.view === 'comparison'} 
+            isVisible={appState.view === 'comparison'}
             mode={appState.comparisonMode}
+            onModeChange={(mode) => setState('comparisonMode', mode)}
             onSetName={handleSetName}
             onHide={handleHide}
         />
@@ -712,18 +725,23 @@ function App() {
             isVisible={appState.view === 'community_gallery'}
             onVote={handleVote}
             modalItem={modalItem}
-            onItemSelect={setModalItem}
-            onModalClose={() => setModalItem(null)}
+            onItemSelect={(item) => {
+                setState('isCommunityItem', true);
+                setModalItem(item);
+            }}
+            onModalClose={() => {
+                setState('isCommunityItem', false);
+                setModalItem(null);
+            }}
         />
       </main>
       
-      <GamificationWidget isHeaderVisible={isHeaderVisible} />
       <LogPanel messages={appState.logMessages} isVisible={appState.isProcessing} />
     </div>
   );
 }
 
-const GalleryView = ({ images, isVisible, onImageClick, onNewImage, onCommunityClick }) => {
+const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewImage }) => {
     const [showInstructions, setShowInstructions] = useState(true);
     const [isTouchDevice, setIsTouchDevice] = useState(false);
     const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
@@ -752,6 +770,7 @@ const GalleryView = ({ images, isVisible, onImageClick, onNewImage, onCommunityC
             panState.current.lastOffset = panOffset;
         }
     };
+
     const handlePointerMove = (e, viewport, size) => {
         if (panState.current.isPanning) {
             const x = e.nativeEvent.touches?.[0]?.clientX ?? e.clientX;
@@ -762,41 +781,43 @@ const GalleryView = ({ images, isVisible, onImageClick, onNewImage, onCommunityC
             setPanOffset({ x: panState.current.lastOffset.x + dx, y: panState.current.lastOffset.y - dy });
         }
     };
+
     const handlePointerUp = () => { if (panState.current.isPanning) { panState.current.isPanning = false; } };
     const handleClick = (texture) => { if (!panState.current.isPanning) { onImageClick(texture); } };
 
     const handleFileSelect = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
+            if (file.size > 15 * 1024 * 1024) { // 15MB limit
+                alert("File is too large. Please select an image smaller than 15MB.");
+                return;
+            }
             const url = await fileToDataUrl(file);
             onNewImage({ url, name: file.name });
         }
         e.target.value = null; // Reset file input
     };
 
-    const handleTakePhoto = async () => {
-        alert("Camera access is not yet implemented in this version.");
-    };
-    
     return (
-        <div className={`fullscreen-canvas-container ${isVisible ? 'visible' : ''} ${!isVisible ? 'in-background' : ''}`}>
-            <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
-                {isTouchDevice ? 'DRAG TO EXPLORE. TAP TO BEGIN.' : 'FOCUS TO EXPLORE. CLICK TO BEGIN.'}
-            </div>
+        <div className={`fullscreen-canvas-container ${isVisible ? 'visible' : ''} ${isInBackground ? 'in-background' : ''}`}>
+            {!isInBackground && (
+                <>
+                    <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
+                        {isTouchDevice ? 'DRAG TO EXPLORE. TAP AN IMAGE TO BEGIN.' : 'FOCUS TO EXPLORE. CLICK AN IMAGE TO BEGIN.'}
+                    </div>
+                    <div className="main-actions-container">
+                        <button className="upload-button" onClick={() => fileInputRef.current?.click()}>... OR UPLOAD YOUR OWN IMAGE</button>
+                    </div>
+                    <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}/>
+                </>
+            )}
             <Canvas orthographic camera={{ position: [0, 0, 10], zoom: 100 }}>
                 <ambientLight intensity={3} />
                 {images.length > 0 && <DynamicGallery images={images} onImageClick={handleClick} isTouch={isTouchDevice} panOffset={panOffset} />}
                 <GalleryEvents handlePointerDown={handlePointerDown} handlePointerMove={handlePointerMove} handlePointerUp={handlePointerUp} />
             </Canvas>
-             <div className="main-actions-container">
-                <button className="main-action-button" onClick={handleTakePhoto}>TAKE PHOTO</button>
-                <button className="main-action-button" onClick={() => fileInputRef.current?.click()}>SELECT PHOTO</button>
-                <button className="main-action-button secondary" onClick={onCommunityClick}>COMMUNITY GALLERY</button>
-            </div>
-            <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*" style={{ display: 'none' }}/>
         </div>
     );
 };
 
 export default App;
-
