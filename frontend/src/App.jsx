@@ -302,36 +302,42 @@ const ComparisonView = ({ generationDetails, isVisible, mode, onModeChange, onSe
                 <div className="info-creator">
                     <b>Created by:</b> {generationDetails.creator_name || 'Anonymous'}
                 </div>
-                {!isModal && (
-                    <div className="user-actions">
-                        <div className="name-input-container">
-                            <input
-                                type="text"
-                                placeholder="Enter your name (optional)"
-                                value={creatorName}
-                                onChange={(e) => setCreatorName(e.target.value)}
-                                disabled={nameSaved}
-                            />
-                            <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()}>
-                                {nameSaved ? 'SAVED' : 'SAVE NAME'}
-                            </button>
+            </div>
+
+            <div className="comparison-footer">
+                <div className="user-actions">
+                    {!isModal && (
+                        <>
+                            <div className="name-input-container">
+                                <input
+                                    type="text"
+                                    placeholder="Enter your name (optional)"
+                                    value={creatorName}
+                                    onChange={(e) => setCreatorName(e.target.value)}
+                                    disabled={nameSaved}
+                                />
+                                <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()}>
+                                    {nameSaved ? 'SAVED' : 'SAVE NAME'}
+                                </button>
+                            </div>
+                            <button className="hide-button" onClick={onHide}>REMOVE</button>
+                        </>
+                    )}
+                </div>
+                
+                {generationDetails.prompt_text && (
+                    <div className={`prompt-container ${isPromptExpanded ? 'expanded' : ''}`}>
+                        <div className="prompt-button" onClick={() => setIsPromptExpanded(!isPromptExpanded)}>
+                            {isPromptExpanded ? 'HIDE' : 'SHOW'} PROMPT
                         </div>
-                        <button className="hide-button" onClick={onHide}>REMOVE FROM GALLERY</button>
+                        <div className="prompt-panel-expandable">
+                            <div className="prompt-header">GENERATED PROMPT</div>
+                            <div className="prompt-content">{generationDetails.prompt_text}</div>
+                        </div>
+                        {isPromptExpanded && <div className="prompt-overlay" onClick={() => setIsPromptExpanded(false)}></div>}
                     </div>
                 )}
             </div>
-             {generationDetails.prompt_text && (
-                 <div className={`prompt-container ${isPromptExpanded ? 'expanded' : ''}`}>
-                    <div className="prompt-button" onClick={() => setIsPromptExpanded(!isPromptExpanded)}>
-                        {isPromptExpanded ? 'HIDE' : 'SHOW'} PROMPT
-                    </div>
-                    <div className="prompt-panel-expandable">
-                        <div className="prompt-header">GENERATED PROMPT</div>
-                        <div className="prompt-content">{generationDetails.prompt_text}</div>
-                    </div>
-                    {isPromptExpanded && <div className="prompt-overlay" onClick={() => setIsPromptExpanded(false)}></div>}
-                </div>
-             )}
         </div>
     );
 };
@@ -405,7 +411,7 @@ const CommunityGalleryView = ({ isVisible, onBack, onVote }) => {
 };
 
 
-const GamificationWidget = () => {
+const GamificationWidget = ({ currentView }) => {
     const [stats, setStats] = useState({ happiness_score: 0, target_score: 1000, deadline_iso: '' });
     const [timeLeft, setTimeLeft] = useState('');
 
@@ -445,8 +451,11 @@ const GamificationWidget = () => {
         return () => clearInterval(interval);
     }, [stats.deadline_iso]);
 
+    // MODIFIED: Add a dynamic class based on whether the header is visible.
+    const isHeaderVisible = currentView !== 'gallery';
+
     return (
-        <div className="gamification-widget">
+        <div className={`gamification-widget ${isHeaderVisible ? 'header-visible' : ''}`}>
             <div className="happiness-score">
                 <div className="score-title">ALMERE HAPPINESS SCORE</div>
                 <div className="score-bar-container">
@@ -605,16 +614,11 @@ function App() {
   };
   
   const handleSelectGalleryImage = (texture) => {
-    // MODIFIED: This logic is now fixed to prevent the 404 error.
     const thumbnailSrc = texture.image.src;
-    // Extract the thumbnail filename (e.g., 'IMG_1234.jpeg') from the full URL
     const thumbnailFilename = thumbnailSrc.split('/').pop();
-
-    // Find the corresponding full image data from the initial gallery list
     const fullImage = galleryImages.find(img => img.thumbnail === thumbnailFilename);
     
     if (fullImage) {
-        // Construct the correct source object using the original filename
         const source = {
             url: `${API_BASE_URL}/images/${fullImage.filename}`,
             name: fullImage.filename
@@ -707,7 +711,8 @@ function App() {
         />
       </main>
 
-      <GamificationWidget />
+      {/* MODIFIED: Pass the current view to the widget so it knows when to move. */}
+      <GamificationWidget currentView={appState.view} />
       <LogPanel messages={appState.logMessages} isVisible={appState.isProcessing} />
     </div>
   );
