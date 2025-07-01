@@ -1,31 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { fileToDataUrl } from '../utils';
 import DynamicGallery from '../components/gallery/DynamicGallery';
 import './GalleryView.css';
 
-// This new component handles the frame-by-frame updates for panning,
-// which prevents conflicts with React's render cycle.
-const GalleryPanController = ({ galleryRef, panOffset }) => {
-    useFrame(() => {
-        if (galleryRef.current) {
-            // Smoothly interpolate the gallery group's position towards the target pan offset
-            galleryRef.current.position.x = panOffset.current.x;
-            galleryRef.current.position.y = panOffset.current.y;
-        }
-    });
-    return null; // This component does not render anything visible
-};
-
 const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewImage, onShowTutorial }) => {
     const [showInstructions, setShowInstructions] = useState(true);
     const fileInputRef = useRef(null);
-    const galleryGroupRef = useRef(); // A ref for the pannable group
 
-    // Refs to manage interaction state without causing re-renders
+    // MODIFIED: State is simplified. We only need to track if a drag happened
+    // to distinguish it from a tap. No panning logic is needed.
     const panState = useRef({ isPanning: false, startCoords: { x: 0, y: 0 }, hasDragged: false });
-    const panOffset = useRef({ x: 0, y: 0 });
-    const lastPanOffset = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
         const handleInteraction = () => setShowInstructions(false);
@@ -45,7 +30,6 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         const x = e.clientX ?? e.touches?.[0]?.clientX;
         const y = e.clientY ?? e.touches?.[0]?.clientY;
         panState.current.startCoords = { x, y };
-        lastPanOffset.current = { ...panOffset.current };
     };
 
     const handlePointerMove = (e) => {
@@ -57,20 +41,10 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         const dx = x - panState.current.startCoords.x;
         const dy = y - panState.current.startCoords.y;
 
+        // If the finger moves more than a few pixels, we consider it a drag
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
             panState.current.hasDragged = true;
         }
-        
-        // Convert screen pixel delta to world unit delta
-        const { width, height } = e.target.getBoundingClientRect();
-        const viewport = { width: galleryGroupRef.current.parent.viewport.width, height: galleryGroupRef.current.parent.viewport.height };
-        const dx_world = dx * (viewport.width / width);
-        const dy_world = dy * (viewport.height / height);
-
-        panOffset.current = {
-            x: lastPanOffset.current.x + dx_world,
-            y: lastPanOffset.current.y - dy_world,
-        };
     };
 
     const handlePointerUp = () => {
@@ -78,6 +52,7 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
     };
 
     const handleImageClick = (texture) => {
+        // Only trigger a click if the user hasn't dragged their finger
         if (!panState.current.hasDragged) {
             onImageClick(texture);
         }
@@ -118,13 +93,10 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
                 onPointerLeave={handlePointerUp}
             >
                 <ambientLight intensity={3} />
-                <GalleryPanController galleryRef={galleryGroupRef} panOffset={panOffset} />
                 {images.length > 0 && 
                     <DynamicGallery 
-                        ref={galleryGroupRef} 
                         images={images} 
                         onImageClick={handleImageClick}
-                        panOffset={panOffset}
                     />
                 }
             </Canvas>
@@ -133,4 +105,3 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
 };
 
 export default GalleryView;
-
