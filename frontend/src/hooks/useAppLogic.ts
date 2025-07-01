@@ -100,7 +100,8 @@ export const useAppLogic = () => {
             });
             if (!promptResponse.ok) throw new Error(`AI Vision Connection failed: ${promptResponse.statusText}`);
             const promptData = await promptResponse.json();
-            addLogMessage('Vision prompt generated.', 'success');
+            addLogMessage('Vision prompt generated.');
+            addLogMessage(`Prompt: ${promptData.prompt}`);
     
             addLogMessage('Step 2/3: Submitting to FLUX renderer...');
             const transformResponse = await fetch(`${API_BASE_URL}/transform-image`, { 
@@ -116,7 +117,7 @@ export const useAppLogic = () => {
             if (!transformResponse.ok) throw new Error(`FLUX renderer submission failed: ${transformResponse.statusText}`);
             const { job_id } = await transformResponse.json();
             setState('jobId', job_id);
-            addLogMessage(`Job submitted with ID: ${job_id}.`, 'system');
+            addLogMessage(`Job submitted with ID: ${job_id}.`);
             
             addLogMessage('Step 3/3: Awaiting result...');
             pollJobStatus(job_id);
