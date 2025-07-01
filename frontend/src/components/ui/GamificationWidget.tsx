@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '../../config';
+import type { GamificationStats } from '../../types';
 import './GamificationWidget.css';
 
-const GamificationWidget = () => {
-    const [stats, setStats] = useState({ happiness_score: 0, target_score: 1000, deadline_iso: '' });
+const GamificationWidget: React.FC = () => {
+    const [stats, setStats] = useState<GamificationStats>({ happiness_score: 0, target_score: 1000, deadline_iso: '' });
     const [timeLeft, setTimeLeft] = useState('');
 
     const fetchStats = useCallback(async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/gamification-stats`);
             if (!response.ok) throw new Error('Failed to fetch stats');
-            const data = await response.json();
+            const data: GamificationStats = await response.json();
             setStats(data);
         } catch (error) {
             console.error("Error fetching gamification stats:", error);
@@ -28,7 +29,7 @@ const GamificationWidget = () => {
         const interval = setInterval(() => {
             const now = new Date();
             const deadline = new Date(stats.deadline_iso);
-            const diff = deadline - now;
+            const diff = deadline.getTime() - now.getTime();
             if (diff <= 0) {
                 setTimeLeft('DEADLINE REACHED');
                 return;

@@ -1,20 +1,27 @@
 import React, { useMemo } from 'react';
 import { useLoader, useThree } from '@react-three/fiber';
-import { TextureLoader, Vector2 } from 'three';
+import { TextureLoader, Vector2, Texture } from 'three';
 import { API_BASE_URL, GALLERY_CONFIG } from '../../config';
 import ImageNode from './ImageNode';
-const DynamicGallery = ({ images, onImageClick, isInBackground }) => {
+import type { GalleryImage } from '../../types';
+
+interface DynamicGalleryProps {
+    images: GalleryImage[];
+    onImageClick: (texture: Texture) => void;
+    isInBackground: boolean;
+}
+
+const DynamicGallery: React.FC<DynamicGalleryProps> = ({ images, onImageClick, isInBackground }) => {
     const textures = useLoader(TextureLoader, images.map(img => `${API_BASE_URL}/thumbnails/${img.thumbnail}`));
     const { viewport } = useThree();
 
-    // MODIFIED: Restored your original, superior, responsive grid calculation logic.
     const grid = useMemo(() => {
         if (!textures.length || viewport.width === 0) return [];
         
         const imageCount = images.length;
         const { width, height } = viewport;
         const items = [];
-        const tempPoints = [];
+        const tempPoints: Vector2[] = [];
         const hexSize = Math.sqrt((width * height) / (imageCount * 1.5 * Math.sqrt(3))) / GALLERY_CONFIG.GRID_DENSITY;
         const hexWidth = Math.sqrt(3) * hexSize;
         const hexHeight = 2 * hexSize;
@@ -35,7 +42,7 @@ const DynamicGallery = ({ images, onImageClick, isInBackground }) => {
             items.push({
                 index: i,
                 texture: textures[i],
-                homePosition: [point.x - center.x, point.y - center.y, 0],
+                homePosition: [point.x - center.x, point.y - center.y, 0] as [number, number, number],
                 baseSize: (hexWidth / Math.sqrt(3)) * 1.1,
             });
         }

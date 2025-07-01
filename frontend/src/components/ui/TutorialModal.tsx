@@ -1,21 +1,24 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { API_BASE_URL } from '../../config';
+import type { GenerationDetails } from '../../types';
 import './TutorialModal.css';
 
 // Fallback images in case the dynamic fetch fails or the gallery is empty
 const FALLBACK_ORIGINAL_URL = '/api/images/IMG_20250628_213414260.jpg';
 const FALLBACK_GENERATED_URL = '/api/images/generated/a3d9f5d9-0a18-4a18-bfe2-16901146d9bb.png';
 
-const TutorialModal = ({ isVisible, onClose }) => {
-    const sliderContainerRef = useRef(null);
+interface TutorialModalProps {
+    isVisible: boolean;
+    onClose: () => void;
+}
+
+const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => {
+    const sliderContainerRef = useRef<HTMLDivElement>(null);
     const [clipPosition, setClipPosition] = useState(50);
     
-    // MODIFIED: State to hold image URLs, initialized with fallbacks.
-    const [originalImageUrl, setOriginalImageUrl] = useState(FALLBACK_ORIGINAL_URL);
-    const [generatedImageUrl, setGeneratedImageUrl] = useState(FALLBACK_GENERATED_URL);
+    const [originalImageUrl, setOriginalImageUrl] = useState<string>(FALLBACK_ORIGINAL_URL);
+    const [generatedImageUrl, setGeneratedImageUrl] = useState<string>(FALLBACK_GENERATED_URL);
 
-    // MODIFIED: This effect dynamically fetches an image pair from the public gallery
-    // when the modal becomes visible.
     useEffect(() => {
         if (isVisible) {
             const fetchImagePair = async () => {
@@ -24,17 +27,15 @@ const TutorialModal = ({ isVisible, onClose }) => {
                     if (!response.ok) {
                         throw new Error(`Failed to fetch public gallery with status: ${response.status}`);
                     }
-                    const galleryItems = await response.json();
+                    const galleryItems: GenerationDetails[] = await response.json();
                     
-                    // Use the first item from the public gallery as the example
-                    if (galleryItems && galleryItems.length > 0) {
+                    if (galleryItems && galleryItems.length > 0 && galleryItems[0].generated_image_url) {
                         const firstItem = galleryItems[0];
                         setOriginalImageUrl(`${API_BASE_URL}/images/${firstItem.original_image_filename}`);
                         setGeneratedImageUrl(`${API_BASE_URL}/images/${firstItem.generated_image_url}`);
                     }
                 } catch (error) {
                     console.error("Could not fetch dynamic tutorial image, using fallback.", error);
-                    // On error, the state will just remain with the initial fallback URLs
                     setOriginalImageUrl(FALLBACK_ORIGINAL_URL);
                     setGeneratedImageUrl(FALLBACK_GENERATED_URL);
                 }
@@ -44,12 +45,12 @@ const TutorialModal = ({ isVisible, onClose }) => {
         }
     }, [isVisible]);
 
-    const handleSliderMove = (e) => {
+    const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
         if (!sliderContainerRef.current) return;
         const rect = sliderContainerRef.current.getBoundingClientRect();
-        const x = e.clientX ?? e.touches?.[0]?.clientX;
-        if (x === undefined) return;
-        setClipPosition(Math.max(0, Math.min(100, ((x - rect.left) / rect.width) * 100)));
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        if (clientX === undefined) return;
+        setClipPosition(Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)));
     };
 
     if (!isVisible) return null;
@@ -64,8 +65,6 @@ const TutorialModal = ({ isVisible, onClose }) => {
                     onMouseMove={handleSliderMove} 
                     onTouchMove={handleSliderMove}
                 >
-                    {/* MODIFIED: Images are now sourced from component state */
-                    }
                     <div className="image-panel" style={{ backgroundImage: `url("${originalImageUrl}")` }}></div>
                     <div 
                         className="image-panel after-image" 
@@ -97,3 +96,4 @@ const TutorialModal = ({ isVisible, onClose }) => {
 };
 
 export default TutorialModal;
+

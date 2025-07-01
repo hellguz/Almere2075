@@ -2,16 +2,24 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { fileToDataUrl } from '../utils';
 import DynamicGallery from '../components/gallery/DynamicGallery';
+import type { GalleryImage, SourceImage } from '../types';
+import type { Texture } from 'three';
 import './GalleryView.css';
 
-const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewImage, onShowTutorial }) => {
-    // MODIFIED: Create a ref for the main container
-    const viewRef = useRef(null);
-    const [showInstructions, setShowInstructions] = useState(true);
-    const fileInputRef = useRef(null);
+interface GalleryViewProps {
+    images: GalleryImage[];
+    isVisible: boolean;
+    isInBackground: boolean;
+    onImageClick: (texture: Texture) => void;
+    onNewImage: (source: SourceImage) => void;
+    onShowTutorial: () => void;
+}
 
-    // MODIFIED: This effect dynamically sets the view height to handle the mobile browser's
-    // address bar, ensuring the buttons at the bottom are always visible.
+const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackground, onImageClick, onNewImage, onShowTutorial }) => {
+    const viewRef = useRef<HTMLDivElement>(null);
+    const [showInstructions, setShowInstructions] = useState(true);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
     useEffect(() => {
         const setViewHeight = () => {
             if (viewRef.current) {
@@ -43,20 +51,16 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         };
     }, []);
 
-    const handlePointerDown = (e) => {
+    const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
         panState.current.isPanning = true;
         panState.current.hasDragged = false;
-        const x = e.clientX ?? e.touches?.[0]?.clientX;
-        const y = e.clientY ?? e.touches?.[0]?.clientY;
-        panState.current.startCoords = { x, y };
+        panState.current.startCoords = { x: e.clientX, y: e.clientY };
     };
-    const handlePointerMove = (e) => {
+    const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (!panState.current.isPanning) return;
-        const x = e.clientX ?? e.touches?.[0]?.clientX;
-        const y = e.clientY ?? e.touches?.[0]?.clientY;
         
-        const dx = x - panState.current.startCoords.x;
-        const dy = y - panState.current.startCoords.y;
+        const dx = e.clientX - panState.current.startCoords.x;
+        const dy = e.clientY - panState.current.startCoords.y;
 
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
             panState.current.hasDragged = true;
@@ -67,13 +71,13 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         panState.current.isPanning = false;
     };
 
-    const handleImageClick = (texture) => {
+    const handleImageClick = (texture: Texture) => {
         if (!panState.current.hasDragged) {
             onImageClick(texture);
         }
     };
 
-    const handleFileSelect = async (e) => {
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             if (file.size > 15 * 1024 * 1024) {
@@ -83,7 +87,7 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
             const url = await fileToDataUrl(file);
             onNewImage({ url, name: file.name });
         }
-        e.target.value = null;
+        e.target.value = '';
     };
     return (
         <div ref={viewRef} className={`fullscreen-canvas-container ${isVisible ? 'visible' : ''} ${isInBackground ? 'in-background' : ''}`}>
@@ -120,3 +124,4 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
 };
 
 export default GalleryView;
+

@@ -1,8 +1,14 @@
 import React, { useEffect, useRef } from 'react';
+import type { LogMessage } from '../../types';
 import './LogPanel.css';
 
-const LogPanel = ({ messages, isVisible }) => {
-  const logEndRef = useRef(null);
+interface LogPanelProps {
+    messages: LogMessage[];
+    isVisible: boolean;
+}
+
+const LogPanel: React.FC<LogPanelProps> = ({ messages, isVisible }) => {
+  const logEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });

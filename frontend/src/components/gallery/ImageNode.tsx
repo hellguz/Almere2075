@@ -1,11 +1,18 @@
 import React, { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { Vector2, Vector3 } from 'three';
+import { useFrame, RootState } from '@react-three/fiber';
+import { Vector2, Vector3, Texture, Mesh } from 'three';
 import { GALLERY_CONFIG } from '../../config';
 
-// MODIFIED: The component now accepts an `isInBackground` prop to change its animation logic.
-const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isInBackground }) => {
-    const meshRef = useRef();
+interface ImageNodeProps {
+    texture: Texture;
+    homePosition: [number, number, number];
+    baseSize: number;
+    onImageClick: (texture: Texture) => void;
+    isInBackground: boolean;
+}
+
+const ImageNode: React.FC<ImageNodeProps> = ({ texture, homePosition, baseSize, onImageClick, isInBackground }) => {
+    const meshRef = useRef<Mesh>(null);
     const homeVec = useMemo(() => new Vector3(...homePosition), [homePosition]);
 
     const imagePlaneScale = useMemo(() => {
@@ -13,21 +20,18 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isInBackgrou
         return [imageAspect > 1 ? baseSize : baseSize * imageAspect, imageAspect > 1 ? baseSize / imageAspect : baseSize, 1];
     }, [texture, baseSize]);
 
-    useFrame(({ viewport, mouse, clock }) => {
+    useFrame((state: RootState) => {
         if (!meshRef.current) return;
 
-        let mousePos;
+        let mousePos: Vector2;
 
-        // If the gallery is a background element, use a time-based animation
-        // instead of the actual mouse position. This creates a gentle, continuous "breathing" effect.
         if (isInBackground) {
-            const t = clock.getElapsedTime();
-            const x = Math.sin(t * 0.2) * (viewport.width / 5);
-            const y = Math.cos(t * 0.3) * (viewport.height / 5);
+            const t = state.clock.getElapsedTime();
+            const x = Math.sin(t * 0.2) * (state.viewport.width / 5);
+            const y = Math.cos(t * 0.3) * (state.viewport.height / 5);
             mousePos = new Vector2(x, y);
         } else {
-            // Otherwise, use the live mouse position for direct interaction.
-            mousePos = new Vector2(mouse.x * viewport.width / 2, mouse.y * viewport.height / 2);
+            mousePos = new Vector2(state.mouse.x * state.viewport.width / 2, state.mouse.y * state.viewport.height / 2);
         }
 
         const homePos2D = new Vector2(homeVec.x, homeVec.y);
@@ -52,7 +56,7 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isInBackgrou
         meshRef.current.scale.lerp(new Vector3(targetScale, targetScale, 1), GALLERY_CONFIG.DAMPING);
     });
     return (
-        <group ref={meshRef} position={homePosition} onClick={() => onImageClick(texture)}>
+        <group ref={meshRef as React.Ref<THREE.Group>} position={homePosition} onClick={() => onImageClick(texture)}>
              <mesh scale={imagePlaneScale}>
                 <planeGeometry args={[1, 1]} />
                 <meshBasicMaterial map={texture} toneMapped={false} />

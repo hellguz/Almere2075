@@ -1,6 +1,6 @@
 // --- Configuration ---
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-export const POLLING_INTERVAL = 2000; // ms
+export const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL || '/api';
+export const POLLING_INTERVAL: number = 2000; // ms
 
 // --- Gallery Configuration ---
 export const GALLERY_CONFIG = {

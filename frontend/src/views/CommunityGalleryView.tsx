@@ -1,17 +1,28 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '../config';
 import ComparisonView from '../components/ui/ComparisonView';
+import type { GenerationDetails } from '../types';
 import './CommunityGalleryView.css';
 
-const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onModalClose }) => {
-    const [items, setItems] = useState([]);
-    const [modalComparisonMode, setModalComparisonMode] = useState('side-by-side');
+interface CommunityGalleryViewProps {
+    isVisible: boolean;
+    onVote: (id: string) => Promise<void>;
+    onItemSelect: (item: GenerationDetails) => void;
+    modalItem: GenerationDetails | null;
+    onModalClose: () => void;
+}
+
+type ComparisonMode = 'slider' | 'side-by-side';
+
+const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({ isVisible, onVote, onItemSelect, modalItem, onModalClose }) => {
+    const [items, setItems] = useState<GenerationDetails[]>([]);
+    const [modalComparisonMode, setModalComparisonMode] = useState<ComparisonMode>('side-by-side');
 
     const fetchGallery = useCallback(async () => {
         try {
             const response = await fetch(`${API_BASE_URL}/public-gallery`);
             if (!response.ok) throw new Error('Failed to fetch gallery');
-            const data = await response.json();
+            const data: GenerationDetails[] = await response.json();
             setItems(data);
         } catch (error) {
              console.error("Error fetching community gallery:", error);
@@ -24,34 +35,30 @@ const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onMo
         }
     }, [isVisible, modalItem, fetchGallery]);
 
-    const handleVoteClick = (e, itemId) => {
+    const handleVoteClick = (e: React.MouseEvent<HTMLButtonElement>, itemId: string) => {
         e.stopPropagation();
         onVote(itemId).then(() => {
             setItems(currentItems => currentItems.map(item => 
                 item.id === itemId ? { ...item, votes: item.votes + 1 } : item
-            ).sort((a, b) => b.votes - a.votes)); // Re-sort after voting
+            ).sort((a, b) => b.votes - a.votes));
         }).catch(err => {
-            alert(err.message);
+            alert((err as Error).message);
         });
     };
     
-    // MODIFIED: Added a more robust handler for voting from within the modal with optimistic updates.
     const handleModalVote = useCallback(() => {
         if (!modalItem) return;
 
         const originalItem = { ...modalItem };
         const updatedItem = { ...modalItem, votes: modalItem.votes + 1 };
         
-        // Optimistically update the UI for instant feedback
-        onItemSelect(updatedItem); // This updates the modal's state via the hook
+        onItemSelect(updatedItem);
         setItems(currentItems => currentItems.map(item => 
             item.id === modalItem.id ? updatedItem : item
         ).sort((a, b) => b.votes - a.votes));
 
-        // Make the API call
         onVote(modalItem.id).catch(err => {
-            // If the API call fails, revert the UI changes and alert the user
-            alert(`Error recording vote: ${err.message}`);
+            alert(`Error recording vote: ${(err as Error).message}`);
             onItemSelect(originalItem);
             setItems(currentItems => currentItems.map(item =>
                 item.id === modalItem.id ? originalItem : item
@@ -68,7 +75,7 @@ const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onMo
                  {items.map(item => (
                     <div key={item.id} className="gallery-item" onClick={() => onItemSelect(item)}>
                         <div className="gallery-item-images">
-                            <img src={`${API_BASE_URL}/images/${item.generated_image_url}`} alt="Generated" className="gallery-item-thumb generated"/>
+                            {item.generated_image_url && <img src={`${API_BASE_URL}/images/${item.generated_image_url}`} alt="Generated" className="gallery-item-thumb generated"/>}
                              <img src={`${API_BASE_URL}/images/${item.original_image_filename}`} alt="Original" className="gallery-item-thumb original"/>
                         </div>
                         <div className="gallery-item-info">
@@ -105,6 +112,7 @@ const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onMo
                             mode={modalComparisonMode}
                             onModeChange={setModalComparisonMode}
                             onVote={handleModalVote}
+                            sourceImage={null}
                         />
                     </div>
                 </div>

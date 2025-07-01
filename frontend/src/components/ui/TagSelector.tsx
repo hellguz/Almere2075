@@ -1,6 +1,13 @@
 import React from 'react';
+import type { Tag } from '../../types';
 
-const TagSelector = ({ tags, selectedTags, onTagToggle }) => {
+interface TagSelectorProps {
+    tags: Tag[];
+    selectedTags: string[];
+    onTagToggle: (tagId: string) => void;
+}
+
+const TagSelector: React.FC<TagSelectorProps> = ({ tags, selectedTags, onTagToggle }) => {
     if (!tags.length) return null;
 
     return (

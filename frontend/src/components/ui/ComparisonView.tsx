@@ -1,36 +1,54 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from '../../config';
+import type { GenerationDetails, SourceImage } from '../../types';
 import './ComparisonView.css';
-const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onModeChange, isModal = false, onSetName, onHide, onVote }) => {
-    const sliderContainerRef = useRef(null);
+
+type ComparisonMode = 'slider' | 'side-by-side';
+
+interface ComparisonViewProps {
+    generationDetails: GenerationDetails | null;
+    sourceImage: SourceImage | null;
+    isVisible: boolean;
+    mode: ComparisonMode;
+    onModeChange: (mode: ComparisonMode) => void;
+    isModal?: boolean;
+    onSetName?: (name: string) => void;
+    onHide?: () => void;
+    onVote?: () => void;
+}
+
+const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sourceImage, isVisible, mode, onModeChange, isModal = false, onSetName, onHide, onVote }) => {
+    const sliderContainerRef = useRef<HTMLDivElement>(null);
     const [clipPosition, setClipPosition] = useState(50);
     const [creatorName, setCreatorName] = useState('');
     const [nameSaved, setNameSaved] = useState(false);
+
     useEffect(() => {
         if (generationDetails) {
             setCreatorName(generationDetails.creator_name || '');
             setNameSaved(!!generationDetails.creator_name);
         }
     }, [generationDetails]);
-    const handleSliderMove = (e) => {
+
+    const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
         if (!sliderContainerRef.current) return;
         const rect = sliderContainerRef.current.getBoundingClientRect();
-        const x = e.clientX ?? e.touches?.[0]?.clientX;
-        if (x === undefined) return;
-        setClipPosition(Math.max(0, Math.min(100, ((x - rect.left) / rect.width) * 100)));
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        if (clientX === undefined) return;
+        setClipPosition(Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)));
     };
 
     const handleNameSubmit = () => {
-        if (creatorName.trim()) {
+        if (creatorName.trim() && onSetName) {
             onSetName(creatorName);
             setNameSaved(true);
         }
     };
 
     if (!generationDetails) return null;
-    // FIXED: Construct full URLs for both original and generated images
+    
     const originalImageUrl = sourceImage?.url || `${API_BASE_URL}/images/${generationDetails.original_image_filename}`;
-    const outputImageUrl = `${API_BASE_URL}/images/${generationDetails.generated_image_url}`;
+    const outputImageUrl = generationDetails.generated_image_url ? `${API_BASE_URL}/images/${generationDetails.generated_image_url}` : '';
     
     return (
         <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
@@ -71,7 +89,7 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onMod
                         <b>By:</b> {generationDetails.creator_name || 'Anonymous'}
                     </div>
                 </div>
-                {!isModal && (
+                {!isModal && onSetName && (
                     <div className="footer-center">
                         <div className="name-input-container">
                             <input type="text" placeholder="Sign your creation..." value={creatorName} onChange={(e) => setCreatorName(e.target.value)} disabled={nameSaved} />
@@ -82,11 +100,9 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onMod
                     </div>
                  )}
                 <div className="footer-right">
-                    {!isModal && (
+                    {!isModal && onHide && (
                         <button className="hide-button" onClick={onHide} title="Remove from public gallery">REMOVE</button>
                     )}
-                    {/* MODIFIED: Show like button in modal view */
-                    }
                     {isModal && onVote && (
                         <button className="modal-like-button" onClick={onVote}>
                             👍 {generationDetails.votes}

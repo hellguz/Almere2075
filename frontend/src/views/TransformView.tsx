@@ -1,12 +1,21 @@
 import React, { useRef, useEffect } from 'react';
 import TagSelector from '../components/ui/TagSelector';
+import type { SourceImage, Tag } from '../types';
 import './TransformView.css';
 
-const TransformView = ({ sourceImage, isVisible, isProcessing, onTransform, tags, selectedTags, onTagToggle }) => {
-    const viewRef = useRef(null);
+interface TransformViewProps {
+    sourceImage: SourceImage | null;
+    isVisible: boolean;
+    isProcessing: boolean;
+    onTransform: () => void;
+    tags: Tag[];
+    selectedTags: string[];
+    onTagToggle: (tagId: string) => void;
+}
 
-    // MODIFIED: This effect sets the view's height dynamically to match the browser's
-    // visible viewport, solving the issue of the address bar hiding content on mobile.
+const TransformView: React.FC<TransformViewProps> = ({ sourceImage, isVisible, isProcessing, onTransform, tags, selectedTags, onTagToggle }) => {
+    const viewRef = useRef<HTMLDivElement>(null);
+
     useEffect(() => {
         const setViewHeight = () => {
             if (viewRef.current) {
