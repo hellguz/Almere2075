@@ -21,7 +21,7 @@ const GALLERY_CONFIG = {
 // --- Global State ---
 const AppState = {
   view: 'gallery', // gallery, transform, comparison, community_gallery
-  comparisonMode: 'slider',
+  comparisonMode: 'side-by-side',
   selectedImage: null, // The source image from the initial gallery
   sourceImageForTransform: null, // Could be from gallery or a new upload
   outputImage: null,
@@ -236,7 +236,7 @@ const TransformView = ({ sourceImage, isVisible, isProcessing, onTransform, tags
     );
 };
 
-const ComparisonView = ({ generationDetails, isVisible, mode, onModeChange, onSetName, onHide, isModal = false }) => {
+const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onSetName, onHide, isModal = false }) => {
     const sliderContainerRef = useRef(null);
     const [clipPosition, setClipPosition] = useState(50);
     const [isPromptExpanded, setIsPromptExpanded] = useState(false);
@@ -267,18 +267,11 @@ const ComparisonView = ({ generationDetails, isVisible, mode, onModeChange, onSe
 
     if (!generationDetails) return null;
 
-    const originalImageUrl = `${API_BASE_URL}/images/${generationDetails.original_image_filename}`;
+    const originalImageUrl = sourceImage?.url || `${API_BASE_URL}/images/${generationDetails.original_image_filename}`;
     const outputImageUrl = generationDetails.generated_image_url;
 
     return (
         <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
-            <div className="comparison-header">
-                <div className="view-mode-toggle">
-                    <button className={mode === 'slider' ? 'active' : ''} onClick={() => onModeChange('slider')}>Slider</button>
-                    <button className={mode === 'side-by-side' ? 'active' : ''} onClick={() => onModeChange('side-by-side')}>Side-by-Side</button>
-                </div>
-            </div>
-
             <div className="comparison-main-area">
                 {mode === 'side-by-side' && (
                     <div className="comparison-view side-by-side">
@@ -295,60 +288,67 @@ const ComparisonView = ({ generationDetails, isVisible, mode, onModeChange, onSe
                 )}
             </div>
 
-            <div className="generation-info-panel">
-                <div className="info-tags">
-                    <b>Concepts Used:</b> {generationDetails.tags_used?.join(', ') || 'N/A'}
+            {!isModal && (
+                 <div className="info-text">
+                    Your generation is saved to the Community Gallery. You can enter your name, or remove it from the gallery.
                 </div>
-                <div className="info-creator">
-                    <b>Created by:</b> {generationDetails.creator_name || 'Anonymous'}
-                </div>
-            </div>
-
+            )}
+           
             <div className="comparison-footer">
-                <div className="user-actions">
+                <div className="footer-left">
+                     <div className="info-tags">
+                        <b>Concepts:</b> {generationDetails.tags_used?.join(', ') || 'N/A'}
+                    </div>
+                    <div className="info-creator">
+                        <b>By:</b> {generationDetails.creator_name || 'Anonymous'}
+                    </div>
+                </div>
+
+                <div className="footer-center">
                     {!isModal && (
-                        <>
-                            <div className="name-input-container">
-                                <input
-                                    type="text"
-                                    placeholder="Enter your name (optional)"
-                                    value={creatorName}
-                                    onChange={(e) => setCreatorName(e.target.value)}
-                                    disabled={nameSaved}
-                                />
-                                <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()}>
-                                    {nameSaved ? 'SAVED' : 'SAVE NAME'}
-                                </button>
-                            </div>
-                            <button className="hide-button" onClick={onHide}>REMOVE</button>
-                        </>
+                         <div className="name-input-container">
+                            <input
+                                type="text"
+                                placeholder="Enter your name..."
+                                value={creatorName}
+                                onChange={(e) => setCreatorName(e.target.value)}
+                                disabled={nameSaved}
+                            />
+                            <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()}>
+                                {nameSaved ? 'SAVED' : 'SAVE NAME'}
+                            </button>
+                        </div>
                     )}
                 </div>
-                
-                {generationDetails.prompt_text && (
-                    <div className={`prompt-container ${isPromptExpanded ? 'expanded' : ''}`}>
-                        <div className="prompt-button" onClick={() => setIsPromptExpanded(!isPromptExpanded)}>
-                            {isPromptExpanded ? 'HIDE' : 'SHOW'} PROMPT
+
+                <div className="footer-right">
+                    {!isModal && (
+                        <button className="hide-button" onClick={onHide}>REMOVE</button>
+                    )}
+                    {generationDetails.prompt_text && (
+                        <div className={`prompt-container ${isPromptExpanded ? 'expanded' : ''}`}>
+                            <div className="prompt-button" onClick={() => setIsPromptExpanded(!isPromptExpanded)}>
+                                {isPromptExpanded ? 'HIDE' : 'SHOW'} PROMPT
+                            </div>
+                            <div className="prompt-panel-expandable">
+                                <div className="prompt-header">GENERATED PROMPT</div>
+                                <div className="prompt-content">{generationDetails.prompt_text}</div>
+                            </div>
+                            {isPromptExpanded && <div className="prompt-overlay" onClick={() => setIsPromptExpanded(false)}></div>}
                         </div>
-                        <div className="prompt-panel-expandable">
-                            <div className="prompt-header">GENERATED PROMPT</div>
-                            <div className="prompt-content">{generationDetails.prompt_text}</div>
-                        </div>
-                        {isPromptExpanded && <div className="prompt-overlay" onClick={() => setIsPromptExpanded(false)}></div>}
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );
 };
 
-const CommunityGalleryView = ({ isVisible, onBack, onVote }) => {
+const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onModalClose }) => {
     const [items, setItems] = useState([]);
-    const [selectedItem, setSelectedItem] = useState(null);
-    const [comparisonMode, setComparisonMode] = useState('slider');
+    const [comparisonMode, setComparisonMode] = useState('side-by-side');
 
     useEffect(() => {
-        if (isVisible) {
+        if (isVisible && !modalItem) {
             const fetchGallery = async () => {
                 try {
                     const response = await fetch(`${API_BASE_URL}/public-gallery`);
@@ -361,21 +361,19 @@ const CommunityGalleryView = ({ isVisible, onBack, onVote }) => {
             };
             fetchGallery();
         }
-    }, [isVisible]);
+    }, [isVisible, modalItem]);
 
     return (
         <div className={`community-gallery-view ${isVisible ? 'visible' : ''}`}>
-            <header className="community-header">
-                <button onClick={onBack} className="back-button">← BACK TO START</button>
-                <h2>Community Gallery</h2>
-                <div/>
-            </header>
+            <div className="gallery-info-text">
+                <p>Explore visions of Almere 2075 created by others. <b>Give a "👍" to your favorites</b> to help the city reach its happiness goal!</p>
+            </div>
             <div className="gallery-grid-container">
                 {items.map(item => (
                     <div key={item.id} className="gallery-item">
-                        <div className="gallery-item-images" onClick={() => setSelectedItem(item)}>
-                            <img src={`${API_BASE_URL}/images/${item.original_image_filename}`} alt="Original" className="gallery-item-thumb"/>
-                            <img src={item.generated_image_url} alt="Generated" className="gallery-item-thumb"/>
+                        <div className="gallery-item-images" onClick={() => onItemSelect(item)}>
+                            <img src={`${API_BASE_URL}/images/${item.original_image_filename}`} alt="Original" className="gallery-item-thumb original"/>
+                            <img src={item.generated_image_url} alt="Generated" className="gallery-item-thumb generated"/>
                         </div>
                         <div className="gallery-item-info">
                             <div className="gallery-item-tags">
@@ -384,25 +382,25 @@ const CommunityGalleryView = ({ isVisible, onBack, onVote }) => {
                             <div className="gallery-item-creator">
                                 by {item.creator_name || 'Anonymous'}
                             </div>
-                            <button className="vote-button" onClick={() => onVote(item.id)}>
-                                ▲ VOTE ({item.votes})
+                            <button className="like-button" onClick={() => onVote(item.id)}>
+                                👍 LIKE ({item.votes})
                             </button>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {selectedItem && (
-                 <div className="modal-overlay" onClick={() => setSelectedItem(null)}>
+            {modalItem && (
+                 <div className="modal-overlay" onClick={onModalClose}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <ComparisonView
-                            generationDetails={selectedItem}
+                            generationDetails={modalItem}
                             isVisible={true}
                             isModal={true}
                             mode={comparisonMode}
                             onModeChange={setComparisonMode}
                         />
-                         <button className="close-modal-button" onClick={() => setSelectedItem(null)}>×</button>
+                         <button className="close-modal-button" onClick={onModalClose}>×</button>
                     </div>
                  </div>
             )}
@@ -411,7 +409,7 @@ const CommunityGalleryView = ({ isVisible, onBack, onVote }) => {
 };
 
 
-const GamificationWidget = ({ currentView }) => {
+const GamificationWidget = ({ isHeaderVisible }) => {
     const [stats, setStats] = useState({ happiness_score: 0, target_score: 1000, deadline_iso: '' });
     const [timeLeft, setTimeLeft] = useState('');
 
@@ -428,7 +426,7 @@ const GamificationWidget = ({ currentView }) => {
 
     useEffect(() => {
         fetchStats();
-        const interval = setInterval(fetchStats, 15000); // Refresh stats every 15 seconds
+        const interval = setInterval(fetchStats, 15000);
         return () => clearInterval(interval);
     }, [fetchStats]);
 
@@ -451,11 +449,14 @@ const GamificationWidget = ({ currentView }) => {
         return () => clearInterval(interval);
     }, [stats.deadline_iso]);
 
-    // MODIFIED: Add a dynamic class based on whether the header is visible.
-    const isHeaderVisible = currentView !== 'gallery';
-
     return (
         <div className={`gamification-widget ${isHeaderVisible ? 'header-visible' : ''}`}>
+             <div className="info-tooltip">
+                <span>ℹ️</span>
+                <div className="info-tooltip-text">
+                    Help make Almere a happier city! Every vote on a generated image in the Community Gallery adds one "Happy Point" to the total score. You can vote once per minute. Let's reach 1000 points before the deadline!
+                </div>
+            </div>
             <div className="happiness-score">
                 <div className="score-title">ALMERE HAPPINESS SCORE</div>
                 <div className="score-bar-container">
@@ -467,12 +468,6 @@ const GamificationWidget = ({ currentView }) => {
                 <div className="countdown-title">TIME UNTIL DEADLINE</div>
                 <div className="countdown-text">{timeLeft}</div>
             </div>
-             <div className="info-tooltip">
-                <span>ℹ️</span>
-                <div className="info-tooltip-text">
-                    Help make Almere a happier city! Every vote on a generated image in the Community Gallery adds one "Happy Point" to the total score. You can vote once per minute. Let's reach 1000 points before the deadline!
-                </div>
-            </div>
         </div>
     );
 };
@@ -483,9 +478,9 @@ function App() {
   const [galleryImages, setGalleryImages] = useState([]);
   const [availableTags, setAvailableTags] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
+  const [modalItem, setModalItem] = useState(null);
   const pollingRef = useRef(null);
 
-  // --- State & API Data Loading ---
   useEffect(() => subscribe(() => setAppState({ ...state })), []);
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -503,7 +498,6 @@ function App() {
 
             const tags = await tagsRes.json();
             setAvailableTags(tags);
-
         } catch (e) {
             console.error(`Error fetching initial data: ${e.message}`);
         }
@@ -514,7 +508,6 @@ function App() {
     };
   }, []);
   
-  // --- Core Transformation Logic ---
   const pollJobStatus = useCallback((jobId) => {
     if (pollingRef.current) clearInterval(pollingRef.current);
     pollingRef.current = setInterval(async () => {
@@ -530,7 +523,6 @@ function App() {
           setState('generationDetails', data.generation_data);
           setState('isProcessing', false);
           setState('view', 'comparison');
-
         } else if (data.status === 'failed') {
           clearInterval(pollingRef.current);
           throw new Error(data.error || 'Job failed for an unknown reason.');
@@ -581,7 +573,6 @@ function App() {
         
         addLogMessage('Step 3/3: Awaiting result...');
         pollJobStatus(job_id);
-
     } catch (err) {
         addLogMessage(`PROCESS FAILED: ${err.message}`, 'error');
         setState('isProcessing', false);
@@ -630,7 +621,6 @@ function App() {
     }
   };
 
-  // --- User Action Handlers ---
   const handleSetName = useCallback(async (name) => {
     if (!appState.jobId) return;
     try {
@@ -639,7 +629,6 @@ function App() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name })
         });
-        // Optimistically update local state
         setState('generationDetails', { ...appState.generationDetails, creator_name: name });
     } catch (error) {
         console.error("Failed to set name:", error);
@@ -664,17 +653,32 @@ function App() {
             const errorData = await res.json();
             throw new Error(errorData.detail || "Vote failed");
         }
-        // No need to refresh all data, widget will poll for new score
     } catch (error) {
-        alert(error.message); // Give user feedback
+        alert(error.message);
     }
   }, []);
 
-  // --- Main Render ---
+  const isHeaderVisible = appState.view !== 'gallery' && !modalItem;
+
   return (
     <div className="app-container">
-      <header className={`app-header ${appState.view !== 'gallery' ? 'visible' : ''}`}>
-        <button onClick={handleBackToStart} className="back-button">← BACK TO START</button>
+      <header className={`app-header ${isHeaderVisible ? 'visible' : ''}`}>
+          <div className="header-left">
+             {(appState.view === 'transform' || appState.view === 'comparison' || appState.view === 'community_gallery') && (
+                <button onClick={handleBackToStart} className="back-button">← BACK TO START</button>
+             )}
+          </div>
+          <div className="header-center">
+            {/* The widget is no longer in the header */}
+          </div>
+          <div className="header-right">
+            {appState.view === 'comparison' && (
+                <div className="view-mode-toggle">
+                    <button className={appState.comparisonMode === 'slider' ? 'active' : ''} onClick={() => setState('comparisonMode', 'slider')}>Slider</button>
+                    <button className={appState.comparisonMode === 'side-by-side' ? 'active' : ''} onClick={() => setState('comparisonMode', 'side-by-side')}>Side-by-Side</button>
+                </div>
+            )}
+          </div>
       </header>
 
       <main>
@@ -698,21 +702,22 @@ function App() {
         />
         <ComparisonView
             generationDetails={appState.generationDetails}
+            sourceImage={appState.sourceImageForTransform}
             isVisible={appState.view === 'comparison'} 
             mode={appState.comparisonMode}
-            onModeChange={(mode) => setState('comparisonMode', mode)}
             onSetName={handleSetName}
             onHide={handleHide}
         />
         <CommunityGalleryView
             isVisible={appState.view === 'community_gallery'}
-            onBack={handleBackToStart}
             onVote={handleVote}
+            modalItem={modalItem}
+            onItemSelect={setModalItem}
+            onModalClose={() => setModalItem(null)}
         />
       </main>
-
-      {/* MODIFIED: Pass the current view to the widget so it knows when to move. */}
-      <GamificationWidget currentView={appState.view} />
+      
+      <GamificationWidget isHeaderVisible={isHeaderVisible} />
       <LogPanel messages={appState.logMessages} isVisible={appState.isProcessing} />
     </div>
   );
@@ -771,14 +776,6 @@ const GalleryView = ({ images, isVisible, onImageClick, onNewImage, onCommunityC
 
     const handleTakePhoto = async () => {
         alert("Camera access is not yet implemented in this version.");
-        // Placeholder for future implementation:
-        // try {
-        //     const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        //     // Handle video stream to capture a photo
-        // } catch (error) {
-        //     console.error("Camera access denied:", error);
-        //     alert("Could not access camera. Please check permissions.");
-        // }
     };
     
     return (
