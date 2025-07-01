@@ -1,75 +1,84 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { fileToDataUrl } from '../utils';
 import DynamicGallery from '../components/gallery/DynamicGallery';
-import GalleryEvents from '../components/gallery/GalleryEvents';
 import './GalleryView.css';
+
+// This new component handles the frame-by-frame updates for panning,
+// which prevents conflicts with React's render cycle.
+const GalleryPanController = ({ galleryRef, panOffset }) => {
+    useFrame(() => {
+        if (galleryRef.current) {
+            // Smoothly interpolate the gallery group's position towards the target pan offset
+            galleryRef.current.position.x = panOffset.current.x;
+            galleryRef.current.position.y = panOffset.current.y;
+        }
+    });
+    return null; // This component does not render anything visible
+};
 
 const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewImage, onShowTutorial }) => {
     const [showInstructions, setShowInstructions] = useState(true);
-    const [isTouchDevice, setIsTouchDevice] = useState(false);
-    const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-    
-    // MODIFIED: Added more state to correctly distinguish tap from pan/drag
-    const panState = useRef({ 
-        isPanning: false, 
-        startCoords: { x: 0, y: 0 }, 
-        lastOffset: { x: 0, y: 0 },
-        moved: false // Flag to track if pointer has moved significantly
-    });
     const fileInputRef = useRef(null);
-    
+    const galleryGroupRef = useRef(); // A ref for the pannable group
+
+    // Refs to manage interaction state without causing re-renders
+    const panState = useRef({ isPanning: false, startCoords: { x: 0, y: 0 }, hasDragged: false });
+    const panOffset = useRef({ x: 0, y: 0 });
+    const lastPanOffset = useRef({ x: 0, y: 0 });
+
     useEffect(() => {
-      const handleInteraction = () => setShowInstructions(false);
-      window.addEventListener('mousemove', handleInteraction, { once: true });
-      window.addEventListener('click', handleInteraction, { once: true });
-      const timer = setTimeout(() => setShowInstructions(false), 5000);
-      return () => {
-        window.removeEventListener('mousemove', handleInteraction);
-        window.removeEventListener('click', handleInteraction);
-        clearTimeout(timer);
-      };
+        const handleInteraction = () => setShowInstructions(false);
+        window.addEventListener('mousemove', handleInteraction, { once: true });
+        window.addEventListener('click', handleInteraction, { once: true });
+        const timer = setTimeout(() => setShowInstructions(false), 5000);
+        return () => {
+            window.removeEventListener('mousemove', handleInteraction);
+            window.removeEventListener('click', handleInteraction);
+            clearTimeout(timer);
+        };
     }, []);
 
     const handlePointerDown = (e) => {
-        if (e.pointerType === 'touch' && !isTouchDevice) {
-            setIsTouchDevice(true);
-        }
-        const x = e.nativeEvent.touches?.[0]?.clientX ?? e.clientX;
-        const y = e.nativeEvent.touches?.[0]?.clientY ?? e.clientY;
         panState.current.isPanning = true;
+        panState.current.hasDragged = false;
+        const x = e.clientX ?? e.touches?.[0]?.clientX;
+        const y = e.clientY ?? e.touches?.[0]?.clientY;
         panState.current.startCoords = { x, y };
-        panState.current.lastOffset = panOffset;
-        panState.current.moved = false; // Reset moved flag on new interaction
+        lastPanOffset.current = { ...panOffset.current };
     };
 
-    const handlePointerMove = (e, viewport, size) => {
-        if (panState.current.isPanning) {
-            const x = e.nativeEvent.touches?.[0]?.clientX ?? e.clientX;
-            const y = e.nativeEvent.touches?.[0]?.clientY ?? e.clientY;
-            if (x === undefined || y === undefined || panState.current.startCoords.x === undefined) return;
-            
-            const dx_screen = x - panState.current.startCoords.x;
-            const dy_screen = y - panState.current.startCoords.y;
+    const handlePointerMove = (e) => {
+        if (!panState.current.isPanning) return;
+        
+        const x = e.clientX ?? e.touches?.[0]?.clientX;
+        const y = e.clientY ?? e.touches?.[0]?.clientY;
+        
+        const dx = x - panState.current.startCoords.x;
+        const dy = y - panState.current.startCoords.y;
 
-            // If pointer moved more than a few pixels, consider it a pan
-            if (Math.abs(dx_screen) > 5 || Math.abs(dy_screen) > 5) {
-                panState.current.moved = true;
-            }
-
-            const dx_world = dx_screen * (viewport.width / size.width);
-            const dy_world = dy_screen * (viewport.height / size.height);
-            setPanOffset({ x: panState.current.lastOffset.x + dx_world, y: panState.current.lastOffset.y - dy_world });
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            panState.current.hasDragged = true;
         }
+        
+        // Convert screen pixel delta to world unit delta
+        const { width, height } = e.target.getBoundingClientRect();
+        const viewport = { width: galleryGroupRef.current.parent.viewport.width, height: galleryGroupRef.current.parent.viewport.height };
+        const dx_world = dx * (viewport.width / width);
+        const dy_world = dy * (viewport.height / height);
+
+        panOffset.current = {
+            x: lastPanOffset.current.x + dx_world,
+            y: lastPanOffset.current.y - dy_world,
+        };
     };
 
     const handlePointerUp = () => {
         panState.current.isPanning = false;
     };
 
-    // MODIFIED: Use the 'moved' flag to decide if it was a click or a pan
-    const handleClick = (texture) => {
-        if (!panState.current.moved) {
+    const handleImageClick = (texture) => {
+        if (!panState.current.hasDragged) {
             onImageClick(texture);
         }
     };
@@ -77,14 +86,14 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
     const handleFileSelect = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 15 * 1024 * 1024) { // 15MB limit
+            if (file.size > 15 * 1024 * 1024) {
                 alert("File is too large. Please select an image smaller than 15MB.");
                 return;
             }
             const url = await fileToDataUrl(file);
             onNewImage({ url, name: file.name });
         }
-        e.target.value = null; // Reset file input
+        e.target.value = null;
     };
 
     return (
@@ -92,7 +101,7 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
             {!isInBackground && (
                 <>
                     <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
-                        {isTouchDevice ? 'DRAG TO EXPLORE. TAP AN IMAGE TO BEGIN.' : 'MOVE CURSOR TO EXPLORE. CLICK AN IMAGE TO BEGIN.'}
+                        DRAG TO EXPLORE. TAP AN IMAGE TO BEGIN.
                     </div>
                     <div className="main-actions-container">
                         <button className="upload-button" onClick={onShowTutorial}>HOW IT WORKS</button>
@@ -101,10 +110,23 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}/>
                 </>
             )}
-            <Canvas orthographic camera={{ position: [0, 0, 10], zoom: 100 }}>
-              <ambientLight intensity={3} />
-                {images.length > 0 && <DynamicGallery images={images} onImageClick={handleClick} panOffset={panOffset} />}
-                <GalleryEvents handlePointerDown={handlePointerDown} handlePointerMove={handlePointerMove} handlePointerUp={handlePointerUp} />
+            <Canvas 
+                orthographic camera={{ position: [0, 0, 10], zoom: 100 }}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+            >
+                <ambientLight intensity={3} />
+                <GalleryPanController galleryRef={galleryGroupRef} panOffset={panOffset} />
+                {images.length > 0 && 
+                    <DynamicGallery 
+                        ref={galleryGroupRef} 
+                        images={images} 
+                        onImageClick={handleImageClick}
+                        panOffset={panOffset}
+                    />
+                }
             </Canvas>
         </div>
     );

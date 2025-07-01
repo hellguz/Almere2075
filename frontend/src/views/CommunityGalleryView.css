@@ -1,9 +1,9 @@
 /*
   File: /frontend/src/views/CommunityGalleryView.css
-  Final, comprehensive style fix for the gallery.
+  This file ensures the community gallery is scrollable and looks good on mobile.
 */
 
-/* --- Main View Container (styles from previous fix are correct) --- */
+/* --- Main View Container --- */
 .community-gallery-view {
     display: flex;
     flex-direction: column;
@@ -26,6 +26,7 @@
 .gallery-info-text {
     flex-shrink: 0; 
     padding: 85px 15px 15px;
+    padding-top: calc(85px + env(safe-area-inset-top));
     text-align: center;
     color: var(--color-text-secondary);
     font-size: 0.9rem;
@@ -41,14 +42,10 @@
     box-sizing: border-box;
 
     display: grid;
-    /* MODIFIED: Changed minmax from 320px to 160px to make cards smaller */
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 24px;
 
-    /*
-      THE ROOT CAUSE FIX: This packs all grid rows at the top,
-      allowing the content to overflow correctly and create a scrollbar.
-    */
+    /* This packs all grid rows at the top, allowing the content to scroll correctly. */
     grid-auto-rows: min-content;
 }
 
@@ -74,9 +71,8 @@
 .gallery-item-images {
     position: relative;
     width: 100%;
-    /* This forces the 1:1 aspect ratio and works now that the card height is not being stretched. */
     aspect-ratio: 1 / 1;
-    flex-shrink: 0; /* Prevents image container from squashing */
+    flex-shrink: 0;
     overflow: hidden;
 }
 .gallery-item-images > img {
@@ -98,34 +94,34 @@
 
 /* --- Card Info Section --- */
 .gallery-item-info {
-    padding: 10px; /* Reduced padding for smaller cards */
+    padding: 10px;
     display: flex;
-    flex-wrap: wrap; /* Allows items to wrap on very narrow screens */
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    gap: 8px; /* Reduced gap */
+    gap: 8px;
 }
 .gallery-item-details {
     flex-grow: 1;
 }
 .gallery-item-tags {
     font-weight: bold;
-    font-size: 0.8rem; /* Reduced font size */
+    font-size: 0.8rem;
 }
 .gallery-item-creator {
     color: var(--color-text-secondary);
-    font-size: 0.75rem; /* Reduced font size */
+    font-size: 0.75rem;
 }
 .like-button {
     background: #333;
     color: white;
     border: 1px solid #555;
-    padding: 6px 10px; /* Reduced padding */
-    border-radius: 6px; /* Reduced radius */
+    padding: 6px 10px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
-    flex-shrink: 0; /* Prevents button from shrinking */
-    font-size: 0.8rem; /* Reduced font size */
+    flex-shrink: 0;
+    font-size: 0.8rem;
 }
 .like-button:hover {
     background: var(--color-system);
@@ -133,7 +129,7 @@
 }
 
 
-/* --- Modal & Scrollbar Styles (Unchanged) --- */
+/* --- Modal & Scrollbar Styles --- */
 .modal-overlay { 
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
     background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); 
@@ -158,4 +154,3 @@
 .gallery-grid-container::-webkit-scrollbar-track { background: transparent; }
 .gallery-grid-container::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg); border-radius: 3px; }
 .gallery-grid-container::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg); }
-

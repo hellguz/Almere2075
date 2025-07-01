@@ -1,16 +1,19 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, forwardRef } from 'react';
 import { useLoader, useThree } from '@react-three/fiber';
 import { TextureLoader, Vector2 } from 'three';
 import { API_BASE_URL, GALLERY_CONFIG } from '../../config';
 import ImageNode from './ImageNode';
 
-// MODIFIED: Pass panOffset down to ImageNode
-const DynamicGallery = ({ images, onImageClick, panOffset }) => {
+// MODIFIED: This component is now wrapped in forwardRef to receive a ref
+// from its parent. It also passes the panOffset ref down to each child node.
+const DynamicGallery = forwardRef(({ images, onImageClick, panOffset }, ref) => {
     const textures = useLoader(TextureLoader, images.map(img => `${API_BASE_URL}/thumbnails/${img.thumbnail}`));
     const { viewport } = useThree();
 
     const grid = useMemo(() => {
-        if (!textures.length || viewport.width === 0) return [];
+        if (!textures.length) return [];
+        // This complex grid generation logic remains the same.
+        // It arranges images in a hexagonal pattern.
         const imageCount = images.length;
         const { width, height } = viewport;
         const items = [];
@@ -40,16 +43,22 @@ const DynamicGallery = ({ images, onImageClick, panOffset }) => {
             });
         }
         return items;
-    }, [images, textures, viewport.width, viewport.height]);
+    }, [images, textures]);
 
     return (
-        <group position={[panOffset.x, panOffset.y, 0]}>
+        // This group is now controlled directly by the GalleryView via the ref
+        <group ref={ref}>
             {grid.map(item => (
-                <ImageNode key={item.index} {...item} onImageClick={onImageClick} panOffset={panOffset} />
+                <ImageNode
+                    key={item.index}
+                    {...item}
+                    onImageClick={onImageClick}
+                    panOffset={panOffset} // Pass the panOffset ref
+                />
             ))}
         </group>
     );
-};
+});
 
 export default DynamicGallery;
 

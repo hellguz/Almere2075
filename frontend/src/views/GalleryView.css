@@ -8,6 +8,22 @@
   pointer-events: none;
 }
 
+/* Main gallery container */
+.fullscreen-canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* This prevents the browser's pull-to-refresh action from firing on touch devices */
+    overscroll-behavior-y: contain;
+}
+
+.fullscreen-canvas-container canvas {
+    /* This ensures touch actions are captured by the canvas for panning */
+    touch-action: none;
+}
+
 /* Instructions text */
 .gallery-instructions {
     position: absolute; top: 90px; left: 50%;
@@ -27,7 +43,7 @@
 /* Upload button container */
 .main-actions-container {
     position: absolute;
-    /* MODIFIED: Adjusted for safe area on mobile devices */
+    /* Adjusted for safe area on mobile devices to prevent being hidden by nav bars */
     bottom: 30px;
     bottom: calc(30px + env(safe-area-inset-bottom));
     left: 50%;
