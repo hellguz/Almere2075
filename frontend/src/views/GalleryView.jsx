@@ -3,13 +3,34 @@ import { Canvas } from '@react-three/fiber';
 import { fileToDataUrl } from '../utils';
 import DynamicGallery from '../components/gallery/DynamicGallery';
 import './GalleryView.css';
+
 const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewImage, onShowTutorial }) => {
+    // MODIFIED: Create a ref for the main container
+    const viewRef = useRef(null);
     const [showInstructions, setShowInstructions] = useState(true);
     const fileInputRef = useRef(null);
 
-    // MODIFIED: State is simplified. We only need to track if a drag happened
-    // to distinguish it from a tap.
+    // MODIFIED: This effect dynamically sets the view height to handle the mobile browser's
+    // address bar, ensuring the buttons at the bottom are always visible.
+    useEffect(() => {
+        const setViewHeight = () => {
+            if (viewRef.current) {
+                viewRef.current.style.height = `${window.innerHeight}px`;
+            }
+        };
+
+        if (isVisible) {
+            setViewHeight();
+            window.addEventListener('resize', setViewHeight);
+        }
+
+        return () => {
+            window.removeEventListener('resize', setViewHeight);
+        };
+    }, [isVisible]);
+
     const panState = useRef({ isPanning: false, startCoords: { x: 0, y: 0 }, hasDragged: false });
+    
     useEffect(() => {
         const handleInteraction = () => setShowInstructions(false);
         window.addEventListener('mousemove', handleInteraction, { once: true });
@@ -18,9 +39,10 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         return () => {
             window.removeEventListener('mousemove', handleInteraction);
             window.removeEventListener('click', handleInteraction);
-             clearTimeout(timer);
+            clearTimeout(timer);
         };
     }, []);
+
     const handlePointerDown = (e) => {
         panState.current.isPanning = true;
         panState.current.hasDragged = false;
@@ -36,7 +58,6 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         const dx = x - panState.current.startCoords.x;
         const dy = y - panState.current.startCoords.y;
 
-        // If the finger moves more than a few pixels, we consider it a drag
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
             panState.current.hasDragged = true;
         }
@@ -47,7 +68,6 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
     };
 
     const handleImageClick = (texture) => {
-        // Only trigger a click if the user hasn't dragged their finger
         if (!panState.current.hasDragged) {
             onImageClick(texture);
         }
@@ -66,33 +86,31 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         e.target.value = null;
     };
     return (
-        <div className={`fullscreen-canvas-container ${isVisible ? 'visible' : ''} ${isInBackground ? 'in-background' : ''}`}>
+        <div ref={viewRef} className={`fullscreen-canvas-container ${isVisible ? 'visible' : ''} ${isInBackground ? 'in-background' : ''}`}>
             {!isInBackground && (
                 <>
                     <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
-                        
                         DRAG TO EXPLORE. TAP AN IMAGE TO BEGIN.
                     </div>
                     <div className="main-actions-container">
                         <button className="upload-button" onClick={onShowTutorial}>HOW IT WORKS</button>
-                        
                         <button className="upload-button" onClick={() => fileInputRef.current?.click()}>...OR UPLOAD YOUR OWN IMAGE</button>
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}/>
                 </>
             )}
             <Canvas 
-                 orthographic camera={{ position: [0, 0, 10], zoom: 100 }}
+                orthographic camera={{ position: [0, 0, 10], zoom: 100 }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
             >
-                 <ambientLight intensity={3} />
+                <ambientLight intensity={3} />
                 {images.length > 0 && 
                     <DynamicGallery 
                         images={images} 
-                         onImageClick={handleImageClick}
+                        onImageClick={handleImageClick}
                         isInBackground={isInBackground}
                     />
                 }
@@ -102,4 +120,3 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
 };
 
 export default GalleryView;
-
