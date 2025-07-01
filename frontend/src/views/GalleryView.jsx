@@ -3,15 +3,13 @@ import { Canvas } from '@react-three/fiber';
 import { fileToDataUrl } from '../utils';
 import DynamicGallery from '../components/gallery/DynamicGallery';
 import './GalleryView.css';
-
 const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewImage, onShowTutorial }) => {
     const [showInstructions, setShowInstructions] = useState(true);
     const fileInputRef = useRef(null);
 
     // MODIFIED: State is simplified. We only need to track if a drag happened
-    // to distinguish it from a tap. No panning logic is needed.
+    // to distinguish it from a tap.
     const panState = useRef({ isPanning: false, startCoords: { x: 0, y: 0 }, hasDragged: false });
-
     useEffect(() => {
         const handleInteraction = () => setShowInstructions(false);
         window.addEventListener('mousemove', handleInteraction, { once: true });
@@ -20,10 +18,9 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         return () => {
             window.removeEventListener('mousemove', handleInteraction);
             window.removeEventListener('click', handleInteraction);
-            clearTimeout(timer);
+             clearTimeout(timer);
         };
     }, []);
-
     const handlePointerDown = (e) => {
         panState.current.isPanning = true;
         panState.current.hasDragged = false;
@@ -31,10 +28,8 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         const y = e.clientY ?? e.touches?.[0]?.clientY;
         panState.current.startCoords = { x, y };
     };
-
     const handlePointerMove = (e) => {
         if (!panState.current.isPanning) return;
-        
         const x = e.clientX ?? e.touches?.[0]?.clientX;
         const y = e.clientY ?? e.touches?.[0]?.clientY;
         
@@ -70,33 +65,35 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         }
         e.target.value = null;
     };
-
     return (
         <div className={`fullscreen-canvas-container ${isVisible ? 'visible' : ''} ${isInBackground ? 'in-background' : ''}`}>
             {!isInBackground && (
                 <>
                     <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
+                        
                         DRAG TO EXPLORE. TAP AN IMAGE TO BEGIN.
                     </div>
                     <div className="main-actions-container">
                         <button className="upload-button" onClick={onShowTutorial}>HOW IT WORKS</button>
+                        
                         <button className="upload-button" onClick={() => fileInputRef.current?.click()}>...OR UPLOAD YOUR OWN IMAGE</button>
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}/>
                 </>
             )}
             <Canvas 
-                orthographic camera={{ position: [0, 0, 10], zoom: 100 }}
+                 orthographic camera={{ position: [0, 0, 10], zoom: 100 }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
             >
-                <ambientLight intensity={3} />
+                 <ambientLight intensity={3} />
                 {images.length > 0 && 
                     <DynamicGallery 
                         images={images} 
-                        onImageClick={handleImageClick}
+                         onImageClick={handleImageClick}
+                        isInBackground={isInBackground}
                     />
                 }
             </Canvas>
@@ -105,3 +102,4 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
 };
 
 export default GalleryView;
+

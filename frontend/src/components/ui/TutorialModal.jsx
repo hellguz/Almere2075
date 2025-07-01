@@ -1,10 +1,8 @@
 import React, { useState, useRef } from 'react';
 import './TutorialModal.css';
-
-// Using API paths for images that should always be available in the app.
+// MODIFIED: Use a correctly matching pair of before/after images from the assets.
 const ORIGINAL_IMAGE_URL = '/api/images/IMG_20250628_213414260.jpg';
-// A sample futuristic image from a public URL that fits the app's theme.
-const GENERATED_IMAGE_URL = 'https://replicate.delivery/pbxt/J1f3x23p64Sj4yZt1g3gIuDqYVtj8h2qV1E3O3A3I2I2lRhIA/output.png';
+const GENERATED_IMAGE_URL = '/api/images/generated/a3d9f5d9-0a18-4a18-bfe2-16901146d9bb.png';
 
 const TutorialModal = ({ isVisible, onClose }) => {
     const sliderContainerRef = useRef(null);
@@ -19,7 +17,6 @@ const TutorialModal = ({ isVisible, onClose }) => {
     };
 
     if (!isVisible) return null;
-
     return (
         <div className={`tutorial-modal-overlay ${isVisible ? 'visible' : ''}`} onClick={onClose}>
             <div className="tutorial-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -27,28 +24,31 @@ const TutorialModal = ({ isVisible, onClose }) => {
                 <div 
                     className="tutorial-slider-container" 
                     ref={sliderContainerRef} 
-                    onMouseMove={handleSliderMove} 
+                     onMouseMove={handleSliderMove} 
                     onTouchMove={handleSliderMove}
                 >
                     <div className="image-panel" style={{ backgroundImage: `url("${ORIGINAL_IMAGE_URL}")` }}></div>
                     <div 
-                        className="image-panel after-image" 
+                         className="image-panel after-image" 
                         style={{ 
                             backgroundImage: `url("${GENERATED_IMAGE_URL}")`, 
-                            clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` 
+                             clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` 
                         }}
                     ></div>
                     <div className="slider-line" style={{ left: `${clipPosition}%` }}>
-                        <div className="slider-handle"></div>
+                         <div className="slider-handle"></div>
                     </div>
                 </div>
 
                 <div className="tutorial-description">
                     <p>
-                        Let us imagine the future, more specifically the year 2075 in Almere, Netherlands. Due to a multitude of threats posing to this city, the city had to react to the threats by implementing some ideas for a sustainable future from student projects created in Bauhaus University Weimar in 2025. Let us all explore how these changes might affect how the current city looks. For simplicity and to make these changes more personal for exhibition visitors, we decided to show how the same changes would affect how Weimar looks.
+                         Let us imagine the future, more specifically the year 2075 in Almere, Netherlands.
+                         Due to a multitude of threats posing to this city, the city had to react to the threats by implementing some ideas for a sustainable future from student projects created in Bauhaus University Weimar in 2025. Let us all explore how these changes might affect how the current city looks.
+                         For simplicity and to make these changes more personal for exhibition visitors, we decided to show how the same changes would affect how Weimar looks.
                     </p>
                     <p>
-                        <b>How to use the app:</b> Select an image from the gallery or upload your own, choose the concepts you want to apply, and click 'Transform'. Your creation will appear in the Community Gallery where all participants can vote for images of the others, which results in more happy points for Almere!
+                        <b>How to use the app:</b> Select an image from the gallery or upload your own, choose the concepts you want to apply, and click 'Transform'.
+                        Your creation will appear in the Community Gallery where all participants can vote for images of the others, which results in more happy points for Almere!
                     </p>
                 </div>
 

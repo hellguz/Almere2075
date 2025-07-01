@@ -5,7 +5,7 @@
   transform: scale(1.05);
   transition: filter 0.8s ease, transform 0.8s ease;
   z-index: 5;
-  pointer-events: none;
+  /* MODIFIED: Removed pointer-events to allow mouse interaction for the fish-eye effect. */
 }
 
 /* Main gallery container */

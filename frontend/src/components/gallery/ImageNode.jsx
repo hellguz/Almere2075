@@ -3,9 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import { Vector2, Vector3 } from 'three';
 import { GALLERY_CONFIG } from '../../config';
 
-// MODIFIED: Simplified to remove panOffset. The animation is now driven
-// directly by the mouse/touch position over the static grid.
-const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
+// MODIFIED: The component now accepts an `isInBackground` prop to change its animation logic.
+const ImageNode = ({ texture, homePosition, baseSize, onImageClick, isInBackground }) => {
     const meshRef = useRef();
     const homeVec = useMemo(() => new Vector3(...homePosition), [homePosition]);
 
@@ -14,11 +13,22 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
         return [imageAspect > 1 ? baseSize : baseSize * imageAspect, imageAspect > 1 ? baseSize / imageAspect : baseSize, 1];
     }, [texture, baseSize]);
 
-    useFrame(({ viewport, mouse }) => {
+    useFrame(({ viewport, mouse, clock }) => {
         if (!meshRef.current) return;
 
-        // The mouse position in world units is all we need now.
-        const mousePos = new Vector2(mouse.x * viewport.width / 2, mouse.y * viewport.height / 2);
+        let mousePos;
+
+        // If the gallery is a background element, use a time-based animation
+        // instead of the actual mouse position. This creates a gentle, continuous "breathing" effect.
+        if (isInBackground) {
+            const t = clock.getElapsedTime();
+            const x = Math.sin(t * 0.2) * (viewport.width / 5);
+            const y = Math.cos(t * 0.3) * (viewport.height / 5);
+            mousePos = new Vector2(x, y);
+        } else {
+            // Otherwise, use the live mouse position for direct interaction.
+            mousePos = new Vector2(mouse.x * viewport.width / 2, mouse.y * viewport.height / 2);
+        }
 
         const homePos2D = new Vector2(homeVec.x, homeVec.y);
         const directionVec = new Vector2().subVectors(homePos2D, mousePos);
@@ -41,7 +51,6 @@ const ImageNode = ({ texture, homePosition, baseSize, onImageClick }) => {
         meshRef.current.position.lerp(new Vector3(targetPosition.x, targetPosition.y, targetZ), GALLERY_CONFIG.DAMPING);
         meshRef.current.scale.lerp(new Vector3(targetScale, targetScale, 1), GALLERY_CONFIG.DAMPING);
     });
-
     return (
         <group ref={meshRef} position={homePosition} onClick={() => onImageClick(texture)}>
              <mesh scale={imagePlaneScale}>
