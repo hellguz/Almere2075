@@ -1,6 +1,7 @@
 import React, { useMemo, useRef } from 'react';
 import { useFrame, RootState } from '@react-three/fiber';
-import { Vector2, Vector3, Texture, Mesh } from 'three';
+// MODIFIED: Removed the unused 'THREE' namespace import.
+import { Vector2, Vector3, Texture, Group } from 'three';
 import { GALLERY_CONFIG } from '../../config';
 
 interface ImageNodeProps {
@@ -12,12 +13,17 @@ interface ImageNodeProps {
 }
 
 const ImageNode: React.FC<ImageNodeProps> = ({ texture, homePosition, baseSize, onImageClick, isInBackground }) => {
-    const meshRef = useRef<Mesh>(null);
+    const meshRef = useRef<Group>(null);
     const homeVec = useMemo(() => new Vector3(...homePosition), [homePosition]);
 
     const imagePlaneScale = useMemo(() => {
         const imageAspect = texture.image.width / texture.image.height;
-        return [imageAspect > 1 ? baseSize : baseSize * imageAspect, imageAspect > 1 ? baseSize / imageAspect : baseSize, 1];
+        // FIXED: Assert the return type as a tuple to satisfy the 'scale' prop's type.
+        return [
+            imageAspect > 1 ? baseSize : baseSize * imageAspect, 
+            imageAspect > 1 ? baseSize / imageAspect : baseSize, 
+            1
+        ] as [number, number, number];
     }, [texture, baseSize]);
 
     useFrame((state: RootState) => {
@@ -56,7 +62,7 @@ const ImageNode: React.FC<ImageNodeProps> = ({ texture, homePosition, baseSize, 
         meshRef.current.scale.lerp(new Vector3(targetScale, targetScale, 1), GALLERY_CONFIG.DAMPING);
     });
     return (
-        <group ref={meshRef as React.Ref<THREE.Group>} position={homePosition} onClick={() => onImageClick(texture)}>
+        <group ref={meshRef} position={homePosition} onClick={() => onImageClick(texture)}>
              <mesh scale={imagePlaneScale}>
                 <planeGeometry args={[1, 1]} />
                 <meshBasicMaterial map={texture} toneMapped={false} />
@@ -66,4 +72,3 @@ const ImageNode: React.FC<ImageNodeProps> = ({ texture, homePosition, baseSize, 
 };
 
 export default ImageNode;
-

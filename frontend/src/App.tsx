@@ -1,4 +1,5 @@
-import React from 'react';
+// MODIFIED: 'React' import is no longer needed with the new JSX transform.
+// import React from 'react';
 
 // Styles
 import './App.css';
