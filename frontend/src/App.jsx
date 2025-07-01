@@ -276,7 +276,7 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onMod
 
     return (
         <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
-             {!isModal && (
+            {!isModal && (
                 <div className="floating-controls-top">
                     <div className="view-mode-toggle">
                         <button className={mode === 'side-by-side' ? 'active' : ''} onClick={() => onModeChange('side-by-side')}>Side-by-Side</button>
@@ -293,8 +293,14 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onMod
                 )}
                 {mode === 'slider' && (
                     <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleSliderMove} onTouchMove={handleSliderMove}>
-                        <div className="image-panel"><img src={originalImageUrl} alt="Original" /></div>
-                        <div className="image-panel after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}><img src={outputImageUrl} alt="Almere 2075" /></div>
+                        <div className="image-panel">
+                            <div className="image-header">SOURCE</div>
+                            <img src={originalImageUrl} alt="Original" />
+                        </div>
+                        <div className="image-panel after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
+                            <div className="image-header">ALMERE 2075</div>
+                            <img src={outputImageUrl} alt="Almere 2075" />
+                        </div>
                         <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
                     </div>
                 )}
@@ -353,12 +359,11 @@ const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onMo
     const handleVoteClick = (e, itemId) => {
         e.stopPropagation();
         onVote(itemId).then(() => {
-            // Optimistically update vote count
             setItems(currentItems => currentItems.map(item => 
                 item.id === itemId ? { ...item, votes: item.votes + 1 } : item
             ));
         }).catch(err => {
-            alert(err.message); // Show vote limit error
+            alert(err.message);
         });
     };
     
@@ -404,6 +409,7 @@ const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onMo
                             isVisible={true}
                             isModal={true}
                             mode={modalComparisonMode}
+                            onModeChange={setModalComparisonMode} /* Pass handler */
                         />
                     </div>
                 </div>
@@ -668,7 +674,6 @@ function App() {
             throw new Error(errorData.detail || "Vote failed");
         }
     } catch (error) {
-        // This rejection will be caught by the caller to show an alert
         throw error;
     }
   }, []);
