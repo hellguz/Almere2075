@@ -51,7 +51,8 @@
     gap: 15px;
 }
 .upload-button {
-    font-size: 0.9rem; font-weight: 500; letter-spacing: 0.5px;
+    font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;
+    min-width: 180px;
     color: var(--color-text-secondary); background: var(--liquid-bg);
     padding: 12px 24px;
     border: 1px solid var(--liquid-border);

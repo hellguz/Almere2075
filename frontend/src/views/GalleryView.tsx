@@ -98,7 +98,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
                     </div>
                     <div className="main-actions-container">
                         <button className="upload-button" onClick={onShowTutorial}>HOW IT WORKS</button>
-                        <button className="upload-button" onClick={() => fileInputRef.current?.click()}>...OR UPLOAD YOUR OWN IMAGE</button>
+                        <button className="upload-button" onClick={() => fileInputRef.current?.click()}>UPLOAD IMAGE</button>
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}/>
                 </>
