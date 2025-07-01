@@ -3,10 +3,11 @@ import React from 'react';
 // Styles
 import './App.css';
 
-// Hooks
+// Hooks and Store
 import { useAppLogic } from './hooks/useAppLogic';
-// State & Components
-import { setState } from './state';
+import { useStore } from './store';
+
+// UI Components
 import LogPanel from './components/ui/LogPanel';
 import GamificationWidget from './components/ui/GamificationWidget';
 import ComparisonView from './components/ui/ComparisonView';
@@ -16,21 +17,35 @@ import TutorialModal from './components/ui/TutorialModal';
 import GalleryView from './views/GalleryView';
 import TransformView from './views/TransformView';
 import CommunityGalleryView from './views/CommunityGalleryView';
+
 function App() {
+  // useAppLogic handles the application's side effects and async logic.
+  const { handlers } = useAppLogic();
+  
+  // We get the reactive state directly from the Zustand store.
   const {
-    appState,
+    view,
+    isProcessing,
+    logMessages,
+    showTutorial,
+    isCommunityItem,
     galleryImages,
+    sourceImageForTransform,
     availableTags,
     selectedTags,
+    comparisonMode,
+    generationDetails,
     modalItem,
-    handlers
-  } = useAppLogic();
-  const showGalleryBackground = (appState.view === 'transform' || appState.view === 'comparison') && !appState.isCommunityItem;
+    communityGalleryItems
+  } = useStore();
+
+  const showGalleryBackground = (view === 'transform' || view === 'comparison') && !isCommunityItem;
+
   return (
     <div className="app-container">
       <header className="app-header">
           <div className="header-left">
-             {(appState.view !== 'gallery') && (
+             {(view !== 'gallery') && (
                 <button onClick={handlers.handleBackToStart} className="back-button">← BACK TO START</button>
              )}
           </div>
@@ -38,8 +53,8 @@ function App() {
             <GamificationWidget />
           </div>
           <div className="header-right">
-            {(appState.view === 'gallery') && (
-                <button className="community-gallery-button" onClick={() => setState('view', 'community_gallery')}>COMMUNITY GALLERY</button>
+            {(view === 'gallery') && (
+                <button className="community-gallery-button" onClick={() => handlers.setState('view', 'community_gallery')}>COMMUNITY GALLERY</button>
             )}
           </div>
       </header>
@@ -47,44 +62,45 @@ function App() {
       <main>
         <GalleryView 
             images={galleryImages} 
-            isVisible={appState.view === 'gallery' || showGalleryBackground} 
+            isVisible={view === 'gallery' || showGalleryBackground} 
             isInBackground={showGalleryBackground}
             onImageClick={handlers.handleSelectGalleryImage}
             onNewImage={handlers.handleStartTransform}
             onShowTutorial={handlers.handleShowTutorial}
         />
         <TransformView 
-            sourceImage={appState.sourceImageForTransform} 
-            isVisible={appState.view === 'transform'} 
-            isProcessing={appState.isProcessing}
+            sourceImage={sourceImageForTransform} 
+            isVisible={view === 'transform'} 
+            isProcessing={isProcessing}
             onTransform={handlers.handleTransform}
             tags={availableTags}
             selectedTags={selectedTags}
             onTagToggle={handlers.handleTagToggle}
         />
-        {/* The main comparison view after a transformation */}
         <ComparisonView
-            generationDetails={appState.generationDetails}
-            sourceImage={appState.sourceImageForTransform}
-            isVisible={appState.view === 'comparison'}
-            mode={appState.comparisonMode}
-            onModeChange={(mode) => setState('comparisonMode', mode)}
+            generationDetails={generationDetails}
+            sourceImage={sourceImageForTransform}
+            isVisible={view === 'comparison'}
+            mode={comparisonMode}
+            onModeChange={(mode) => handlers.setState('comparisonMode', mode)}
             onSetName={handlers.handleSetName}
             onHide={handlers.handleHide}
         />
         <CommunityGalleryView
-            isVisible={appState.view === 'community_gallery'}
+            isVisible={view === 'community_gallery'}
+            items={communityGalleryItems}
             onVote={handlers.handleVote}
             modalItem={modalItem}
             onItemSelect={handlers.handleModalOpen}
             onModalClose={handlers.handleModalClose}
+            fetchGallery={handlers.fetchCommunityGallery}
         />
       </main>
       
-      <LogPanel messages={appState.logMessages} isVisible={appState.isProcessing} />
+      <LogPanel messages={logMessages} isVisible={isProcessing} />
       
       <TutorialModal 
-          isVisible={appState.showTutorial} 
+          isVisible={showTutorial} 
           onClose={handlers.handleCloseTutorial}
       />
     </div>

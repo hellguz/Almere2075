@@ -1,33 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { API_BASE_URL } from '../config';
+import React, { useEffect, useCallback, useState } from 'react';
 import ComparisonView from '../components/ui/ComparisonView';
 import type { GenerationDetails } from '../types';
+import { API_BASE_URL } from '../config';
 import './CommunityGalleryView.css';
 
 interface CommunityGalleryViewProps {
     isVisible: boolean;
+    items: GenerationDetails[];
+    modalItem: GenerationDetails | null;
     onVote: (id: string) => Promise<void>;
     onItemSelect: (item: GenerationDetails) => void;
-    modalItem: GenerationDetails | null;
     onModalClose: () => void;
+    fetchGallery: () => void;
 }
 
 type ComparisonMode = 'slider' | 'side-by-side';
 
-const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({ isVisible, onVote, onItemSelect, modalItem, onModalClose }) => {
-    const [items, setItems] = useState<GenerationDetails[]>([]);
+const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
+    isVisible,
+    items,
+    modalItem,
+    onVote,
+    onItemSelect,
+    onModalClose,
+    fetchGallery,
+}) => {
     const [modalComparisonMode, setModalComparisonMode] = useState<ComparisonMode>('side-by-side');
-
-    const fetchGallery = useCallback(async () => {
-        try {
-            const response = await fetch(`${API_BASE_URL}/public-gallery`);
-            if (!response.ok) throw new Error('Failed to fetch gallery');
-            const data: GenerationDetails[] = await response.json();
-            setItems(data);
-        } catch (error) {
-             console.error("Error fetching community gallery:", error);
-        }
-    }, []);
 
     useEffect(() => {
         if (isVisible && !modalItem) {
@@ -37,34 +35,13 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({ isVisible, 
 
     const handleVoteClick = (e: React.MouseEvent<HTMLButtonElement>, itemId: string) => {
         e.stopPropagation();
-        onVote(itemId).then(() => {
-            setItems(currentItems => currentItems.map(item => 
-                item.id === itemId ? { ...item, votes: item.votes + 1 } : item
-            ).sort((a, b) => b.votes - a.votes));
-        }).catch(err => {
-            alert((err as Error).message);
-        });
+        onVote(itemId);
     };
     
     const handleModalVote = useCallback(() => {
         if (!modalItem) return;
-
-        const originalItem = { ...modalItem };
-        const updatedItem = { ...modalItem, votes: modalItem.votes + 1 };
-        
-        onItemSelect(updatedItem);
-        setItems(currentItems => currentItems.map(item => 
-            item.id === modalItem.id ? updatedItem : item
-        ).sort((a, b) => b.votes - a.votes));
-
-        onVote(modalItem.id).catch(err => {
-            alert(`Error recording vote: ${(err as Error).message}`);
-            onItemSelect(originalItem);
-            setItems(currentItems => currentItems.map(item =>
-                item.id === modalItem.id ? originalItem : item
-            ).sort((a, b) => b.votes - a.votes));
-        });
-    }, [modalItem, onVote, onItemSelect]);
+        onVote(modalItem.id);
+    }, [modalItem, onVote]);
 
     return (
         <div className={`community-gallery-view ${isVisible ? 'visible' : ''}`}>
@@ -122,4 +99,3 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({ isVisible, 
 };
 
 export default CommunityGalleryView;
-

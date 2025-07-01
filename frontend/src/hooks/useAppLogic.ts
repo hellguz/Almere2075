@@ -1,24 +1,36 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { API_BASE_URL, POLLING_INTERVAL } from '../config';
-import { state, setState, addLogMessage, subscribe } from '../state';
-import type { AppState, GalleryImage, Tag, GenerationDetails, SourceImage } from '../types';
+import { useStore } from '../store';
+import type { GalleryImage, Tag, GenerationDetails, SourceImage } from '../types';
 import { Texture } from 'three';
 
+// This hook encapsulates the application's side-effects (API calls, timers)
+// and provides a clean API of "handlers" for components to call.
 export const useAppLogic = () => {
-    const [appState, setAppState] = useState<AppState>(state);
-    const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
-    const [availableTags, setAvailableTags] = useState<Tag[]>([]);
-    const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [modalItem, setModalItem] = useState<GenerationDetails | null>(null);
     const pollingRef = useRef<number | null>(null);
 
-    // Subscribe to global state changes
-    useEffect(() => subscribe(() => setAppState({ ...state })), []);
-    
+    // Get actions from the store once. They are stable and don't cause re-renders.
+    const {
+        addLogMessage,
+        setState,
+        setGalleryImages,
+        setAvailableTags,
+        resetForNewTransform,
+        startTransform,
+        openTutorial, // MODIFIED: Renamed from showTutorial
+        closeTutorial,
+        setCommunityGalleryItems,
+        optimisticallyUpdateVote,
+        openModal,
+        closeModal,
+        toggleTag,
+    } = useStore.getState();
+
+    // Effect for fetching initial app data (source images, tags)
     useEffect(() => {
         const hasSeen = localStorage.getItem('almere2075-tutorial-seen');
         if (!hasSeen) {
-            setState('showTutorial', true);
+            openTutorial(); // MODIFIED: Use the new action name
         }
 
         const fetchInitialData = async () => {
@@ -27,8 +39,7 @@ export const useAppLogic = () => {
                     fetch(`${API_BASE_URL}/gallery`),
                     fetch(`${API_BASE_URL}/tags`),
                 ]);
-                if (!galleryRes.ok) throw new Error(`Gallery fetch failed: ${galleryRes.statusText}`);
-                if (!tagsRes.ok) throw new Error(`Tags fetch failed: ${tagsRes.statusText}`);
+                if (!galleryRes.ok || !tagsRes.ok) throw new Error(`Initial data fetch failed`);
                 
                 const images: GalleryImage[] = await galleryRes.json();
                 setGalleryImages(images.filter(img => img.thumbnail));
@@ -40,10 +51,12 @@ export const useAppLogic = () => {
             }
         };
         fetchInitialData();
+        
+        // Cleanup polling on unmount
         return () => {
             if (pollingRef.current) clearInterval(pollingRef.current);
         };
-    }, []);
+    }, [setGalleryImages, setAvailableTags, openTutorial]); // MODIFIED: Updated dependency array
 
     const pollJobStatus = useCallback((jobId: string) => {
         if (pollingRef.current) clearInterval(pollingRef.current);
@@ -54,13 +67,13 @@ export const useAppLogic = () => {
             const data = await res.json();
     
             if (data.status === 'completed') {
-              if(pollingRef.current) clearInterval(pollingRef.current);
+              if (pollingRef.current) clearInterval(pollingRef.current);
               addLogMessage('--- Transformation Complete ---', 'success');
               setState('generationDetails', data.generation_data as GenerationDetails);
               setState('isProcessing', false);
               setState('view', 'comparison');
             } else if (data.status === 'failed') {
-              if(pollingRef.current) clearInterval(pollingRef.current);
+              if (pollingRef.current) clearInterval(pollingRef.current);
               throw new Error(data.error || 'Job failed for an unknown reason.');
             }
           } catch (err) {
@@ -69,13 +82,13 @@ export const useAppLogic = () => {
             if (pollingRef.current) clearInterval(pollingRef.current);
           }
         }, POLLING_INTERVAL);
-    }, []);
+    }, [addLogMessage, setState]);
 
     const handleTransform = useCallback(async () => {
-        if (!state.sourceImageForTransform) return;
+        const { sourceImageForTransform, selectedTags } = useStore.getState();
+        if (!sourceImageForTransform) return;
         
         setState('isProcessing', true);
-        setState('view', 'transform');
         setState('logMessages', [{time: new Date().toLocaleTimeString('en-GB'), text: '--- Initiating Transformation Protocol ---', type: 'system'}]);
         
         try {
@@ -83,9 +96,9 @@ export const useAppLogic = () => {
             const promptResponse = await fetch(`${API_BASE_URL}/generate-prompt`, { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ imageBase64: state.sourceImageForTransform.url, tags: selectedTags }) 
+                body: JSON.stringify({ imageBase64: sourceImageForTransform.url, tags: selectedTags }) 
             });
-            if (!promptResponse.ok) throw new Error(`AI Vision Conection failed: ${promptResponse.statusText}`);
+            if (!promptResponse.ok) throw new Error(`AI Vision Connection failed: ${promptResponse.statusText}`);
             const promptData = await promptResponse.json();
             addLogMessage('Vision prompt generated.', 'success');
     
@@ -94,10 +107,10 @@ export const useAppLogic = () => {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
                 body: JSON.stringify({ 
-                    imageBase64: state.sourceImageForTransform.url, 
+                    imageBase64: sourceImageForTransform.url, 
                     prompt: promptData.prompt,
                     tags: promptData.tags_used,
-                    original_filename: state.sourceImageForTransform.name
+                    original_filename: sourceImageForTransform.name
                 }) 
             });
             if (!transformResponse.ok) throw new Error(`FLUX renderer submission failed: ${transformResponse.statusText}`);
@@ -111,30 +124,15 @@ export const useAppLogic = () => {
             addLogMessage(`PROCESS FAILED: ${(err as Error).message}`, 'error');
             setState('isProcessing', false);
         }
-    }, [pollJobStatus, selectedTags]);
+    }, [pollJobStatus, addLogMessage, setState]);
 
-    const resetState = () => {
-        setState('sourceImageForTransform', null);
-        setState('isProcessing', false);
-        setState('logMessages', []);
-        setState('jobId', null);
-        setState('generationDetails', null);
-        setState('isCommunityItem', false);
-        setSelectedTags([]);
-        if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-    const handleBackToStart = () => {
-        resetState();
+    const handleBackToStart = useCallback(() => {
+        resetForNewTransform();
         setState('view', 'gallery');
-    };
-    const handleStartTransform = (sourceImage: SourceImage) => {
-        resetState();
-        setState('sourceImageForTransform', sourceImage);
-        setState('view', 'transform');
-        addLogMessage(`Source selected: ${sourceImage.name}`);
-    };
+    }, [resetForNewTransform, setState]);
 
-    const handleSelectGalleryImage = (texture: Texture) => {
+    const handleSelectGalleryImage = useCallback((texture: Texture) => {
+        const { galleryImages } = useStore.getState();
         const thumbnailSrc = texture.image.src;
         const thumbnailFilename = thumbnailSrc.split('/').pop();
         const fullImage = galleryImages.find(img => img.thumbnail === thumbnailFilename);
@@ -143,35 +141,37 @@ export const useAppLogic = () => {
                 url: `${API_BASE_URL}/images/${fullImage.filename}`,
                 name: fullImage.filename
             };
-            handleStartTransform(source);
+            startTransform(source);
         } else {
             console.error("Could not find matching full-size image for thumbnail:", thumbnailFilename);
-            alert("An error occurred while selecting the image. Please try another one.");
         }
-    };
+    }, [startTransform]);
+
     const handleSetName = useCallback(async (name: string) => {
-        const jobId = appState.jobId || appState.generationDetails?.id;
-        if (!jobId) return;
+        const { jobId, generationDetails } = useStore.getState();
+        const currentJobId = jobId || generationDetails?.id;
+        if (!currentJobId) return;
         try {
-            await fetch(`${API_BASE_URL}/generations/${jobId}/set-name`, {
+            await fetch(`${API_BASE_URL}/generations/${currentJobId}/set-name`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name })
             });
-            if (appState.generationDetails) {
-                setState('generationDetails', { ...appState.generationDetails, creator_name: name });
+            if (generationDetails) {
+                setState('generationDetails', { ...generationDetails, creator_name: name });
             }
         } catch (error) {
            console.error("Failed to set name:", error);
         }
-    }, [appState.jobId, appState.generationDetails]);
+    }, [setState]);
 
     const handleHide = useCallback(async () => {
-        const jobId = appState.jobId || appState.generationDetails?.id;
-        if (!jobId) return;
+        const { jobId, generationDetails } = useStore.getState();
+        const currentJobId = jobId || generationDetails?.id;
+        if (!currentJobId) return;
         if (window.confirm("Are you sure you want to permanently remove this image from the gallery? This cannot be undone.")) {
             try {
-                await fetch(`${API_BASE_URL}/generations/${jobId}/hide`, { method: 'POST' });
+                await fetch(`${API_BASE_URL}/generations/${currentJobId}/hide`, { method: 'POST' });
                 alert("This image has been removed from the public gallery.");
                 handleBackToStart();
             } catch (error) {
@@ -179,8 +179,21 @@ export const useAppLogic = () => {
                 alert("Failed to hide generation. See console for details.");
             }
         }
-    }, [appState.jobId, appState.generationDetails, handleBackToStart]);
-    const handleVote = useCallback(async (generationId: string): Promise<void> => {
+    }, [handleBackToStart]);
+    
+    const fetchCommunityGallery = useCallback(async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/public-gallery`);
+            if (!response.ok) throw new Error('Failed to fetch gallery');
+            const data: GenerationDetails[] = await response.json();
+            setCommunityGalleryItems(data);
+        } catch (error) {
+             console.error("Error fetching community gallery:", error);
+        }
+    }, [setCommunityGalleryItems]);
+
+    const handleVote = useCallback(async (generationId: string) => {
+        optimisticallyUpdateVote(generationId); // Update UI immediately
         try {
             const res = await fetch(`${API_BASE_URL}/generations/${generationId}/vote`, { method: 'POST' });
             if (!res.ok) {
@@ -188,53 +201,28 @@ export const useAppLogic = () => {
                 throw new Error(errorData.detail || "Vote failed");
             }
         } catch (error) {
-            throw error;
+            alert(`Vote failed: ${(error as Error).message}. Reverting.`);
+            fetchCommunityGallery(); // Re-fetch to revert to correct state
         }
-    }, []);
-    const handleModalOpen = (item: GenerationDetails) => {
-        setState('isCommunityItem', true);
-        setModalItem(item);
-    };
-    const handleModalClose = () => {
-        setState('isCommunityItem', false);
-        setModalItem(null);
-    };
-    const handleTagToggle = (tagId: string) => {
-        setSelectedTags(current => 
-            current.includes(tagId) ? current.filter(t => t !== tagId) : [...current, tagId]
-        );
-    };
+    }, [optimisticallyUpdateVote, fetchCommunityGallery]);
 
-    const handleCloseTutorial = () => {
-        localStorage.setItem('almere2075-tutorial-seen', 'true');
-        setState('showTutorial', false);
-    };
-
-    const handleShowTutorial = () => {
-        setState('showTutorial', true);
-    }
-
+    // Expose a collection of stable handlers for components to use.
     return {
-        appState,
-        galleryImages,
-        availableTags,
-        selectedTags,
-        modalItem,
         handlers: {
             handleBackToStart,
             handleTransform,
             handleSelectGalleryImage,
-            handleStartTransform,
+            handleStartTransform: startTransform,
             handleSetName,
             handleHide,
             handleVote,
-            handleModalOpen,
-            handleModalClose,
-            handleTagToggle,
+            handleModalOpen: openModal,
+            handleModalClose: closeModal,
+            handleTagToggle: toggleTag,
+            handleCloseTutorial: closeTutorial,
+            handleShowTutorial: openTutorial, // MODIFIED: Point to the renamed action
+            fetchCommunityGallery,
             setState,
-            handleCloseTutorial,
-            handleShowTutorial,
         }
     };
 };
-

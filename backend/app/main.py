@@ -116,7 +116,7 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
     try:
         image_data_url = resolve_image_to_data_url(image_string_from_request)
         
-        model_name = "black-forest-labs/flux-kontext-dev"
+        model_name = "black-forest-labs/flux-kontext-pro"
         input_data = {"prompt": prompt, "input_image": image_data_url, "output_format": "png"}
         
         print(f"[{job_id}] Starting Replicate prediction...")
