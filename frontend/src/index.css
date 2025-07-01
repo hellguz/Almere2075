@@ -164,14 +164,16 @@ button, input, textarea, select, a, .slider-mode, .gallery-item {
 
 .image-panel {
   flex: 1;
-  position: relative; /* Context for header */
+  position: relative;
   width: 100%;
   height: 100%;
-  display: grid;
-  place-items: center; /* This robustly centers the image */
   min-width: 0;
+  /* Switched to background-image for robust sizing */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 8px; /* Apply radius to the panel itself */
 }
-.image-panel img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; }
 .image-header { 
   font-size: 12px; font-weight: 500; text-transform: uppercase; 
   position: absolute; top: 0; left: 50%; transform: translateX(-50%); 

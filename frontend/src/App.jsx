@@ -287,19 +287,17 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onMod
             <div className="comparison-main-area">
                 {mode === 'side-by-side' && (
                     <div className="comparison-view side-by-side">
-                        <div className="image-panel"><div className="image-header">SOURCE</div><img src={originalImageUrl} alt="Original" /></div>
-                        <div className="image-panel"><div className="image-header">ALMERE 2075</div><img src={outputImageUrl} alt="Transformed" /></div>
+                        <div className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}><div className="image-header">SOURCE</div></div>
+                        <div className="image-panel" style={{backgroundImage: `url("${outputImageUrl}")`}}><div className="image-header">ALMERE 2075</div></div>
                     </div>
                 )}
                 {mode === 'slider' && (
                     <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleSliderMove} onTouchMove={handleSliderMove}>
-                        <div className="image-panel">
+                        <div className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}>
                             <div className="image-header">SOURCE</div>
-                            <img src={originalImageUrl} alt="Original" />
                         </div>
-                        <div className="image-panel after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
+                        <div className="image-panel after-image" style={{backgroundImage: `url("${outputImageUrl}")`, clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
                             <div className="image-header">ALMERE 2075</div>
-                            <img src={outputImageUrl} alt="Almere 2075" />
                         </div>
                         <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
                     </div>
