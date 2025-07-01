@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '../config';
 import ComparisonView from '../components/ui/ComparisonView';
+import './CommunityGalleryView.css';
 
 const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onModalClose }) => {
     const [items, setItems] = useState([]);

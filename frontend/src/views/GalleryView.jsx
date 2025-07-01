@@ -3,6 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { fileToDataUrl } from '../utils';
 import DynamicGallery from '../components/gallery/DynamicGallery';
 import GalleryEvents from '../components/gallery/GalleryEvents';
+import './GalleryView.css';
 
 const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewImage }) => {
     const [showInstructions, setShowInstructions] = useState(true);

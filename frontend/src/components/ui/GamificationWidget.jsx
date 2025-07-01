@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '../../config';
+import './GamificationWidget.css';
 
 const GamificationWidget = () => {
     const [stats, setStats] = useState({ happiness_score: 0, target_score: 1000, deadline_iso: '' });

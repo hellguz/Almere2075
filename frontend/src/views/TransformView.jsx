@@ -1,5 +1,6 @@
 import React from 'react';
 import TagSelector from '../components/ui/TagSelector';
+import './TransformView.css';
 
 const TransformView = ({ sourceImage, isVisible, isProcessing, onTransform, tags, selectedTags, onTagToggle }) => {
     if (!sourceImage) return null;

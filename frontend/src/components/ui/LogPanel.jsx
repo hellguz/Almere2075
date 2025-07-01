@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import './LogPanel.css';
 
 const LogPanel = ({ messages, isVisible }) => {
   const logEndRef = useRef(null);

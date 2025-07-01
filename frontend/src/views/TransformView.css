@@ -1,0 +1,80 @@
+.transform-view { 
+    display: flex; align-items: center; justify-content: center; 
+    padding-top: 80px; 
+    box-sizing: border-box; 
+}
+.transform-content { 
+    display: flex; flex-direction: column; gap: 20px; 
+    width: 95%; max-width: 1000px; height: calc(100% - 30px); 
+}
+.main-image-container { 
+    width: 100%; flex: 1; min-height: 0; 
+    display: flex; flex-direction: column; 
+}
+.transform-options { 
+    width: 100%; flex-shrink: 0; display: flex; 
+    flex-direction: column; gap: 20px; 
+}
+.transform-step-title { 
+    font-size: 1rem; font-weight: 600; 
+    color: var(--color-text-secondary); margin: 0; text-align: center; 
+}
+.transform-view .main-image { 
+    width: 100%; height: 100%; object-fit: contain; border-radius: 12px; 
+}
+.transform-action-button {
+    font-size: 1.2rem; font-weight: 600; color: var(--color-background);
+    background: var(--color-accent-white); padding: 20px 40px; border: none;
+    border-radius: 30px; cursor: pointer; transition: all 0.2s ease;
+    width: 100%; box-shadow: 0 0 25px var(--color-accent-glow);
+}
+.transform-action-button:hover:not(:disabled) { 
+    transform: scale(1.02); box-shadow: 0 0 40px var(--color-accent-glow); 
+}
+.transform-action-button:disabled { 
+    background: #555; color: #999; cursor: not-allowed; box-shadow: none; 
+}
+
+/* Scanline animation */
+.scanline { 
+    position: absolute; top: 0; left: 0; width: 100%; height: 3px; 
+    background: var(--color-accent-white); 
+    box-shadow: 0 0 20px 2px var(--color-accent-glow); 
+    animation: scan 20s infinite ease-in-out; z-index: 10; 
+}
+@keyframes scan { 
+    0% { transform: translateY(0vh); } 
+    50% { transform: translateY(100vh); } 
+    100% { transform: translateY(0vh); } 
+}
+
+/* Tag Selector */
+.tag-selector-container { 
+    display: flex; flex-direction: column; gap: 10px; 
+}
+.tag-list-wrapper { 
+    position: relative; 
+}
+.tag-list { 
+    display: flex; overflow-x: auto; padding: 10px 0; 
+    gap: 10px; white-space: nowrap; scrollbar-width: none; 
+}
+.tag-list::-webkit-scrollbar { display: none; }
+.tag-button {
+    background: #2c2c2e; color: var(--color-text-primary); border: 1px solid #444;
+    padding: 10px 15px;
+    border-radius: 20px; font-size: 0.9rem;
+    cursor: pointer; transition: all 0.2s ease; flex-shrink: 0;
+}
+.tag-button:hover { 
+    border-color: #777; background: #3a3a3c; 
+}
+.tag-button.active { 
+    background: var(--color-system); color: white; 
+    border-color: var(--color-system); font-weight: 600; 
+}
+
+@media (max-width: 768px) {
+  .transform-view { padding-top: 60px; }
+}
+

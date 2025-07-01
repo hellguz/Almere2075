@@ -1,5 +1,8 @@
 import React from 'react';
 
+// Styles
+import './App.css';
+
 // Hooks
 import { useAppLogic } from './hooks/useAppLogic';
 
