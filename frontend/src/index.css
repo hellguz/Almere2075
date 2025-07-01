@@ -4,10 +4,12 @@
 :root {
   --font-family: 'Inter', -apple-system, sans-serif;
   --font-monospace: 'Roboto Mono', 'Fira Code', monospace;
+  --panel-width: 550px; /* For log panel */
+  --panel-height: 500px; /* For log panel */
 
   /* Dark Theme (Default) */
   --color-background: #000000;
-  --color-text-primary: #F5F5F7; /* Softer white */
+  --color-text-primary: #F5F5F7;
   --color-text-secondary: #86868B;
   --color-accent-white: #FFFFFF;
   --color-accent-glow: rgba(255, 255, 255, 0.5);
@@ -15,58 +17,29 @@
   --color-error: #FF453A;
   --color-system: #0A84FF;
   --color-data: #A1A1A6;
-
-  /* Light Theme Variables */
-  --light-color-background: #FFFFFF;
-  --light-color-text-primary: #1D1D1F;
-  --light-color-text-secondary: #6E6E73;
-  --light-color-accent-black: #000000;
-  --light-color-accent-glow: rgba(0, 0, 0, 0.15);
-  --light-color-success: #28A745;
-  --light-color-error: #DC3545;   /* Standard red */
-  --light-color-system: #007AFF;
-  --light-color-data: #555555;
-
-  --cursor-pointer-color: #FFFF00; /* Always Yellow */
-  /* --- MODIFIED: Use a URL-encoded data URI to force the correct cursor and avoid caching issues. --- */
   --custom-cursor: url("data:image/svg+xml,%3Csvg width='48' height='48' viewBox='0 0 48 48' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M24 6V22M24 26V42M42 24H26M22 24H6' stroke='%23FFFF00' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 24 24, auto;
-}
-
-body.light-theme {
-  /* --cursor-pointer-color: var(--light-color-accent-black); */ /* Removed: No longer theme dependent */
-  --color-background: var(--light-color-background);
-  --color-text-primary: var(--light-color-text-primary);
-  --color-text-secondary: var(--light-color-text-secondary);
-  --color-accent-white: var(--light-color-accent-black); /* In light theme, "accent-white" becomes black for contrast */
-  --color-accent-glow: var(--light-color-accent-glow);
-  --color-success: var(--light-color-success);
-  --color-error: var(--light-color-error);
-  --color-system: var(--light-color-system);
-  --color-data: var(--light-color-data);
-
-  /* Specific overrides for components that might need different treatment in light mode */
-  --app-header-bg: rgba(249, 249, 250, 0.7); /* Light, slightly transparent */
-  --button-bg: rgba(230, 230, 230, 0.7);
-  --button-hover-bg: rgba(210, 210, 210, 0.9);
-  --button-border-color: rgba(0, 0, 0, 0.1);
-  --button-active-bg: #C0C0C0;
-  --gallery-instructions-bg: rgba(235, 235, 235, 0.8);
-  --gallery-instructions-border: rgba(0, 0, 0, 0.15);
-  --transform-controls-button-text: var(--light-color-background);
-  --transform-controls-button-bg: var(--light-color-accent-black);
-  --scanline-bg: var(--light-color-accent-black);
-  --scanline-shadow: var(--light-color-accent-glow);
-  --slider-line-bg: var(--light-color-accent-black);
-  --slider-handle-border: var(--light-color-accent-black);
-  --slider-handle-bg: rgba(255, 255, 255, 0.5);
-  --prompt-button-bg: rgba(230, 230, 230, 0.8);
-  --prompt-button-border: rgba(0, 0, 0, 0.2);
-  --prompt-panel-bg: rgba(240, 240, 240, 0.8);
-  --prompt-panel-border: rgba(0, 0, 0, 0.15);
-  --log-panel-bg: rgba(240, 240, 240, 0.8);
-  --log-panel-border: rgba(0, 0, 0, 0.15);
-  --scrollbar-thumb-bg: rgba(0, 0, 0, 0.2);
-  --scrollbar-thumb-hover-bg: rgba(0, 0, 0, 0.4);
+  --app-header-bg: rgba(10, 10, 10, 0.7);
+  --button-bg: rgba(28, 28, 30, 0.7);
+  --button-hover-bg: rgba(44, 44, 46, 0.9);
+  --button-border-color: rgba(255, 255, 255, 0.1);
+  --button-active-bg: #333;
+  --gallery-instructions-bg: rgba(44, 44, 46, 0.8);
+  --gallery-instructions-border: rgba(255, 255, 255, 0.15);
+  --transform-controls-button-text: var(--color-background);
+  --transform-controls-button-bg: var(--color-accent-white);
+  --scanline-bg: var(--color-accent-white);
+  --scanline-shadow: var(--color-accent-glow);
+  --slider-line-bg: var(--color-accent-white);
+  --slider-handle-border: var(--color-accent-white);
+  --slider-handle-bg: rgba(0, 0, 0, 0.5);
+  --prompt-button-bg: rgba(44, 44, 46, 0.8);
+  --prompt-button-border: rgba(255, 255, 255, 0.2);
+  --prompt-panel-bg: rgba(28, 28, 30, 0.8);
+  --prompt-panel-border: rgba(255, 255, 255, 0.15);
+  --log-panel-bg: rgba(28, 28, 30, 0.8);
+  --log-panel-border: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-bg: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-hover-bg: rgba(255, 255, 255, 0.4);
 }
 
 html, body, #root {
@@ -89,18 +62,13 @@ html, body, #root {
   height: 100%;
   position: relative;
   cursor: var(--custom-cursor);
-  color: var(--cursor-pointer-color); /* This sets currentColor for the SVG cursor */
 }
-
-/* We need to ensure interactive elements like buttons and text inputs revert to their standard cursors */
 button, input, textarea, select, a, .slider-mode {
   cursor: revert;
 }
 .slider-mode {
   cursor: ew-resize;
 }
-
-
 .app-header {
   position: fixed;
   top: 0;
@@ -111,12 +79,12 @@ button, input, textarea, select, a, .slider-mode {
   z-index: 100;
   opacity: 0;
   transform: translateY(-100%);
-  transition: opacity 0.5s ease, transform 0.5s ease, background-color 0.3s ease;
+  transition: opacity 0.5s ease, transform 0.5s ease;
   pointer-events: none;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: var(--app-header-bg, rgba(10, 10, 10, 0.7)); /* Default dark theme header bg */
+  background-color: var(--app-header-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
@@ -125,548 +93,237 @@ button, input, textarea, select, a, .slider-mode {
   transform: translateY(0);
   pointer-events: auto;
 }
-
-.header-left { flex: 1 0 0; text-align: left; }
-.header-center { flex: 1 0 0; text-align: center; display: flex; justify-content: center; }
-.header-right { flex: 1 0 0; display: flex;
-  justify-content: flex-end; align-items: center; }
-
 .back-button {
-  background: var(--button-bg, rgba(28, 28, 30, 0.7));
-  border: 1px solid var(--button-border-color, rgba(255, 255, 255, 0.1));
+  background: var(--button-bg);
+  border: 1px solid var(--button-border-color);
   color: var(--color-text-primary);
   padding: 8px 16px;
   border-radius: 20px;
   cursor: pointer;
   font-weight: 500;
   font-size: 14px;
-  letter-spacing: 0.2px;
-  backdrop-filter: blur(20px); /* Kept for elements that might float above non-blurred bg */
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   transition: all 0.2s ease;
 }
 .back-button:hover {
-  background: var(--button-hover-bg, rgba(44, 44, 46, 0.9));
-  color: var(--color-accent-white);
-  border-color: var(--button-border-color, rgba(255, 255, 255, 0.2));
+  background: var(--button-hover-bg);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* 3. Views Container */
-.fullscreen-canvas-container, .transform-view, .comparison-container {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  visibility: hidden;
+/* 3. Views */
+.fullscreen-canvas-container, .transform-view, .comparison-container, .community-gallery-view {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  opacity: 0; visibility: hidden;
   transition: opacity 0.8s ease, visibility 0.8s;
   will-change: opacity, filter, transform;
 }
-.fullscreen-canvas-container.visible {
-  opacity: 1;
-  visibility: visible;
-  z-index: 10;
+.fullscreen-canvas-container.visible, .transform-view.visible, .comparison-container.visible, .community-gallery-view.visible {
+  opacity: 1; visibility: visible; z-index: 10;
 }
-.transform-view.visible, .comparison-container.visible {
-  opacity: 1;
-  visibility: visible;
-  z-index: 20;
-}
-
 .fullscreen-canvas-container.in-background {
-  opacity: 1;
-  visibility: visible;
+  opacity: 1; visibility: visible;
   filter: blur(20px) brightness(0.2);
   transform: scale(1.05);
   transition: filter 0.8s ease, transform 0.8s ease;
   z-index: 5;
 }
 
-/* 4. Gallery View */
-.fullscreen-canvas-container canvas {
-    /* cursor: none; */ /* Removed to allow custom app-container cursor to show */
-    border-radius: 8px;
-    touch-action: none;
-}
+/* 4. Initial Gallery View */
 .gallery-instructions {
-    position: absolute;
-    top: 40px;
-    left: 50%;
+    position: absolute; top: 40px; left: 50%;
     transform: translateX(-50%);
     color: var(--color-text-primary);
-    font-weight: 500;
-    letter-spacing: 0.8px;
-    font-size: 14px;
+    font-weight: 500; letter-spacing: 0.8px; font-size: 14px;
     padding: 10px 20px;
-    background: var(--gallery-instructions-bg, rgba(44, 44, 46, 0.8));
-    border: 1px solid var(--gallery-instructions-border, rgba(255, 255, 255, 0.15));
-    border-radius: 20px;
-    backdrop-filter: blur(20px);
-    z-index: 10;
-    opacity: 1;
-    transition: opacity 1s ease 1s, background-color 0.3s ease, border-color 0.3s ease;
-    pointer-events: none;
-    text-align: center;
-    text-transform: uppercase;
+    background: var(--gallery-instructions-bg);
+    border: 1px solid var(--gallery-instructions-border);
+    border-radius: 20px; backdrop-filter: blur(20px);
+    z-index: 10; opacity: 1;
+    transition: opacity 1s ease 1s;
+    pointer-events: none; text-align: center; text-transform: uppercase;
 }
-.gallery-instructions.fade-out {
-    opacity: 0;
-}
-
-
-/* 5. Transform View */
-.transform-view {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.main-image-container {
-    width: 90vw;
-    height: 90vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.transform-view .main-image {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-    border-radius: 8px;
-}
-.transform-controls {
+.gallery-instructions.fade-out { opacity: 0; }
+.main-actions-container {
     position: absolute;
-    bottom: 5%;
+    bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    justify-content: center;
+    gap: 15px;
+    z-index: 20;
 }
-.transform-controls button {
-    font-size: 1.2rem;
-    font-weight: 600; /* Slightly less bold */
+.main-action-button {
+    font-size: 1rem;
+    font-weight: 600;
     letter-spacing: 0.5px;
-    color: var(--transform-controls-button-text, var(--color-background));
-    background: var(--transform-controls-button-bg, var(--color-accent-white));
-    padding: 20px 40px;
+    color: var(--transform-controls-button-text);
+    background: var(--transform-controls-button-bg);
+    padding: 18px 36px;
     border: none;
     border-radius: 30px;
     cursor: pointer;
-    box-shadow: 0 0 20px var(--color-accent-glow), inset 0 0 5px var(--color-accent-glow);
+    box-shadow: 0 0 20px var(--color-accent-glow);
     transition: all 0.2s ease;
 }
-.transform-controls button:hover {
+.main-action-button:hover {
     transform: scale(1.05);
-    box-shadow: 0 0 40px var(--color-accent-glow), inset 0 0 10px var(--color-accent-glow);
+    box-shadow: 0 0 40px var(--color-accent-glow);
+}
+.main-action-button.secondary {
+    background: var(--button-bg);
+    color: var(--color-text-primary);
+    border: 1px solid var(--button-border-color);
+    box-shadow: none;
+}
+.main-action-button.secondary:hover {
+    background: var(--button-hover-bg);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
 }
 
-.scanline {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    background: var(--scanline-bg, var(--color-accent-white));
-    box-shadow: 0 0 20px 2px var(--scanline-shadow, var(--color-accent-glow));
-    animation: scan 20s infinite ease-in-out;
-    z-index: 10;
-}
+/* 5. Transform View */
+.transform-view { display: flex; align-items: center; justify-content: center; background: #080808; }
+.transform-content { display: flex; gap: 40px; width: 90%; max-width: 1400px; }
+.main-image-container { flex: 1.2; display: flex; flex-direction: column; gap: 10px; }
+.transform-options { flex: 1; }
+.transform-step-title { font-size: 1.1rem; font-weight: 600; color: var(--color-text-secondary); margin: 0 0 10px; }
+.transform-view .main-image { max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px; }
+.transform-controls { margin-top: 40px; }
+.transform-controls button { font-size: 1.2rem; font-weight: 600; color: var(--transform-controls-button-text); background: var(--transform-controls-button-bg); padding: 20px 40px; border: none; border-radius: 30px; cursor: pointer; transition: all 0.2s ease; width: 100%; }
+.transform-controls button:hover:not(:disabled) { transform: scale(1.02); }
+.transform-controls button:disabled { background: #555; color: #999; cursor: not-allowed; }
+.scanline { position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: var(--scanline-bg); box-shadow: 0 0 20px 2px var(--scanline-shadow); animation: scan 20s infinite ease-in-out; z-index: 10; }
+@keyframes scan { 0% { transform: translateY(0vh); } 50% { transform: translateY(100vh); } 100% { transform: translateY(0vh); } }
 
-@keyframes scan {
-    0% { transform: translateY(0vh); }
-    50% { transform: translateY(100vh);
-    }
-    100% { transform: translateY(0vh); }
-}
+/* Tag Selector */
+.tag-selector-container { display: flex; flex-direction: column; }
+.tag-selector-title { font-size: 1.1rem; font-weight: 600; color: var(--color-text-secondary); margin: 0 0 15px; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.tag-button { background: #2c2c2e; color: var(--color-text-primary); border: 1px solid #444; padding: 10px 15px; border-radius: 20px; font-size: 0.9rem; cursor: pointer; transition: all 0.2s ease; }
+.tag-button:hover { border-color: #777; background: #3a3a3c; }
+.tag-button.active { background: var(--color-system); color: white; border-color: var(--color-system); font-weight: bold; }
+.tag-selector-note { font-size: 0.8rem; color: var(--color-text-secondary); margin-top: 15px; }
 
 /* 6. Comparison View */
-.comparison-container {
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-    gap: 20px;
-    background: var(--color-background);
-    padding: 70px 30px 30px 30px;
-    height: 100%;
-}
+.comparison-container { display: flex; flex-direction: column; box-sizing: border-box; gap: 15px; background: var(--color-background); padding: 80px 30px 30px 30px; height: 100%; }
+.comparison-header { display: flex; justify-content: center; }
+.comparison-main-area { flex-grow: 1; min-height: 0; position: relative; }
+.view-mode-toggle { display: flex; background: var(--button-bg); border: 1px solid var(--button-border-color); border-radius: 20px; padding: 4px; }
+.view-mode-toggle button { background: transparent; border: none; padding: 8px 16px; font-size: 13px; border-radius: 16px; cursor: pointer; color: var(--color-text-secondary); transition: all 0.2s ease; }
+.view-mode-toggle button.active { background: var(--button-active-bg); color: var(--color-text-primary); }
+.comparison-view { width: 100%; height: 100%; display: flex; gap: 20px; position: relative; }
+.comparison-view.side-by-side .image-panel { display: flex; flex-direction: column; gap: 15px; }
+.image-panel { flex: 1; position: relative; height: 100%; display: flex; align-items: center; justify-content: center; min-width: 0; }
+.image-panel img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
+.image-header { font-size: 12px; font-weight: 500; text-transform: uppercase; position: absolute; top: 0; left: 50%; transform: translateX(-50%); background: var(--app-header-bg); padding: 4px 12px; border-radius: 0 0 8px 8px; color: var(--color-text-secondary); }
+.slider-mode .image-panel { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.after-image { z-index: 2; }
+.slider-line { position: absolute; top: 0; height: 100%; width: 2px; background: var(--slider-line-bg); box-shadow: 0 0 10px var(--color-accent-glow); transform: translateX(-1px); pointer-events: none; z-index: 4; }
+.slider-handle { position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; border: 2px solid var(--slider-handle-border); border-radius: 50%; background: var(--slider-handle-bg); backdrop-filter: blur(10px); transform: translate(-50%, -50%); }
+.generation-info-panel { display: flex; justify-content: space-between; align-items: center; background: #1c1c1e; padding: 10px 20px; border-radius: 12px; }
+.info-tags, .info-creator { color: var(--color-text-secondary); font-size: 0.9rem; }
+.info-tags b, .info-creator b { color: var(--color-text-primary); }
+.user-actions { display: flex; gap: 15px; }
+.name-input-container { display: flex; }
+.name-input-container input { background: #333; border: 1px solid #555; color: white; border-radius: 6px 0 0 6px; padding: 8px 12px; font-size: 0.9rem; }
+.name-input-container button { background: var(--color-system); color: white; border: none; padding: 8px 12px; border-radius: 0 6px 6px 0; cursor: pointer; }
+.name-input-container button:disabled { background: #555; cursor: not-allowed; }
+.hide-button { background: var(--color-error); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
 
-.view-mode-toggle {
-    display: flex;
-    background: var(--button-bg, rgba(28, 28, 30, 0.7));
-    border: 1px solid var(--button-border-color, rgba(255, 255, 255, 0.1));
-    border-radius: 20px;
-    padding: 4px;
-    backdrop-filter: blur(20px);
-}
-.view-mode-toggle button {
-    background: transparent;
-    border: none;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 500;
-    border-radius: 16px;
-    cursor: pointer;
-    color: var(--color-text-secondary);
-    transition: all 0.2s ease;
-}
-.view-mode-toggle button.active {
-    background: var(--button-active-bg, #333);
-    color: var(--color-text-primary);
-}
-.comparison-view {
-    flex-grow: 1;
-    display: flex;
-    gap: 20px;
-    min-height: 0;
-    position: relative;
-}
-.comparison-view.side-by-side .image-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-.image-panel {
-    flex: 1;
-    position: relative;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    min-width: 0;
-}
-.image-panel img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 8px;
-}
-.image-header {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--color-text-secondary);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--app-header-bg, rgba(10,10,10,0.6)); /* Similar to header */
-    padding: 4px 12px;
-    border-radius: 0 0 8px 8px;
-    color: var(--color-text-secondary); /* Ensure this uses theme color */
-}
-/* Slider Mode Specifics */
-.slider-mode {
-    cursor: ew-resize;
-}
-.slider-mode .image-panel {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-.slider-mode .image-header {
-    display: none;
-}
-.after-image {
-    z-index: 2;
-}
-.slider-line {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    width: 2px;
-    background: var(--slider-line-bg, var(--color-accent-white));
-    box-shadow: 0 0 10px var(--color-accent-glow); /* Use theme glow */
-    transform: translateX(-1px);
-    pointer-events: none;
-    z-index: 4;
-}
-.slider-handle {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 44px;
-    height: 44px;
-    border: 2px solid var(--slider-handle-border, var(--color-accent-white));
-    border-radius: 50%;
-    background: var(--slider-handle-bg, rgba(0, 0, 0, 0.5));
-    backdrop-filter: blur(10px);
-    transform: translate(-50%, -50%);
-}
-.prompt-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--color-accent-glow);
-    z-index: 55;
-}
+/* Prompt Panel */
+.prompt-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 55; }
+.prompt-container { position: absolute; bottom: 30px; right: 30px; z-index: 60; }
+.prompt-button { background: var(--prompt-button-bg); border: 1px solid var(--prompt-button-border); color: var(--color-text-primary); padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 500; font-size: 13px; text-transform: uppercase; backdrop-filter: blur(20px); transition: all 0.3s ease; }
+.prompt-panel-expandable { position: absolute; bottom: calc(100% + 10px); right: 0; width: 450px; height: 200px; background: var(--prompt-panel-bg); border: 1px solid var(--prompt-panel-border); border-radius: 16px; backdrop-filter: blur(20px); opacity: 0; transform: translateY(10px) scale(0.98); transform-origin: bottom right; transition: all 0.3s ease; pointer-events: none; display: flex; flex-direction: column; }
+.prompt-container.expanded .prompt-panel-expandable { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+.prompt-container.expanded .prompt-overlay { display: block; }
+.prompt-header { font-size: 12px; font-weight: 600; text-transform: uppercase; color: var(--color-text-secondary); padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); flex-shrink: 0; }
+.prompt-content { flex-grow: 1; overflow-y: auto; padding: 12px 16px; font-family: var(--font-monospace); font-size: 14px; line-height: 1.6; }
 
-.prompt-container {
+/* 7. Community Gallery View */
+.community-gallery-view { display: flex; flex-direction: column; background: #080808; padding: 20px; box-sizing: border-box; }
+.community-header { display: flex; justify-content: space-between; align-items: center; padding: 0 10px 20px; flex-shrink: 0; }
+.community-header h2 { margin: 0; font-size: 1.8rem; }
+.gallery-grid-container { flex-grow: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; padding: 10px; }
+.gallery-item { background: #1c1c1e; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+.gallery-item-images { display: flex; cursor: pointer; }
+.gallery-item-thumb { width: 50%; aspect-ratio: 1/1; object-fit: cover; transition: transform 0.3s ease; }
+.gallery-item:hover .gallery-item-thumb { transform: scale(1.05); }
+.gallery-item-info { padding: 15px; display: grid; grid-template-columns: 1fr auto; gap: 5px 15px; align-items: center; }
+.gallery-item-tags { font-weight: bold; grid-column: 1 / 2; }
+.gallery-item-creator { color: var(--color-text-secondary); font-size: 0.9rem; grid-column: 1 / 2; }
+.vote-button { background: #333; color: white; border: 1px solid #555; padding: 10px 15px; border-radius: 8px; cursor: pointer; grid-column: 2 / 3; grid-row: 1 / 3; align-self: center; justify-self: end; transition: all 0.2s ease; }
+.vote-button:hover { background: #444; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 200; display: flex; align-items: center; justify-content: center; }
+.modal-content { position: relative; width: 90%; height: 90%; }
+.close-modal-button { position: absolute; top: -10px; right: -10px; background: white; color: black; border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; cursor: pointer; z-index: 10; }
+
+/* 8. Gamification Widget */
+.gamification-widget {
   position: absolute;
-  bottom: 30px;
-  right: 30px;
-  z-index: 60;
-}
-
-.prompt-button {
-  background: var(--prompt-button-bg, rgba(44, 44, 46, 0.8));
-  border: 1px solid var(--prompt-button-border, rgba(255, 255, 255, 0.2));
-  color: var(--color-text-primary);
-  padding: 10px 20px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-weight: 500;
-  font-size: 13px;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  transition: all 0.3s ease;
-  transform-origin: bottom right;
-}
-
-.prompt-button:hover {
-    transform: scale(1.05);
-    border-color: var(--prompt-button-border, rgba(255, 255, 255, 0.4));
-}
-
-.prompt-panel-expandable {
-    position: absolute;
-    bottom: calc(100% + 10px);
-    right: 0;
-    width: 450px;
-    height: 200px;
-    background: var(--prompt-panel-bg, rgba(28, 28, 30, 0.8));
-    border: 1px solid var(--prompt-panel-border, rgba(255, 255, 255, 0.15));
-    border-radius: 16px;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    opacity: 0;
-    transform: translateY(10px) scale(0.98);
-    transform-origin: bottom right;
-    transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-    pointer-events: none;
-    display: flex;
-    flex-direction: column;
-}
-
-.prompt-container.expanded .prompt-panel-expandable {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  pointer-events: auto;
-}
-.prompt-container.expanded .prompt-overlay {
-    display: block;
-}
-
-
-.prompt-header {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    color: var(--color-text-secondary);
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    flex-shrink: 0;
-}
-.prompt-content {
-    flex-grow: 1;
-    overflow-y: auto;
-    padding: 12px 16px;
-    font-family: var(--font-monospace);
-    font-size: 14px;
-    color: var(--color-text-primary);
-    line-height: 1.6;
-}
-.prompt-content::-webkit-scrollbar { width: 6px; }
-.prompt-content::-webkit-scrollbar-track { background: transparent; }
-.prompt-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg, rgba(255, 255, 255, 0.2)); border-radius: 3px;
-}
-.prompt-content::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg, rgba(255, 255, 255, 0.4)); }
-
-
-/* 7. Process Log */
-.process-log-wrapper {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: var(--panel-width);
-  max-width: calc(100% - 40px);
-  height: var(--panel-height);
-  max-height: 60vh;
-  background: var(--log-panel-bg, rgba(28, 28, 30, 0.8));
-  border: 1px solid var(--log-panel-border, rgba(255, 255, 255, 0.15));
-  border-radius: 16px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  top: 20px;
+  left: 20px;
+  /* MODIFIED: Increased z-index to 101 to appear above the app-header (z-index: 100) */
+  z-index: 101;
+  background: var(--button-bg);
+  border-radius: 12px;
+  padding: 15px;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--button-border-color);
   display: flex;
   flex-direction: column;
-  z-index: 50;
-  transform: translateX(calc(100% + 40px));
-  transition: transform 0.5s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.3s ease, border-color 0.3s ease;
+  gap: 15px;
+  width: 280px;
 }
-.process-log-wrapper.visible {
-  transform: translateX(0);
+.score-title, .countdown-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-secondary); }
+.score-bar-container { width: 100%; height: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; margin: 5px 0; }
+.score-bar { height: 100%; background: var(--color-system); border-radius: 4px; transition: width 0.5s ease; }
+.score-text { font-size: 0.9rem; font-weight: 500; }
+.countdown-text { font-size: 1.2rem; font-weight: 600; color: var(--color-accent-white); }
+.info-tooltip { position: absolute; top: 10px; right: 10px; cursor: help; }
+.info-tooltip-text {
+  display: none;
+  position: absolute;
+  /* MODIFIED: Changed position to open downwards and to the right, preventing it from going off-screen. */
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  width: 250px;
+  background: #333;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #eee;
+  z-index: 10;
+  pointer-events: none;
 }
+.info-tooltip:hover .info-tooltip-text { display: block; }
 
-/* Styles for Theme Toggle Button */
-.theme-toggle-container {
-  position: fixed;
-  top: 15px;
-  right: 30px; /* Align with header padding */
-  z-index: 1001;
-}
-
-.theme-toggle-button {
-  background: var(--button-bg, rgba(28, 28, 30, 0.7));
-  border: 1px solid var(--button-border-color, rgba(255, 255, 255, 0.1));
-  color: var(--color-text-primary);
-  padding: 8px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 18px; /* For emoji icons */
-  line-height: 1;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  transition: all 0.2s ease;
-}
-
-.theme-toggle-button:hover {
-  background: var(--button-hover-bg, rgba(44, 44, 46, 0.9));
-  border-color: var(--button-border-color, rgba(255, 255, 255, 0.2));
-}
-
-.log-header {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--log-panel-border, rgba(255, 255, 255, 0.1));
-  flex-shrink: 0;
-}
-
-.log-content {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 8px 16px;
-  font-family: var(--font-monospace);
-  font-size: 13px;
-  color: var(--color-text-primary); /* Ensure log text uses theme color */
-}
-
-.log-content::-webkit-scrollbar { width: 6px;
-}
-.log-content::-webkit-scrollbar-track { background: transparent; }
-.log-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg, rgba(255, 255, 255, 0.2));
-  border-radius: 3px;
-}
-.log-content::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg, rgba(255, 255, 255, 0.4)); }
-
-.log-message {
-  margin: 4px 0;
-  display: grid;
-  grid-template-columns: 80px 1fr;
-  gap: 16px;
-  line-height: 1.5;
-}
+/* 9. Process Log */
+.process-log-wrapper { position: fixed; bottom: 20px; right: 20px; width: var(--panel-width); max-width: calc(100% - 40px); height: var(--panel-height); max-height: 40vh; background: var(--log-panel-bg); border: 1px solid var(--log-panel-border); border-radius: 16px; backdrop-filter: blur(20px); display: flex; flex-direction: column; z-index: 50; transform: translateX(calc(100% + 40px)); transition: transform 0.5s ease; }
+.process-log-wrapper.visible { transform: translateX(0); }
+.log-header { font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--color-text-secondary); padding: 12px 16px; border-bottom: 1px solid var(--log-panel-border); flex-shrink: 0; }
+.log-content { flex-grow: 1; overflow-y: auto; padding: 8px 16px; font-family: var(--font-monospace); font-size: 13px; }
+.log-message { margin: 4px 0; display: grid; grid-template-columns: 80px 1fr; gap: 16px; line-height: 1.5; }
 .log-message span:first-child { color: var(--color-text-secondary); }
-.log-message.system span:last-child { font-weight: bold; color: var(--color-system);
-}
+.log-message.system span:last-child { font-weight: bold; color: var(--color-system); }
 .log-message.success span:last-child { color: var(--color-success); }
 .log-message.error span:last-child { color: var(--color-error); font-weight: bold; }
-.log-message.data {
-  color: var(--color-data);
-  font-style: italic;
-  white-space: pre-wrap;
-  word-break: break-all;
-}
+.log-message.data { color: var(--color-data); font-style: italic; white-space: pre-wrap; word-break: break-all; }
 
+/* Scrollbar Styles */
+.log-content::-webkit-scrollbar, .prompt-content::-webkit-scrollbar, .gallery-grid-container::-webkit-scrollbar { width: 6px; }
+.log-content::-webkit-scrollbar-track, .prompt-content::-webkit-scrollbar-track, .gallery-grid-container::-webkit-scrollbar-track { background: transparent; }
+.log-content::-webkit-scrollbar-thumb, .prompt-content::-webkit-scrollbar-thumb, .gallery-grid-container::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg); border-radius: 3px; }
+.log-content::-webkit-scrollbar-thumb:hover, .prompt-content::-webkit-scrollbar-thumb:hover, .gallery-grid-container::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg); }
 
-/* 8. Responsive Design */
+/* 10. Responsive Design */
 @media (max-width: 768px) {
-    .app-header {
-        padding: 10px 15px;
-    }
-    .back-button, .view-mode-toggle button {
-        padding: 6px 12px;
-        font-size: 12px;
-    }
-    
-    .transform-controls {
-        bottom: 12vh;
-        width: 90%;
-    }
-
-    .transform-controls button {
-        font-size: 1rem;
-        padding: 15px 30px;
-    }
-
-    .comparison-container {
-        padding: 60px 15px 15px 15px;
-        gap: 15px;
-    }
-
-    .comparison-view.side-by-side {
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .comparison-view.side-by-side .image-panel {
-        flex-grow: 1;
-        min-height: 100px;
-    }
-
-    .image-header {
-        font-size: 12px;
-        padding: 2px 8px;
-    }
-
-    .process-log-wrapper {
-        bottom: 15px;
-        left: 15px;
-        right: 15px;
-        width: auto;
-        max-width: none;
-        height: 40vh;
-        max-height: 300px;
-        transform: translateY(calc(100% + 30px));
-    }
-    .process-log-wrapper.visible {
-        transform: translateY(0);
-    }
-    .log-message {
-        grid-template-columns: 65px 1fr;
-        gap: 10px;
-        font-size: 12px;
-    }
-
-    .prompt-container {
-        bottom: 15px;
-        right: 15px;
-        left: 15px;
-        display: flex;
-        justify-content: flex-end;
-    }
-    .prompt-panel-expandable {
-        width: 100%;
-        left: 0;
-        height: 180px;
-    }
-
-    .gallery-instructions {
-        width: calc(100% - 30px);
-        top: 20px;
-    }
+  .app-header { padding: 10px 15px; }
+  .gamification-widget { top: 70px; left: 15px; right: 15px; width: auto; }
+  .main-actions-container { flex-direction: column; width: calc(100% - 40px); }
+  .transform-content { flex-direction: column; }
+  .transform-view .main-image { max-height: 40vh; }
+  .community-gallery-view { padding: 10px; }
+  .gallery-grid-container { grid-template-columns: 1fr; }
 }

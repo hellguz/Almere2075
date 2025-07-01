@@ -25,7 +25,9 @@ services:
       dockerfile: Dockerfile
     container_name: almere-backend-prod
     env_file: .env
-    # VOLUMES are removed for production. The code is baked into the image.
+    # MODIFIED: Add a volume to persist the SQLite database
+    volumes:
+      - ./database:/app/database
     networks:
       - almere-net
     expose:
@@ -50,4 +52,5 @@ services:
 networks:
   almere-net:
     driver: bridge
+
 

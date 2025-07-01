@@ -1,7 +1,6 @@
 # Development-specific docker-compose file.
 # To run: docker-compose -f docker-compose.dev.yml up --build
 # This setup enables hot-reloading for both frontend and backend.
-
 services:
   nginx:
     image: nginx:alpine
@@ -29,6 +28,8 @@ services:
     volumes:
       # Mount the entire backend directory to enable hot-reloading
       - ./backend:/app
+      # MODIFIED: Add a volume to persist the SQLite database across restarts
+      - ./database:/app/database
     networks:
       - almere-net
     expose:
@@ -62,4 +63,5 @@ services:
 networks:
   almere-net:
     driver: bridge
+
 

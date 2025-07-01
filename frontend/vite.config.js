@@ -19,7 +19,10 @@ export default defineConfig(({ mode }) => {
       watch: {
         usePolling: true,
       },
+      // MODIFIED: Add custom domain to allowed hosts to prevent Vite from blocking requests
+      allowedHosts: [
+        'almere.i-am-hellguz.uk',
+      ],
     }
   }
 })
-

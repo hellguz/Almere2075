@@ -6,4 +6,6 @@ replicate
 Pillow
 aiofiles
 python-multipart
+# ADDED: For database integration
+SQLAlchemy
 
