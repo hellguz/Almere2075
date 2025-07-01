@@ -5,18 +5,17 @@ import './App.css';
 
 // Hooks
 import { useAppLogic } from './hooks/useAppLogic';
-
 // State & Components
 import { setState } from './state';
 import LogPanel from './components/ui/LogPanel';
 import GamificationWidget from './components/ui/GamificationWidget';
 import ComparisonView from './components/ui/ComparisonView';
+import TutorialModal from './components/ui/TutorialModal';
 
 // Views
 import GalleryView from './views/GalleryView';
 import TransformView from './views/TransformView';
 import CommunityGalleryView from './views/CommunityGalleryView';
-
 function App() {
   const {
     appState,
@@ -26,9 +25,7 @@ function App() {
     modalItem,
     handlers
   } = useAppLogic();
-
   const showGalleryBackground = (appState.view === 'transform' || appState.view === 'comparison') && !appState.isCommunityItem;
-
   return (
     <div className="app-container">
       <header className="app-header">
@@ -54,6 +51,7 @@ function App() {
             isInBackground={showGalleryBackground}
             onImageClick={handlers.handleSelectGalleryImage}
             onNewImage={handlers.handleStartTransform}
+            onShowTutorial={handlers.handleShowTutorial}
         />
         <TransformView 
             sourceImage={appState.sourceImageForTransform} 
@@ -84,6 +82,11 @@ function App() {
       </main>
       
       <LogPanel messages={appState.logMessages} isVisible={appState.isProcessing} />
+      
+      <TutorialModal 
+          isVisible={appState.showTutorial} 
+          onClose={handlers.handleCloseTutorial}
+      />
     </div>
   );
 }

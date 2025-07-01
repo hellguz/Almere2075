@@ -4,8 +4,7 @@ import { fileToDataUrl } from '../utils';
 import DynamicGallery from '../components/gallery/DynamicGallery';
 import GalleryEvents from '../components/gallery/GalleryEvents';
 import './GalleryView.css';
-
-const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewImage }) => {
+const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewImage, onShowTutorial }) => {
     const [showInstructions, setShowInstructions] = useState(true);
     const [isTouchDevice, setIsTouchDevice] = useState(false);
     const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
@@ -23,7 +22,6 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
         clearTimeout(timer);
       };
     }, []);
-
     const handlePointerDown = (e) => {
         if (e.pointerType === 'touch') {
             if (!isTouchDevice) setIsTouchDevice(true);
@@ -34,7 +32,6 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
             panState.current.lastOffset = panOffset;
         }
     };
-
     const handlePointerMove = (e, viewport, size) => {
         if (panState.current.isPanning) {
             const x = e.nativeEvent.touches?.[0]?.clientX ?? e.clientX;
@@ -45,10 +42,8 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
             setPanOffset({ x: panState.current.lastOffset.x + dx, y: panState.current.lastOffset.y - dy });
         }
     };
-
     const handlePointerUp = () => { if (panState.current.isPanning) { panState.current.isPanning = false; } };
     const handleClick = (texture) => { if (!panState.current.isPanning) { onImageClick(texture); } };
-
     const handleFileSelect = async (e) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -59,7 +54,8 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
             const url = await fileToDataUrl(file);
             onNewImage({ url, name: file.name });
         }
-        e.target.value = null; // Reset file input
+        e.target.value = null;
+        // Reset file input
     };
 
     return (
@@ -70,13 +66,14 @@ const GalleryView = ({ images, isVisible, isInBackground, onImageClick, onNewIma
                         {isTouchDevice ? 'DRAG TO EXPLORE. TAP AN IMAGE TO BEGIN.' : 'FOCUS TO EXPLORE. CLICK AN IMAGE TO BEGIN.'}
                     </div>
                     <div className="main-actions-container">
-                        <button className="upload-button" onClick={() => fileInputRef.current?.click()}>... OR UPLOAD YOUR OWN IMAGE</button>
+                        <button className="upload-button" onClick={onShowTutorial}>HOW IT WORKS</button>
+                        <button className="upload-button" onClick={() => fileInputRef.current?.click()}>...OR UPLOAD YOUR OWN IMAGE</button>
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}/>
                 </>
             )}
             <Canvas orthographic camera={{ position: [0, 0, 10], zoom: 100 }}>
-                 <ambientLight intensity={3} />
+              <ambientLight intensity={3} />
                 {images.length > 0 && <DynamicGallery images={images} onImageClick={handleClick} isTouch={isTouchDevice} panOffset={panOffset} />}
                 <GalleryEvents handlePointerDown={handlePointerDown} handlePointerMove={handlePointerMove} handlePointerUp={handlePointerUp} />
             </Canvas>

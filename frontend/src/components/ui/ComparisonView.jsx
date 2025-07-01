@@ -1,20 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from '../../config';
 import './ComparisonView.css';
-
 const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onModeChange, isModal = false, onSetName, onHide }) => {
     const sliderContainerRef = useRef(null);
     const [clipPosition, setClipPosition] = useState(50);
     const [creatorName, setCreatorName] = useState('');
     const [nameSaved, setNameSaved] = useState(false);
-
     useEffect(() => {
         if (generationDetails) {
             setCreatorName(generationDetails.creator_name || '');
             setNameSaved(!!generationDetails.creator_name);
         }
     }, [generationDetails]);
-
     const handleSliderMove = (e) => {
         if (!sliderContainerRef.current) return;
         const rect = sliderContainerRef.current.getBoundingClientRect();
@@ -32,9 +29,10 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onMod
 
     if (!generationDetails) return null;
 
+    // FIXED: Construct full URLs for both original and generated images
     const originalImageUrl = sourceImage?.url || `${API_BASE_URL}/images/${generationDetails.original_image_filename}`;
-    const outputImageUrl = generationDetails.generated_image_url;
-
+    const outputImageUrl = `${API_BASE_URL}/images/${generationDetails.generated_image_url}`;
+    
     return (
         <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
             {!isModal && (
@@ -78,7 +76,7 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onMod
                     <div className="footer-center">
                         <div className="name-input-container">
                             <input type="text" placeholder="Sign your creation..." value={creatorName} onChange={(e) => setCreatorName(e.target.value)} disabled={nameSaved} />
-                            <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()}>
+                            <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()} className={nameSaved ? "save-button-saved" : "save-button"}>
                                 {nameSaved ? '✓ SAVED' : 'SAVE NAME'}
                             </button>
                         </div>
@@ -88,11 +86,10 @@ const ComparisonView = ({ generationDetails, sourceImage, isVisible, mode, onMod
                     {!isModal && (
                         <button className="hide-button" onClick={onHide} title="Remove from public gallery">REMOVE</button>
                     )}
-                 </div>
+                </div>
             </div>
         </div>
     );
 };
 
 export default ComparisonView;
-

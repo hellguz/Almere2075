@@ -12,9 +12,15 @@ export const useAppLogic = () => {
 
     // Subscribe to global state changes
     useEffect(() => subscribe(() => setAppState({ ...state })), []);
-
-    // Fetch initial gallery images and tags
+    
+    // MODIFIED: This effect now also handles showing the tutorial on first visit
     useEffect(() => {
+        // Show tutorial on first visit
+        const hasSeen = localStorage.getItem('almere2075-tutorial-seen');
+        if (!hasSeen) {
+            setState('showTutorial', true);
+        }
+
         const fetchInitialData = async () => {
             try {
                 const [galleryRes, tagsRes] = await Promise.all([
@@ -64,7 +70,6 @@ export const useAppLogic = () => {
           }
         }, POLLING_INTERVAL);
     }, []);
-
     const handleTransform = useCallback(async () => {
         if (!state.sourceImageForTransform) return;
         
@@ -117,12 +122,10 @@ export const useAppLogic = () => {
         setSelectedTags([]);
         if (pollingRef.current) clearInterval(pollingRef.current);
     };
-
     const handleBackToStart = () => {
         resetState();
         setState('view', 'gallery');
     };
-
     const handleStartTransform = (sourceImage) => {
         resetState();
         setState('sourceImageForTransform', sourceImage);
@@ -134,7 +137,6 @@ export const useAppLogic = () => {
         const thumbnailSrc = texture.image.src;
         const thumbnailFilename = thumbnailSrc.split('/').pop();
         const fullImage = galleryImages.find(img => img.thumbnail === thumbnailFilename);
-        
         if (fullImage) {
             const source = {
                 url: `${API_BASE_URL}/images/${fullImage.filename}`,
@@ -146,7 +148,6 @@ export const useAppLogic = () => {
             alert("An error occurred while selecting the image. Please try another one.");
         }
     };
-
     const handleSetName = useCallback(async (name) => {
         const jobId = appState.jobId || appState.generationDetails?.id;
         if (!jobId) return;
@@ -178,7 +179,6 @@ export const useAppLogic = () => {
             }
         }
     }, [appState.jobId, appState.generationDetails]);
-
     const handleVote = useCallback(async (generationId) => {
         try {
             const res = await fetch(`${API_BASE_URL}/generations/${generationId}/vote`, { method: 'POST' });
@@ -190,22 +190,29 @@ export const useAppLogic = () => {
             throw error; // Re-throw to be caught in the component
         }
     }, []);
-    
     const handleModalOpen = (item) => {
         setState('isCommunityItem', true);
         setModalItem(item);
     };
-
     const handleModalClose = () => {
         setState('isCommunityItem', false);
         setModalItem(null);
     };
-
     const handleTagToggle = (tagId) => {
         setSelectedTags(current => 
             current.includes(tagId) ? current.filter(t => t !== tagId) : [...current, tagId]
         );
     };
+
+    // ADDED: Handlers for the tutorial modal
+    const handleCloseTutorial = () => {
+        localStorage.setItem('almere2075-tutorial-seen', 'true');
+        setState('showTutorial', false);
+    };
+
+    const handleShowTutorial = () => {
+        setState('showTutorial', true);
+    }
 
     return {
         appState,
@@ -225,6 +232,8 @@ export const useAppLogic = () => {
             handleModalClose,
             handleTagToggle,
             setState, // Expose setState directly for simple changes like comparisonMode
+            handleCloseTutorial, // ADDED
+            handleShowTutorial, // ADDED
         }
     };
 };

@@ -75,6 +75,7 @@ yarn-error.log*
 */__pycache__
 
 */thumbnails
+backend/images/generated/*
 
 .gpt/*.txt
 

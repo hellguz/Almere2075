@@ -1,0 +1,122 @@
+.tutorial-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s;
+}
+
+.tutorial-modal-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.tutorial-modal-content {
+    background: #1c1c1e;
+    border: 1px solid var(--liquid-border);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    padding: 25px;
+    box-sizing: border-box;
+    position: relative;
+    color: var(--color-text-primary);
+    transform: scale(0.95);
+    transition: transform 0.4s ease;
+}
+
+.tutorial-modal-overlay.visible .tutorial-modal-content {
+    transform: scale(1);
+}
+
+.tutorial-slider-container {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: ew-resize;
+    border: 1px solid var(--liquid-border);
+}
+
+.tutorial-slider-container .image-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+.tutorial-slider-container .slider-line {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 2px;
+    background: var(--color-accent-white);
+    box-shadow: 0 0 10px var(--color-accent-glow);
+    transform: translateX(-1px);
+    pointer-events: none;
+    z-index: 4;
+}
+
+.tutorial-slider-container .slider-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    border: 2px solid var(--color-accent-white);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    transform: translate(-50%, -50%);
+}
+
+.tutorial-description {
+    margin-top: 20px;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    overflow-y: auto;
+    padding-right: 10px;
+}
+.tutorial-description p {
+    margin: 0 0 1em 0;
+}
+.tutorial-description b {
+    color: var(--color-text-primary);
+}
+
+.tutorial-close-button {
+    margin-top: 20px;
+    padding: 12px 30px;
+    border-radius: 25px;
+    border: none;
+    background: var(--color-system);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    align-self: center;
+    transition: all 0.2s ease;
+}
+
+.tutorial-close-button:hover {
+    transform: scale(1.05);
+    background: #0b94ff;
+}

@@ -3,12 +3,12 @@
     box-sizing: border-box; position: relative; width: 100%; height: 100%; 
 }
 .floating-controls-top { 
-    position: absolute; top: 20px; right: 25px; z-index: 20; 
+    position: absolute; top: 20px; right: 25px; z-index: 20;
 }
 .view-mode-toggle { 
     display: flex; background: var(--liquid-bg); border-radius: 20px; 
     border: 1px solid var(--liquid-border); padding: 4px; 
-    backdrop-filter: blur(var(--liquid-blur)); 
+    backdrop-filter: blur(var(--liquid-blur));
 }
 .view-mode-toggle button { 
     border: none; background: transparent; color: var(--color-text-secondary); 
@@ -26,7 +26,7 @@
     width: 100%; height: 100%; display: flex; position: relative; 
 }
 .comparison-view.side-by-side { 
-    gap: 10px; padding: 10px; box-sizing: border-box; 
+    gap: 10px; padding: 10px; box-sizing: border-box;
 }
 
 .image-panel {
@@ -41,7 +41,7 @@
   border-radius: 8px; /* Apply radius to the panel itself */
 }
 .image-header { 
-  font-size: 12px; font-weight: 500; text-transform: uppercase; 
+  font-size: 12px; font-weight: 500; text-transform: uppercase;
   position: absolute; top: 0; left: 50%; transform: translateX(-50%); 
   background: rgba(0,0,0,0.5); padding: 4px 12px; 
   border-radius: 0 0 8px 8px; color: var(--color-text-secondary);
@@ -51,20 +51,23 @@
 /* Slider View */
 .comparison-view.slider-mode { 
     position: relative; overflow: hidden; 
-    cursor: ew-resize; 
+    cursor: ew-resize;
 }
 .slider-mode .image-panel { position: absolute; top: 0; left: 0; }
-.slider-mode .image-panel.after-image { z-index: 2; }
+.slider-mode .image-panel.after-image { z-index: 2;
+}
 .slider-line { 
     position: absolute; top: 0; height: 100%; width: 2px; 
-    background: var(--color-accent-white); 
+    background: var(--color-accent-white);
     box-shadow: 0 0 10px var(--color-accent-glow); 
     transform: translateX(-1px); pointer-events: none; z-index: 4; 
 }
 .slider-handle { 
-    position: absolute; top: 50%; left: 50%; width: 44px; height: 44px; 
+    position: absolute;
+    top: 50%; left: 50%; width: 44px; height: 44px; 
     border: 2px solid var(--color-accent-white); border-radius: 50%; 
-    background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(10px); 
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px); 
     transform: translate(-50%, -50%); 
 }
 
@@ -74,7 +77,8 @@
     width: 90%; max-width: 700px;
     display: flex; justify-content: space-between; align-items: center;
     gap: 15px; background: var(--liquid-bg); padding: 12px 20px;
-    border-radius: 16px; backdrop-filter: blur(var(--liquid-blur)); 
+    border-radius: 16px;
+    backdrop-filter: blur(var(--liquid-blur)); 
     -webkit-backdrop-filter: blur(var(--liquid-blur));
     border: 1px solid var(--liquid-border); z-index: 30;
     box-sizing: border-box;
@@ -82,43 +86,79 @@
 .footer-left { flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
 .info-tags, .info-creator { 
     color: var(--color-text-secondary); font-size: 0.8rem; 
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+    white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; 
 }
 .info-tags b, .info-creator b { color: var(--color-text-primary); }
-.footer-center { flex: 1.5; display: flex; justify-content: center; }
+.footer-center { flex: 1.5; display: flex; justify-content: center;
+}
 .footer-right { flex: 1; display: flex; justify-content: flex-end; }
-.name-input-container { display: flex; width: 100%; max-width: 300px; }
+.name-input-container { display: flex; width: 100%; max-width: 300px;
+}
 .name-input-container input { 
     background: rgba(0,0,0,0.3); border: 1px solid var(--liquid-border); 
-    color: white; border-radius: 6px 0 0 6px; padding: 8px 12px; 
+    border-right: none;
+    color: white; border-radius: 6px 0 0 6px;
+    padding: 10px 12px; 
     font-size: 0.9rem; width: 100%; transition: all 0.2s ease; 
 }
-.name-input-container input:focus { border-color: var(--color-system); }
-.name-input-container button {
-    background: #555; /* Default Grey Button */
-    color: white; border: none; padding: 8px 12px;
-    border-radius: 0 6px 6px 0; cursor: pointer;
-    white-space: nowrap; font-weight: 600;
-    transition: background-color 0.2s ease;
+.name-input-container input:focus { border-color: var(--color-system);
 }
-.name-input-container button:hover:not(:disabled) { background: #666; }
-.name-input-container button:disabled { background: var(--color-success); cursor: not-allowed; }
-.hide-button { 
-    background: var(--color-error); color: white; border: none; 
-    padding: 8px 12px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+.save-button, .hide-button {
+    background: transparent;
+    border-width: 2px;
+    border-style: solid;
+    padding: 8px 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
 }
+
+.hide-button {
+    border-radius: 6px;
+    border-color: var(--color-error);
+    color: var(--color-error);
+}
+.hide-button:hover {
+    background: var(--color-error);
+    color: white;
+}
+
+.name-input-container .save-button {
+    border-color: var(--color-success);
+    color: var(--color-success);
+    border-radius: 0 6px 6px 0;
+    border-left: none;
+}
+.name-input-container .save-button:hover:not(:disabled) {
+    background: var(--color-success);
+    color: var(--color-background);
+}
+.save-button-saved {
+    background: var(--color-success);
+    color: white;
+    border: 2px solid var(--color-success);
+    padding: 8px 12px;
+    border-radius: 0 6px 6px 0;
+    cursor: not-allowed;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 
 @media (max-width: 900px) {
   .comparison-footer { 
-      flex-direction: column; gap: 12px; align-items: stretch; padding: 10px; 
+      flex-direction: column; gap: 12px; align-items: stretch;
+      padding: 10px; 
   }
   .footer-left, .footer-right, .footer-center { 
-      justify-content: center; text-align: center; 
+      justify-content: center; text-align: center;
   }
 }
 @media (max-width: 768px) {
   .comparison-footer { 
-      width: calc(100% - 20px); bottom: 10px; 
+      width: calc(100% - 20px); bottom: 10px;
   }
 }
 

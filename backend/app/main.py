@@ -5,6 +5,7 @@ import time
 import random
 import mimetypes
 import uuid
+import requests
 from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -31,6 +32,7 @@ load_dotenv()
 # --- Configuration ---
 THUMBNAIL_SIZE = (400, 400)
 IMAGES_DIR = Path("/app/images")
+GENERATED_IMAGES_DIR = IMAGES_DIR / "generated" # ADDED: Directory for generated images
 THUMBNAILS_DIR = Path("/app/thumbnails")
 DATABASE_DIR = Path("/app/database")
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
@@ -41,6 +43,7 @@ GAMIFICATION_DEADLINE = datetime(2025, 7, 13, 23, 59, 59, tzinfo=timezone.utc)
 
 # --- Ensure static directories exist ---
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+GENERATED_IMAGES_DIR.mkdir(parents=True, exist_ok=True) # ADDED
 THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 DATABASE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -100,6 +103,7 @@ def create_thumbnail(image_path: Path):
 def run_ai_transformation_task(job_id: str, image_string_from_request: str, prompt: str, db: Session):
     """
     This is the actual long-running task, now updating the database.
+    MODIFIED: It now downloads the generated image and saves it locally.
     """
     generation = db.query(db_models.Generation).filter(db_models.Generation.id == job_id).first()
     if not generation:
@@ -110,10 +114,9 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
     db.commit()
 
     try:
-        # Use the helper function to ensure we have a valid Data URL for Replicate.
         image_data_url = resolve_image_to_data_url(image_string_from_request)
         
-        model_name = "black-forest-labs/flux-kontext-pro"
+        model_name = "black-forest-labs/flux-kontext-dev"
         input_data = {"prompt": prompt, "input_image": image_data_url, "output_format": "png"}
         
         print(f"[{job_id}] Starting Replicate prediction...")
@@ -126,10 +129,29 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
         if not prediction.output or not isinstance(prediction.output, str):
             raise ValueError(f"Model returned invalid output: {prediction.output}")
 
-        print(f"[{job_id}] Prediction successful.")
-        generation.status = db_models.JobStatus.COMPLETED
-        generation.generated_image_url = prediction.output
-        db.commit()
+        print(f"[{job_id}] Prediction successful. Downloading image...")
+        
+        # --- FIXED: Download image from Replicate and save locally ---
+        replicate_url = prediction.output
+        try:
+            response = requests.get(replicate_url, stream=True, timeout=30)
+            response.raise_for_status()
+            
+            file_extension = Path(replicate_url).suffix or '.png'
+            local_filename = f"{uuid.uuid4()}{file_extension}"
+            save_path = GENERATED_IMAGES_DIR / local_filename
+            
+            with open(save_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            
+            print(f"[{job_id}] Image saved to {save_path}")
+            generation.generated_image_url = f"generated/{local_filename}" # Store relative path
+            generation.status = db_models.JobStatus.COMPLETED
+            db.commit()
+
+        except requests.exceptions.RequestException as e:
+            raise IOError(f"Failed to download image from Replicate: {e}") from e
 
     except Exception as e:
         print(f"[{job_id}] --- DETAILED AI TASK ERROR ---")
@@ -187,11 +209,10 @@ async def generate_prompt(request: models.GeneratePromptRequest):
     system_prompt = create_system_prompt(selected_tags_ids)
 
     try:
-        # Use the helper function to prepare the image for OpenAI.
         image_data_url = resolve_image_to_data_url(request.imageBase64)
         
         response = openai.chat.completions.create(
-            model="gpt-4-turbo",
+            model="gpt-4.1-mini-2025-04-14", # Don't change this model!
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": [{"type": "text", "text": "Generate a prompt for this image."}, {"type": "image_url", "image_url": {"url": image_data_url}}]},
@@ -211,9 +232,6 @@ async def transform_image(request: models.TransformImageRequest, background_task
     image_str = request.imageBase64
     final_image_filename_for_db = request.original_filename
 
-    # FIXED: Handle custom image uploads.
-    # If the input is a data URL, it's a new file. We must save it to disk
-    # to ensure it can be retrieved later for the community gallery.
     if image_str.startswith('data:'):
         try:
             header, encoded = image_str.split(",", 1)
@@ -221,17 +239,14 @@ async def transform_image(request: models.TransformImageRequest, background_task
             extension = mimetypes.guess_extension(mime_type) or '.jpg'
             image_data = base64.b64decode(encoded)
             
-            # Generate a unique filename to prevent collisions
             new_filename = f"{uuid.uuid4()}{extension}"
             save_path = IMAGES_DIR / new_filename
             
             with open(save_path, "wb") as f:
                 f.write(image_data)
             
-            # Generate a thumbnail for the new image
             create_thumbnail(save_path)
             
-            # This new filename is what we store in the database
             final_image_filename_for_db = new_filename
         except Exception as e:
             print(f"Error saving uploaded image: {e}")
@@ -249,7 +264,6 @@ async def transform_image(request: models.TransformImageRequest, background_task
     
     job_id = new_generation.id
     db_for_task = database.SessionLocal()
-    # The `request.imageBase64` string is passed directly; the background task will resolve it.
     background_tasks.add_task(run_ai_transformation_task, job_id, request.imageBase64, request.prompt, db_for_task)
     
     return {"job_id": job_id}
@@ -262,9 +276,9 @@ async def get_job_status(job_id: str, db: Session = Depends(get_db)):
 
     response = {"status": job.status, "result": None, "error": None, "generation_data": None}
     if job.status == db_models.JobStatus.COMPLETED:
-        # We need to convert the SQLAlchemy object to a Pydantic model.
-        # This can be done by converting to dict or by using from_orm/from_attributes in the Pydantic model.
         job_data = models.GenerationInfo.from_orm(job)
+        # The 'result' field is kept for legacy compatibility if any old logic uses it,
+        # but new logic should rely on the full generation_data object.
         response["result"] = job.generated_image_url
         response["generation_data"] = job_data
     elif job.status == db_models.JobStatus.FAILED:
@@ -329,3 +343,4 @@ def get_gamification_stats(db: Session = Depends(get_db)):
         "target_score": GAMIFICATION_TARGET_SCORE,
         "deadline_iso": GAMIFICATION_DEADLINE.isoformat()
     }
+

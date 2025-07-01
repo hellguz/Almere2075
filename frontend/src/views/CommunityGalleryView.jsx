@@ -44,15 +44,18 @@ const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onMo
                 {items.map(item => (
                     <div key={item.id} className="gallery-item" onClick={() => onItemSelect(item)}>
                         <div className="gallery-item-images">
-                            <img src={`${API_BASE_URL}/thumbnails/${item.original_image_filename.replace(/\.[^/.]+$/, ".jpeg")}`} alt="Original" className="gallery-item-thumb original"/>
-                            <img src={item.generated_image_url} alt="Generated" className="gallery-item-thumb generated"/>
+                            <img src={`${API_BASE_URL}/images/${item.generated_image_url}`} alt="Generated" className="gallery-item-thumb generated"/>
+                            <img src={`${API_BASE_URL}/images/${item.original_image_filename}`} alt="Original" className="gallery-item-thumb original"/>
                         </div>
+                        {/* MODIFIED: Simplified info layout */}
                         <div className="gallery-item-info">
-                            <div className="gallery-item-tags">
-                                {item.tags_used?.slice(0, 3).join(', ') || 'General Concept'}
-                            </div>
-                            <div className="gallery-item-creator">
-                                by {item.creator_name || 'Anonymous'}
+                            <div className="gallery-item-details">
+                                <div className="gallery-item-tags">
+                                    {item.tags_used?.slice(0, 3).join(', ') || 'General Concept'}
+                                </div>
+                                <div className="gallery-item-creator">
+                                    by {item.creator_name || 'Anonymous'}
+                                </div>
                             </div>
                             <button className="like-button" onClick={(e) => handleVoteClick(e, item.id)}>
                                 👍 {item.votes}
@@ -87,4 +90,3 @@ const CommunityGalleryView = ({ isVisible, onVote, onItemSelect, modalItem, onMo
 };
 
 export default CommunityGalleryView;
-
