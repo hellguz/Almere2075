@@ -1,19 +1,10 @@
 import React, { useEffect, useCallback, useState, useRef } from 'react';
+import { Canvas } from '@react-three/fiber';
 import ComparisonView from '../components/ui/ComparisonView';
+import DynamicCommunityGallery from '../components/community/DynamicCommunityGallery';
 import type { GenerationDetails } from '../types';
-import { API_BASE_URL } from '../config';
 import './CommunityGalleryView.css';
 
-/**
- * @typedef {object} CommunityGalleryViewProps
- * @property {boolean} isVisible - Whether the view is currently visible.
- * @property {GenerationDetails[]} items - The list of gallery items to display.
- * @property {GenerationDetails | null} modalItem - The currently selected item to show in a modal.
- * @property {(id: string) => Promise<void>} onVote - Callback function to vote for an item.
- * @property {(item: GenerationDetails) => void} onItemSelect - Callback to select an item for modal view.
- * @property {() => void} onModalClose - Callback to close the modal.
- * @property {() => void} fetchGallery - Callback to fetch/refresh the gallery items.
- */
 interface CommunityGalleryViewProps {
     isVisible: boolean;
     items: GenerationDetails[];
@@ -37,10 +28,9 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
 }) => {
     const [modalComparisonMode, setModalComparisonMode] = useState<ComparisonMode>('side-by-side');
     const modalRef = useRef<HTMLDivElement>(null);
-    const viewRef = useRef<HTMLDivElement>(null); // ADDED: Ref for the main view container
+    const viewRef = useRef<HTMLDivElement>(null);
+    const panState = useRef({ isPanning: false, startCoords: { x: 0, y: 0 }, hasDragged: false });
 
-    // MODIFIED: This effect now correctly sets the height of the main gallery view
-    // to the true visible height of the window, fixing the scrolling issue on mobile.
     useEffect(() => {
         if (isVisible && viewRef.current) {
             const setViewHeight = () => {
@@ -73,44 +63,64 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
         }
     }, [modalItem]);
 
-
-    const handleVoteClick = (e: React.MouseEvent<HTMLButtonElement>, itemId: string) => {
-        e.stopPropagation();
-        onVote(itemId);
-    };
-
     const handleModalVote = useCallback(() => {
         if (!modalItem) return;
         onVote(modalItem.id);
     }, [modalItem, onVote]);
+    
+    // Logic to distinguish between a drag and a simple click/tap
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+        panState.current.isPanning = true;
+        panState.current.hasDragged = false; // Reset drag state on new interaction
+        panState.current.startCoords = { x: e.clientX, y: e.clientY };
+    };
+
+    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+        if (!panState.current.isPanning) return;
+        const dx = e.clientX - panState.current.startCoords.x;
+        const dy = e.clientY - panState.current.startCoords.y;
+        // If the mouse has moved more than a few pixels, we consider it a drag
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            panState.current.hasDragged = true;
+        }
+    };
+
+    const handlePointerUp = () => {
+        panState.current.isPanning = false;
+    };
+
+    // This is the new, safe handler that we pass down to the children.
+    // It only calls the original onItemSelect if the user has NOT dragged.
+    const handleItemSelect = (item: GenerationDetails) => {
+        if (!panState.current.hasDragged) {
+            onItemSelect(item);
+        }
+    };
 
     return (
         <div className={`community-gallery-view ${isVisible ? 'visible' : ''}`} ref={viewRef}>
             <div className="gallery-info-text">
-                <p>Explore visions of Almere 2075 created by others. <b>Give a "👍" to your favorites</b> to help the city reach its happiness goal!</p>
+                <p>Explore visions of Almere 2075 created by others. <b>Drag to explore</b> and <b>tap a card to see details</b>. Give a "👍" to your favorites!</p>
             </div>
-            <div className="gallery-grid-container">
-                {items.map(item => (
-                    <div key={item.id} className="gallery-item" onClick={() => onItemSelect(item)}>
-                        <div className="gallery-item-images">
-                            {item.generated_image_url && <img src={`${API_BASE_URL}/images/${item.generated_image_url}`} alt="Generated" className="gallery-item-thumb generated"/>}
-                            <img src={`${API_BASE_URL}/images/${item.original_image_filename}`} alt="Original" className="gallery-item-thumb original"/>
-                        </div>
-                        <div className="gallery-item-info">
-                            <div className="gallery-item-details">
-                                <div className="gallery-item-tags">
-                                    {item.tags_used?.slice(0, 3).join(', ') || 'General Concept'}
-                                </div>
-                                <div className="gallery-item-creator">
-                                   by {item.creator_name || 'Anonymous'}
-                                </div>
-                            </div>
-                            <button className="like-button" onClick={(e) => handleVoteClick(e, item.id)}>
-                                👍 {item.votes}
-                            </button>
-                        </div>
-                    </div>
-                ))}
+            
+            <div 
+                className="community-canvas-container"
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+            >
+                <Canvas orthographic camera={{ position: [0, 0, 10], zoom: 100 }}>
+                    <ambientLight intensity={3} />
+                    {items.length > 0 && (
+                        <DynamicCommunityGallery
+                            items={items}
+                            onItemSelect={handleItemSelect} // Use the new safe handler
+                            onVote={onVote} // Vote is already safe
+                            isInBackground={!!modalItem}
+                        />
+                    )}
+                </Canvas>
             </div>
 
             {modalItem && (

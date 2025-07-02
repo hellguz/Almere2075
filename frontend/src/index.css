@@ -39,14 +39,14 @@ button, input, textarea, select, a, .slider-mode, .gallery-item {
 }
 
 /* Generic view transitions */
-/* FIXED: Removed .community-gallery-view from this rule to solve layout conflict */
-.fullscreen-canvas-container, .transform-view, .comparison-container {
+/* FIXED: Added .community-gallery-view to this rule to solve layout conflict */
+.fullscreen-canvas-container, .transform-view, .comparison-container, .community-gallery-view {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   opacity: 0; visibility: hidden;
   transition: opacity 0.8s ease, visibility 0.8s;
   will-change: opacity;
 }
-.fullscreen-canvas-container.visible, .transform-view.visible, .comparison-container.visible {
+.fullscreen-canvas-container.visible, .transform-view.visible, .comparison-container.visible, .community-gallery-view.visible {
   opacity: 1;
   visibility: visible; 
   z-index: 10;

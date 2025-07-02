@@ -1,0 +1,98 @@
+/*
+  File: /frontend/src/components/community/GalleryItemCard.css
+  This file styles the individual card component used in the 3D community gallery.
+ */
+
+.gallery-item-card {
+    background: #1c1c1e;
+    border-radius: 12px;
+    border: 1px solid #2c2c2e;
+    overflow: hidden;
+    /* Set a fixed size for consistent rendering to texture */
+    width: 220px;
+    height: 280px;
+    transition: border-color 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Inter', sans-serif;
+    color: #F5F5F7;
+    /* This element itself is clickable now */
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+.gallery-item-card:hover {
+    border-color: #0A84FF; /* --color-system */
+}
+
+/* --- Card Image Container --- */
+.gallery-item-images {
+    position: relative;
+    width: 100%;
+    /* Fixed aspect ratio for the image part */
+    height: 200px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.gallery-item-images > img {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    object-fit: cover;
+    transition: opacity 0.4s ease-in-out;
+}
+
+/* Image hover effect */
+.gallery-item-thumb.generated { opacity: 1; }
+.gallery-item-card:hover .gallery-item-thumb.generated { opacity: 0; }
+.gallery-item-thumb.original { opacity: 0; }
+.gallery-item-card:hover .gallery-item-thumb.original { opacity: 1; }
+
+/* --- Card Info Section --- */
+.gallery-item-info {
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 8px;
+    margin-top: auto;
+    flex-grow: 1;
+}
+
+.gallery-item-details {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.gallery-item-tags {
+    font-weight: bold;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gallery-item-creator {
+    color: #a1a1a6; /* --color-text-secondary */
+    font-size: 0.75rem;
+}
+
+.like-button {
+    background: #333;
+    color: white;
+    border: 1px solid #555;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+}
+
+.like-button:hover {
+    background: #0A84FF; /* --color-system */
+    border-color: #0A84FF; /* --color-system */
+}

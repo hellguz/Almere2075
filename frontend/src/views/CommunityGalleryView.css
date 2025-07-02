@@ -1,139 +1,70 @@
 /*
   File: /frontend/src/views/CommunityGalleryView.css
-  This file ensures the community gallery is scrollable and looks good on mobile.
+  This file styles the main container for the community gallery and its modal.
  */
 
 /* --- Main View Container --- */
 .community-gallery-view {
-    display: flex;
-    flex-direction: column;
+    position: relative; /* Changed from flex to allow canvas overlay */
     height: 100%;
-    width: 100%; background: #080808;
+    width: 100%;
+    background: #080808;
     box-sizing: border-box;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.8s ease, visibility 0.8s;
-    will-change: opacity; }
+    will-change: opacity;
+    overflow: hidden; /* Prevent scrollbars from the container itself */
+}
 .community-gallery-view.visible {
     opacity: 1;
     visibility: visible;
 }
 
+/* --- Canvas Container --- */
+.community-canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overscroll-behavior-y: contain; /* Prevents pull-to-refresh */
+}
+
+.community-canvas-container canvas {
+    touch-action: none; /* Allows pointer events for panning */
+}
+
 
 /* --- Header Text --- */
 .gallery-info-text {
-    flex-shrink: 0; padding: 85px 15px 15px;
-    padding-top: calc(85px + env(safe-area-inset-top));
+    position: absolute;
+    top: 85px;
+    top: calc(85px + env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 600px;
     text-align: center;
     color: var(--color-text-secondary);
-    font-size: 0.9rem; }
-
-
-/* --- Scrollable Grid Container --- */
-.gallery-grid-container {
-    flex-grow: 1;
-    overflow-y: auto;
-    min-height: 0;
-    padding: 15px; box-sizing: border-box;
-
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 24px; 
-    grid-auto-rows: min-content;
-}
-
-@media (max-width: 500px) {
-    .gallery-grid-container {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-    }
-}
-
-
-/* --- Gallery Card & Children --- */
-.gallery-item {
-    background: #1c1c1e; border-radius: 12px;
-    border: 1px solid #2c2c2e;
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.2s ease, border-color 0.2s ease;
-    display: flex; flex-direction: column;
-}
-.gallery-item:hover {
-    transform: translateY(-5px);
-    border-color: var(--color-system); }
-
-
-/* --- Card Image Container --- */
-.gallery-item-images {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 1; flex-shrink: 0;
-    overflow: hidden;
-}
-.gallery-item-images > img {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0; left: 0;
-    object-fit: cover;
-    transition: opacity 0.4s ease-in-out;
-}
-
-/* Image hover effect */
-.gallery-item-thumb.generated { opacity: 1; }
-.gallery-item:hover .gallery-item-thumb.generated { opacity: 0; }
-.gallery-item-thumb.original { opacity: 0; }
-.gallery-item:hover .gallery-item-thumb.original { opacity: 1; }
-
-
-/* --- Card Info Section --- */
-.gallery-item-info {
-    padding: 10px;
-    display: flex;
-    justify-content: space-between; 
-    align-items: flex-end; /* Align items to the bottom */
-    gap: 8px;
-    margin-top: auto;
-    flex-grow: 1;
-}
-.gallery-item-details {
-    flex-grow: 1;
-    min-width: 0; /* Prevents text overflow issues */
-}
-.gallery-item-tags {
-    font-weight: bold;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.gallery-item-creator {
-    color: var(--color-text-secondary);
-    font-size: 0.75rem;
-}
-.like-button {
-    background: #333;
-    color: white; border: 1px solid #555;
-    padding: 6px 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-    font-size: 0.8rem; }
-.like-button:hover {
-    background: var(--color-system);
-    border-color: var(--color-system);
+    font-size: 0.9rem;
+    background: var(--liquid-bg);
+    border: 1px solid var(--liquid-border);
+    padding: 10px 20px;
+    border-radius: 20px;
+    backdrop-filter: blur(var(--liquid-blur));
+    z-index: 10;
+    pointer-events: none;
 }
 
 
 /* --- Modal & Scrollbar Styles --- */
 .modal-overlay { 
     position: fixed; top: 0; left: 0; width: 100%;
-    /* MODIFIED: Use 100vh as a fallback, but JS will set the correct height */
     height: 100vh; 
     background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); 
-    z-index: 200; display: flex; align-items: center; justify-content: center; }
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+}
 .modal-content { 
     position: relative; width: 95%; height: 90%; 
     background: var(--color-background); border-radius: 16px; 
@@ -168,11 +99,4 @@
     background: var(--button-hover-bg);
     transform: scale(1.05);
 }
-
-.gallery-grid-container::-webkit-scrollbar { width: 6px; }
-.gallery-grid-container::-webkit-scrollbar-track { background: transparent; }
-.gallery-grid-container::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg); border-radius: 3px; }
-.gallery-grid-container::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg); }
-
-
 
