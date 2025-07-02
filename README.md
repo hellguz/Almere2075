@@ -82,7 +82,7 @@ graph TD
     *   SQLite (for simplicity and portability in an exhibition setting)
 *   **AI Models:**
     *   **Prompt Generation:** OpenAI `gpt-4.1-mini`
-    *   **Image Transformation:** `black-forest-labs/flux-kontext-dev` via Replicate API
+    *   **Image Transformation:** `black-forest-labs/flux-kontext-pro` via Replicate API
 *   **Infrastructure & Deployment:**
     *   **Containerization:** Docker & Docker Compose
     *   **Reverse Proxy:** Nginx
