@@ -14,7 +14,8 @@
   --color-error: #FF453A;
   --color-system: #0A84FF;
   
-  --liquid-bg: rgba(28, 28, 30, 0.7);
+  /* MODIFIED: Increased transparency for all 'liquid' UI elements */
+  --liquid-bg: rgba(28, 28, 30, 0.5);
   --liquid-border: rgba(255, 255, 255, 0.15);
   --liquid-blur: 15px;
   --custom-cursor: url("data:image/svg+xml,%3Csvg width='48' height='48' viewBox='0 0 48 48' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M24 6V22M24 26V42M42 24H26M22 24H6' stroke='%23FFFF00' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") 24 24, auto;
@@ -50,4 +51,3 @@ button, input, textarea, select, a, .slider-mode, .gallery-item {
   visibility: visible; 
   z-index: 10;
 }
-

@@ -29,15 +29,19 @@ interface ComparisonViewProps {
     onVote?: () => void;
 }
 
-// MODIFIED: Added a constant to control the scale of the slider view
-const SLIDER_VIEW_SCALE_FACTOR = 0.95; // 95% of the viewport
+const SLIDER_VIEW_SCALE_FACTOR = 0.95;
 
+/**
+ * A component to display a side-by-side or slider comparison of two images.
+ * It also includes controls for naming, hiding, and voting on the generation.
+ * @param {ComparisonViewProps} props - The component props.
+ * @returns {JSX.Element | null} The rendered ComparisonView component or null.
+ */
 const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sourceImage, isVisible, mode, onModeChange, isModal = false, onSetName, onHide, onVote }) => {
     const sliderContainerRef = useRef<HTMLDivElement>(null);
     const [clipPosition, setClipPosition] = useState(50);
     const [creatorName, setCreatorName] = useState('');
     const [nameSaved, setNameSaved] = useState(false);
-    const [isPromptVisible, setIsPromptVisible] = useState(false);
 
     useEffect(() => {
         if (generationDetails) {
@@ -69,6 +73,17 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
     const viewWrapperStyle = {
         transform: mode === 'slider' ? `scale(${SLIDER_VIEW_SCALE_FACTOR})` : 'scale(1)',
     };
+
+    const promptButton = (
+        <div className="prompt-container">
+            <div className="prompt-button">
+                SHOW PROMPT
+            </div>
+            {generationDetails.prompt_text && (
+                <div className="prompt-panel">{generationDetails.prompt_text}</div>
+            )}
+        </div>
+    );
 
     return (
         <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
@@ -102,7 +117,8 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
                 </div>
             </div>
            
-            <div className="comparison-footer">
+            {/* MODIFIED: Added conditional 'is-modal' class */}
+            <div className={`comparison-footer ${isModal ? 'is-modal' : ''}`}>
                 <div className="footer-left">
                     <div className="info-tags-chips">
                         <b>Concepts:</b> 
@@ -114,37 +130,30 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
                 </div>
 
                 <div className="footer-center">
-                    {!isModal && onSetName ? (
-                        <div className="name-input-container">
+                    {!isModal && onSetName && (
+                         <div className="name-input-container">
                             <input type="text" placeholder="Sign your creation..." value={creatorName} onChange={(e) => setCreatorName(e.target.value)} disabled={nameSaved} />
                             <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()} className={nameSaved ? "save-button-saved" : "save-button"}>
                                 {nameSaved ? '✓ SAVED' : 'SAVE NAME'}
                             </button>
-                        </div>
-                    ) : (
-                        <div className="prompt-container">
-                            <button 
-                                className="prompt-button"
-                                onMouseEnter={() => setIsPromptVisible(true)}
-                                onMouseLeave={() => setIsPromptVisible(false)}
-                            >
-                                SHOW PROMPT
-                            </button>
-                            {isPromptVisible && generationDetails.prompt_text && (
-                                <div className="prompt-panel">{generationDetails.prompt_text}</div>
-                            )}
                         </div>
                     )}
                 </div>
                  
                 <div className="footer-right">
                     {!isModal && onHide && (
-                        <button className="hide-button" onClick={onHide} title="Remove from public gallery">REMOVE</button>
+                        <>
+                            {promptButton}
+                            <button className="hide-button" onClick={onHide} title="Remove from public gallery">REMOVE</button>
+                        </>
                     )}
                     {isModal && onVote && (
-                        <button className="modal-like-button" onClick={onVote}>
-                            👍 {generationDetails.votes}
-                        </button>
+                        <>
+                            <button className="modal-like-button" onClick={onVote}>
+                                👍 {generationDetails.votes}
+                            </button>
+                            {promptButton}
+                        </>
                      )}
                  </div>
             </div>
@@ -153,6 +162,3 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
 };
 
 export default ComparisonView;
-
-
-

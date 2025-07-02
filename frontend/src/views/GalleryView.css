@@ -1,7 +1,7 @@
 /* Gallery background blur effect */
 .fullscreen-canvas-container.in-background {
   opacity: 1; visibility: visible;
-  /* MODIFIED: Reduced blur by 50% */
+  /* MODIFIED: Reduced blur by 50% from 20px to 10px */
   filter: blur(10px) brightness(0.2);
   transform: scale(1.05);
   transition: filter 0.8s ease, transform 0.8s ease;
