@@ -37,6 +37,22 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
 }) => {
     const [modalComparisonMode, setModalComparisonMode] = useState<ComparisonMode>('side-by-side');
     const modalRef = useRef<HTMLDivElement>(null);
+    const viewRef = useRef<HTMLDivElement>(null); // ADDED: Ref for the main view container
+
+    // MODIFIED: This effect now correctly sets the height of the main gallery view
+    // to the true visible height of the window, fixing the scrolling issue on mobile.
+    useEffect(() => {
+        if (isVisible && viewRef.current) {
+            const setViewHeight = () => {
+                if (viewRef.current) {
+                    viewRef.current.style.height = `${window.innerHeight}px`;
+                }
+            };
+            setViewHeight();
+            window.addEventListener('resize', setViewHeight);
+            return () => window.removeEventListener('resize', setViewHeight);
+        }
+    }, [isVisible]);
 
     useEffect(() => {
         if (isVisible && !modalItem) {
@@ -44,8 +60,6 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
         }
     }, [isVisible, modalItem, fetchGallery]);
 
-    // MODIFIED: Added effect to dynamically set the modal height to the window's inner height.
-    // This is the "proper fix" for the 100vh issue on mobile browsers.
     useEffect(() => {
         if (modalItem && modalRef.current) {
             const setModalHeight = () => {
@@ -53,8 +67,8 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                     modalRef.current.style.height = `${window.innerHeight}px`;
                 }
             };
-            setModalHeight(); // Set initially
-            window.addEventListener('resize', setModalHeight); // Update on resize/orientation change
+            setModalHeight();
+            window.addEventListener('resize', setModalHeight);
             return () => window.removeEventListener('resize', setModalHeight);
         }
     }, [modalItem]);
@@ -71,7 +85,7 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
     }, [modalItem, onVote]);
 
     return (
-        <div className={`community-gallery-view ${isVisible ? 'visible' : ''}`}>
+        <div className={`community-gallery-view ${isVisible ? 'visible' : ''}`} ref={viewRef}>
             <div className="gallery-info-text">
                 <p>Explore visions of Almere 2075 created by others. <b>Give a "👍" to your favorites</b> to help the city reach its happiness goal!</p>
             </div>
@@ -126,6 +140,3 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
 };
 
 export default CommunityGalleryView;
-
-
-
