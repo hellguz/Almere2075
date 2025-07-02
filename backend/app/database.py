@@ -6,7 +6,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./almere_app.db")
+# MODIFIED: The DATABASE_URL now points to a file inside the '/app/database' directory,
+# which is mounted as a persistent volume in Docker. This ensures the database
+# survives container restarts. The default is set here, but can be overridden in .env.
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///database/almere_app.db")
 
 # The connect_args is specific to SQLite and needed for FastAPI's multithreading
 engine = create_engine(
@@ -22,13 +25,17 @@ def init_db():
     # they will be registered properly on the metadata. Otherwise
     # you will have to import them first before calling init_db()
     from . import db_models
-    # create parent directory if it doesn't exist
+    
+    # MODIFIED: This logic now correctly handles the database path.
+    # It gets the path part of the sqlite URL, e.g., 'database/almere_app.db'
     db_path = DATABASE_URL.split("///")[-1]
     db_dir = os.path.dirname(db_path)
-    if not os.path.exists(db_dir):
+    
+    # Ensure the directory for the database exists within the container.
+    # In Docker, the volume mount should handle this, but this is a robust fallback.
+    if db_dir and not os.path.exists(db_dir):
         os.makedirs(db_dir)
         print(f"Created database directory: {db_dir}")
 
     Base.metadata.create_all(bind=engine)
     print("Database initialized.")
-

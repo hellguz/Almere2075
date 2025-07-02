@@ -1,82 +1,50 @@
 # General
 .DS_Store
+*.log
+.gpt/*.txt
+expressions.txt
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Environments
+# Environment variables
+# Ignore the local env file containing secrets
 .env
-.venv
-env/
-venv/
-ENV/
+.env.*
+!.env.example
 
-# Database
-# ADDED: Ignore the SQLite database file
-almere_app.db
-/backend/database/
 
 # IDE specific
 .vscode/
 .idea/
 
-# Frontend
-/frontend/node_modules/
-/frontend/dist/
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# General
-.DS_Store
-
-# Environment variables
-# Ignore the local env file containing secrets
-.env
-
-# Python
+# Python / Backend
 __pycache__/
-*.pyc
+*/__pycache__
+*.py[cod]
+*$py.class
 .pytest_cache/
 venv/
 .venv/
+env/
+ENV/
+/backend/instance
 
-# Node
-node_modules/
-dist/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-*.log
-.env
-.env.*
-!.env.example
+# Persisted data (not part of the repo)
+# MODIFIED: Changed from /backend/database/ to /database/ to reflect new location
+/database/
+almere_app.db
+*/thumbnails
+backend/images/generated/*
 
 # Node / Frontend
-/frontend/node_modules
-/frontend/dist
+node_modules/
+/frontend/node_modules/
+dist/
+/frontend/dist/
 /frontend/.pnp
 /frontend/.pnp.js
 /frontend/coverage
 /frontend/.vite
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Python / Backend
-/backend/__pycache__/*
-/backend/*.pyc
-/backend/.venv
-/backend/.pytest_cache
-/backend/instance
 
-*/__pycache__
-
-*/thumbnails
-backend/images/generated/*
-
-.gpt/*.txt
-
-expressions.txt
