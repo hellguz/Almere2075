@@ -3,7 +3,6 @@
   backdrop-filter: blur(var(--liquid-blur)); -webkit-backdrop-filter: blur(var(--liquid-blur));
   display: flex; align-items: center; gap: 20px;
   border-radius: 16px; padding: 10px 20px; position: relative;
-  /* MODIFIED: Scale down the widget */
   transform: scale(0.75);
   transform-origin: center;
 }
@@ -45,5 +44,35 @@
   line-height: 1.5; }
 .info-tooltip:hover .info-tooltip-text { display: block; }
 
+/* MODIFIED: Add a more general mobile compact state */
+@media (max-width: 768px) {
+    .gamification-widget {
+        transform: scale(0.7); /* Smaller scale for all mobile */
+    }
+    .countdown-label {
+        display: none; /* Hide "Until Deadline" label to save space */
+    }
+    .widget-deadline {
+        text-align: center;
+        padding-left: 12px;
+    }
+}
 
 
+/* MODIFIED: Hide more text on very narrow screens to prevent crowding */
+@media (max-width: 420px) {
+    .score-label, .score-target {
+        display: none;
+    }
+    .widget-deadline {
+        padding-left: 10px;
+        border-left: 1px solid var(--liquid-border);
+    }
+    .countdown-text {
+        font-size: 1.1rem;
+    }
+    .gamification-widget {
+        padding: 10px 12px;
+        gap: 10px;
+    }
+}

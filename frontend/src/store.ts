@@ -38,11 +38,15 @@ export interface StoreActions {
 
 const formatTime = (): string => new Date().toLocaleTimeString('en-GB');
 
+// MODIFIED: Simple check for mobile screen size to set a different default.
+const isMobile = window.innerWidth <= 768;
+
 // Create the store
 export const useStore = create<StoreState & StoreActions>((set, get) => ({
     // Initial State
     view: 'gallery',
-    comparisonMode: 'side-by-side',
+    // MODIFIED: Default to 'slider' on mobile, 'side-by-side' on desktop.
+    comparisonMode: isMobile ? 'slider' : 'side-by-side',
     sourceImageForTransform: null,
     isProcessing: false,
     logMessages: [],
@@ -56,6 +60,7 @@ export const useStore = create<StoreState & StoreActions>((set, get) => ({
     selectedTags: [],
     modalItem: null,
 
+    
     // Actions
     setState: (key, value) => set({ [key]: value }),
     
@@ -111,4 +116,3 @@ export const useStore = create<StoreState & StoreActions>((set, get) => ({
         }));
     }
 }));
-

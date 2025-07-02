@@ -30,19 +30,34 @@ main {
   border-radius: 25px; cursor: pointer; font-weight: 600; font-size: 14px;
   backdrop-filter: blur(var(--liquid-blur)); -webkit-backdrop-filter: blur(var(--liquid-blur));
   transition: all 0.2s ease;
+  white-space: nowrap; /* Prevent text wrapping */
 }
 .back-button:hover, .community-gallery-button:hover {
   background: var(--button-hover-bg); transform: scale(1.05); }
 
 @media (max-width: 900px) {
-  /* MODIFIED: Show header-center on mobile */
   .header-center { 
-    /* The widget inside is scaled down, so we can give it less space */
     flex: 1.5;
   }
 }
+
+/* MODIFIED: More aggressive compaction for mobile */
 @media (max-width: 768px) {
-  .app-header { height: 60px; padding: 0 15px; }
+  .app-header { 
+    height: 60px; 
+    padding: 0 10px; /* Reduced padding */
+  }
+  .header-left, .header-right {
+    flex: 1;
+  }
+  .header-center {
+    flex: 1.2; /* Give widget space but prioritize buttons */
+  }
+  .back-button, .community-gallery-button {
+    padding: 8px 12px; /* Smaller buttons */
+    font-size: 12px;
+    font-weight: 500;
+  }
 }
 
 

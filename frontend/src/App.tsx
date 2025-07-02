@@ -1,12 +1,10 @@
-// MODIFIED: 'React' import is no longer needed with the new JSX transform.
-// import React from 'react';
-
 // Styles
 import './App.css';
 
 // Hooks and Store
 import { useAppLogic } from './hooks/useAppLogic';
 import { useStore } from './store';
+import { useIsMobile } from './hooks/useIsMobile'; // ADDED: Hook to detect mobile
 
 // UI Components
 import LogPanel from './components/ui/LogPanel';
@@ -24,9 +22,9 @@ import CommunityGalleryView from './views/CommunityGalleryView';
  * @returns {JSX.Element} The rendered App component.
  */
 function App() {
-  // useAppLogic handles the application's side effects and async logic.
   const { handlers } = useAppLogic();
-  // We get the reactive state directly from the Zustand store.
+  const isMobile = useIsMobile(); // ADDED: Get mobile status
+
   const {
     view,
     isProcessing,
@@ -44,8 +42,6 @@ function App() {
   } = useStore();
 
   const showGalleryBackground = (view === 'transform' || view === 'comparison') && !isCommunityItem;
-  // MODIFIED: Hide the main 'back' button when the community gallery item modal is open
-  // to prevent confusion with the modal's own close button.
   const showBackButton = view !== 'gallery' && !modalItem;
 
   return (
@@ -53,7 +49,10 @@ function App() {
       <header className="app-header">
           <div className="header-left">
              {showBackButton && (
-                <button onClick={handlers.handleBackToStart} className="back-button">← BACK TO START</button>
+                // MODIFIED: Text is shortened on mobile to prevent wrapping
+                <button onClick={handlers.handleBackToStart} className="back-button">
+                  {isMobile ? '← BACK' : '← BACK TO START'}
+                </button>
              )}
           </div>
           <div className="header-center">

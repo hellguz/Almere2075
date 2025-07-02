@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import TagSelector from '../components/ui/TagSelector';
 import type { SourceImage, Tag } from '../types';
 import './TransformView.css';
+import { useIsMobile } from '../hooks/useIsMobile'; // ADDED: Hook to detect mobile
 
 interface TransformViewProps {
     sourceImage: SourceImage | null;
@@ -15,6 +16,7 @@ interface TransformViewProps {
 
 const TransformView: React.FC<TransformViewProps> = ({ sourceImage, isVisible, isProcessing, onTransform, tags, selectedTags, onTagToggle }) => {
     const viewRef = useRef<HTMLDivElement>(null);
+    const isMobile = useIsMobile(); // ADDED: get mobile status
 
     useEffect(() => {
         const setViewHeight = () => {
@@ -25,14 +27,13 @@ const TransformView: React.FC<TransformViewProps> = ({ sourceImage, isVisible, i
 
         if (isVisible) {
             setViewHeight();
-            window.addEventListener('resize', setViewHeight);
+             window.addEventListener('resize', setViewHeight);
         }
 
         return () => {
             window.removeEventListener('resize', setViewHeight);
         };
     }, [isVisible]);
-
 
     if (!sourceImage) return null;
     return (
@@ -41,15 +42,16 @@ const TransformView: React.FC<TransformViewProps> = ({ sourceImage, isVisible, i
                 <div className="main-image-container">
                     <p className="transform-step-title">1. Source Image</p>
                     <img src={sourceImage.url} alt="Selected for transformation" className="main-image" />
-                 </div>
+                </div>
                 <div className="transform-options">
                     <TagSelector tags={tags} selectedTags={selectedTags} onTagToggle={onTagToggle} />
                     <div className="transform-controls">
+                        {/* MODIFIED: Button text is shortened on mobile */ }
                         <button className="transform-action-button" onClick={onTransform} disabled={isProcessing}>
-                             {isProcessing ? 'TRANSFORMING...' : '3. TRANSFORM TO ALMERE 2075'}
+                             {isProcessing ? 'TRANSFORMING...' : (isMobile ? '3. TRANSFORM' : '3. TRANSFORM TO ALMERE 2075')}
                         </button>
                     </div>
-                </div>
+                 </div>
              </div>
             {isProcessing && <div className="scanline"></div>}
         </div>
@@ -57,3 +59,6 @@ const TransformView: React.FC<TransformViewProps> = ({ sourceImage, isVisible, i
 };
 
 export default TransformView;
+
+
+

@@ -81,16 +81,14 @@
     bottom: calc(20px + env(safe-area-inset-bottom));
     left: 50%; 
     width: 90%; max-width: 900px;
-    
     display: flex; justify-content: space-between; align-items: center;
     gap: 15px; background: var(--liquid-bg); padding: 12px 20px;
     border-radius: 16px; backdrop-filter: blur(var(--liquid-blur)); 
     -webkit-backdrop-filter: blur(var(--liquid-blur));
     border: 1px solid var(--liquid-border); z-index: 30;
     box-sizing: border-box;
-
-    transform-origin: bottom center;
-    transform: translateX(-50%) scale(0.75);
+    transform: translateX(-50%);
+    transition: all 0.2s ease;
 }
 .footer-left { flex: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
 .info-creator { 
@@ -218,7 +216,6 @@
     transform: translateX(-50%);
     width: 400px;
     max-width: 90vw;
-    /* MODIFIED: Made background darker and more opaque for readability */
     background: rgba(25, 25, 28, 0.85);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
@@ -232,7 +229,6 @@
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s;
-    /* MODIFIED: Increased blur amount for better text legibility */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
 }
@@ -255,25 +251,72 @@
 
 
 @media (max-width: 900px) {
-  .comparison-footer { 
-      flex-direction: column; gap: 12px; align-items: stretch; padding: 10px; 
-      transform: translateX(-50%) scale(0.85);
-      max-width: 100%;
-      width: calc(100% - 20px);
-  }
   .comparison-footer.is-modal {
       flex-direction: row;
       align-items: center;
   }
-  .footer-left, .footer-right, .footer-center { 
-      justify-content: center; text-align: center; }
-  .prompt-panel {
-      width: 90vw;
-  }
 }
+
 @media (max-width: 768px) {
-  .comparison-footer { 
-      width: calc(100% - 20px);
-      bottom: 10px;
-      bottom: calc(10px + env(safe-area-inset-bottom)); }
+  .comparison-footer {
+    width: calc(100% - 20px);
+    padding: 8px 12px;
+    gap: 10px;
+    border-radius: 12px;
+    /* MODIFIED: Reverted to a smaller, more sensible offset */
+    bottom: 15px;
+    bottom: calc(15px + env(safe-area-inset-bottom));
+  }
+  
+  .comparison-footer:not(.is-modal) {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+  }
+  .comparison-footer:not(.is-modal) .footer-left {
+    flex-basis: 100%;
+    align-items: center;
+    text-align: center;
+  }
+   .comparison-footer:not(.is-modal) .footer-center,
+   .comparison-footer:not(.is-modal) .footer-right {
+    flex: 1;
+  }
+
+  .comparison-footer .footer-left {
+      gap: 4px;
+  }
+
+  .comparison-footer .info-creator {
+      font-size: 0.7rem;
+  }
+
+  .comparison-footer .tag-chip {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+  }
+
+  .name-input-container {
+      height: 34px;
+  }
+  .name-input-container input {
+      font-size: 0.8rem;
+  }
+
+  .save-button,
+  .prompt-button,
+  .hide-button,
+  .modal-like-button {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 16px;
+  }
+  
+  .floating-controls-top {
+      top: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      right: auto;
+      width: auto;
+  }
 }

@@ -2,7 +2,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* MODIFIED: Height is now controlled by Javascript to fix mobile browser issues */
     box-sizing: border-box;
     padding: 70px 15px 15px 15px;
     padding-top: calc(70px + env(safe-area-inset-top));
@@ -139,4 +138,25 @@
     }
     100% { transform: translateY(0vh); }
 }
+
+/* MODIFIED: Mobile layout adjustments for Transform View */
+@media (max-width: 768px) {
+    .transform-view {
+        /* Reduce top padding to bring content up */
+        padding-top: 65px;
+        padding-top: calc(60px + env(safe-area-inset-top));
+    }
+    .transform-content {
+        gap: 10px; /* Tighter gap */
+    }
+    /* Hide the redundant title on mobile */
+    .transform-step-title {
+        display: none;
+    }
+    .main-image-container {
+        gap: 0;
+    }
+}
+
+
 

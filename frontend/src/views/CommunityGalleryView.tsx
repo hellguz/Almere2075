@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import ComparisonView from '../components/ui/ComparisonView';
 import type { GenerationDetails } from '../types';
 import { API_BASE_URL } from '../config';
@@ -36,12 +36,29 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
     fetchGallery,
 }) => {
     const [modalComparisonMode, setModalComparisonMode] = useState<ComparisonMode>('side-by-side');
+    const modalRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (isVisible && !modalItem) {
             fetchGallery();
         }
     }, [isVisible, modalItem, fetchGallery]);
+
+    // MODIFIED: Added effect to dynamically set the modal height to the window's inner height.
+    // This is the "proper fix" for the 100vh issue on mobile browsers.
+    useEffect(() => {
+        if (modalItem && modalRef.current) {
+            const setModalHeight = () => {
+                if (modalRef.current) {
+                    modalRef.current.style.height = `${window.innerHeight}px`;
+                }
+            };
+            setModalHeight(); // Set initially
+            window.addEventListener('resize', setModalHeight); // Update on resize/orientation change
+            return () => window.removeEventListener('resize', setModalHeight);
+        }
+    }, [modalItem]);
+
 
     const handleVoteClick = (e: React.MouseEvent<HTMLButtonElement>, itemId: string) => {
         e.stopPropagation();
@@ -83,9 +100,8 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
             </div>
 
             {modalItem && (
-                 <div className="modal-overlay" onClick={onModalClose}>
+                 <div className="modal-overlay" onClick={onModalClose} ref={modalRef}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        {/* MODIFIED: New header layout for the modal */}
                         <div className="modal-header">
                             <button className="modal-close-button" onClick={onModalClose}>← CLOSE</button>
                             <div className="view-mode-toggle">

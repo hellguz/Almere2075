@@ -39,9 +39,26 @@ const SLIDER_VIEW_SCALE_FACTOR = 0.95;
  */
 const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sourceImage, isVisible, mode, onModeChange, isModal = false, onSetName, onHide, onVote }) => {
     const sliderContainerRef = useRef<HTMLDivElement>(null);
+    const viewRef = useRef<HTMLDivElement>(null);
     const [clipPosition, setClipPosition] = useState(50);
     const [creatorName, setCreatorName] = useState('');
     const [nameSaved, setNameSaved] = useState(false);
+
+    // MODIFIED: This effect now ONLY runs for the main view, not the modal view,
+    // to prevent it from incorrectly resizing the component when it's inside the modal.
+    useEffect(() => {
+        if (isVisible && !isModal && viewRef.current) {
+            const setViewHeight = () => {
+                if (viewRef.current) {
+                    // This sets the height to the actual visible area on mobile.
+                    viewRef.current.style.height = `${window.innerHeight}px`;
+                }
+            };
+            setViewHeight();
+            window.addEventListener('resize', setViewHeight);
+            return () => window.removeEventListener('resize', setViewHeight);
+        }
+    }, [isVisible, isModal]);
 
     useEffect(() => {
         if (generationDetails) {
@@ -86,7 +103,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
     );
 
     return (
-        <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
+        <div className={`comparison-container ${isVisible ? 'visible' : ''}`} ref={viewRef}>
             {!isModal && (
                 <div className="floating-controls-top">
                     <div className="view-mode-toggle">
@@ -117,7 +134,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
                 </div>
             </div>
            
-            {/* MODIFIED: Added conditional 'is-modal' class */}
             <div className={`comparison-footer ${isModal ? 'is-modal' : ''}`}>
                 <div className="footer-left">
                     <div className="info-tags-chips">
