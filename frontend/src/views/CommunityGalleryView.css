@@ -1,21 +1,19 @@
 /*
   File: /frontend/src/views/CommunityGalleryView.css
   This file ensures the community gallery is scrollable and looks good on mobile.
-*/
+ */
 
 /* --- Main View Container --- */
 .community-gallery-view {
     display: flex;
     flex-direction: column;
     height: 100%;
-    width: 100%;
-    background: #080808;
+    width: 100%; background: #080808;
     box-sizing: border-box;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.8s ease, visibility 0.8s;
-    will-change: opacity;
-}
+    will-change: opacity; }
 .community-gallery-view.visible {
     opacity: 1;
     visibility: visible;
@@ -24,13 +22,11 @@
 
 /* --- Header Text --- */
 .gallery-info-text {
-    flex-shrink: 0; 
-    padding: 85px 15px 15px;
+    flex-shrink: 0; padding: 85px 15px 15px;
     padding-top: calc(85px + env(safe-area-inset-top));
     text-align: center;
     color: var(--color-text-secondary);
-    font-size: 0.9rem;
-}
+    font-size: 0.9rem; }
 
 
 /* --- Scrollable Grid Container --- */
@@ -38,49 +34,51 @@
     flex-grow: 1;
     overflow-y: auto;
     min-height: 0;
-    padding: 15px;
-    box-sizing: border-box;
+    padding: 15px; box-sizing: border-box;
 
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 24px;
-
+    /* MODIFIED: Increased minmax size to make cards bigger (fewer columns) */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 24px; 
     /* This packs all grid rows at the top, allowing the content to scroll correctly. */
     grid-auto-rows: min-content;
+}
+
+/* MODIFIED: Enforce 2 columns on small mobile screens */
+@media (max-width: 500px) {
+    .gallery-grid-container {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
 }
 
 
 /* --- Gallery Card & Children --- */
 .gallery-item {
-    background: #1c1c1e;
-    border-radius: 12px;
+    background: #1c1c1e; border-radius: 12px;
     border: 1px solid #2c2c2e;
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.2s ease, border-color 0.2s ease;
-    display: flex;
-    flex-direction: column;
+    display: flex; flex-direction: column;
 }
 .gallery-item:hover {
     transform: translateY(-5px);
-    border-color: var(--color-system);
-}
+    border-color: var(--color-system); }
 
 
 /* --- Card Image Container --- */
 .gallery-item-images {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1;
-    flex-shrink: 0;
+    aspect-ratio: 1 / 1; flex-shrink: 0;
     overflow: hidden;
 }
 .gallery-item-images > img {
     position: absolute;
     width: 100%;
     height: 100%;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     object-fit: cover;
     transition: opacity 0.4s ease-in-out;
 }
@@ -96,17 +94,24 @@
 .gallery-item-info {
     padding: 10px;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: center;
+    justify-content: space-between; 
+    align-items: flex-end; /* Align items to the bottom */
     gap: 8px;
+    /* MODIFIED: Push the info block to the bottom of the card */
+    margin-top: auto;
+    flex-grow: 1;
 }
 .gallery-item-details {
     flex-grow: 1;
+    min-width: 0; /* Prevents text overflow issues */
 }
 .gallery-item-tags {
     font-weight: bold;
     font-size: 0.8rem;
+    /* MODIFIED: Prevent long tags from breaking layout */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .gallery-item-creator {
     color: var(--color-text-secondary);
@@ -114,15 +119,13 @@
 }
 .like-button {
     background: #333;
-    color: white;
-    border: 1px solid #555;
+    color: white; border: 1px solid #555;
     padding: 6px 10px;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
-    font-size: 0.8rem;
-}
+    font-size: 0.8rem; }
 .like-button:hover {
     background: var(--color-system);
     border-color: var(--color-system);
@@ -133,24 +136,46 @@
 .modal-overlay { 
     position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
     background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); 
-    z-index: 200; display: flex; align-items: center; justify-content: center;
-}
+    z-index: 200; display: flex; align-items: center; justify-content: center; }
 .modal-content { 
     position: relative; width: 95%; height: 90%; 
     background: var(--color-background); border-radius: 16px; 
     overflow: hidden; display: flex; flex-direction: column; 
 }
-.modal-header { 
-    position: absolute; top: 15px; right: 15px; z-index: 20; 
-    display: flex; gap: 10px;
+
+/* MODIFIED: New modal header for a cleaner look */
+.modal-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 70px;
+    padding: 0 25px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 20;
+    pointer-events: none;
 }
-.close-modal-button { 
-    background: var(--liquid-bg); color: white; border: 1px solid var(--liquid-border); 
-    border-radius: 50%; width: 40px; height: 40px; font-size: 20px; 
-    cursor: pointer; backdrop-filter: blur(var(--liquid-blur)); 
-    display: flex; align-items: center; justify-content: center;
+.modal-header > * {
+    pointer-events: auto;
 }
+.modal-close-button {
+    background: var(--liquid-bg); border: 1px solid var(--liquid-border);
+    color: var(--color-text-primary); padding: 10px 20px;
+    border-radius: 25px; cursor: pointer; font-weight: 600; font-size: 14px;
+    backdrop-filter: blur(var(--liquid-blur)); -webkit-backdrop-filter: blur(var(--liquid-blur));
+    transition: all 0.2s ease;
+}
+.modal-close-button:hover {
+    background: var(--button-hover-bg);
+    transform: scale(1.05);
+}
+
 .gallery-grid-container::-webkit-scrollbar { width: 6px; }
 .gallery-grid-container::-webkit-scrollbar-track { background: transparent; }
 .gallery-grid-container::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg); border-radius: 3px; }
 .gallery-grid-container::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg); }
+
+

@@ -1,7 +1,8 @@
 /* Gallery background blur effect */
 .fullscreen-canvas-container.in-background {
   opacity: 1; visibility: visible;
-  filter: blur(20px) brightness(0.2);
+  /* MODIFIED: Reduced blur by 50% */
+  filter: blur(10px) brightness(0.2);
   transform: scale(1.05);
   transition: filter 0.8s ease, transform 0.8s ease;
   z-index: 5;
@@ -28,16 +29,14 @@
     position: absolute; top: 90px; left: 50%;
     transform: translateX(-50%); 
     color: var(--color-text-primary);
-    font-weight: 500;
-    letter-spacing: 0.8px; font-size: 14px; padding: 10px 20px;
+    font-weight: 500; letter-spacing: 0.8px; font-size: 14px; padding: 10px 20px;
     background: var(--liquid-bg); border: 1px solid var(--liquid-border);
     border-radius: 20px; backdrop-filter: blur(var(--liquid-blur));
     z-index: 10;
     opacity: 1; transition: opacity 1s ease 1s;
     pointer-events: none; text-align: center; text-transform: uppercase;
 }
-.gallery-instructions.fade-out { opacity: 0;
-}
+.gallery-instructions.fade-out { opacity: 0; }
 
 /* Upload button container */
 .main-actions-container {
@@ -54,12 +53,9 @@
     font-size: 0.9rem; font-weight: 600; letter-spacing: 0.5px;
     min-width: 210px;
     color: var(--color-text-secondary); background: var(--liquid-bg);
-    padding: 12px 24px;
-    border: 1px solid var(--liquid-border);
+    padding: 12px 24px; border: 1px solid var(--liquid-border);
     border-radius: 30px; cursor: pointer;
     backdrop-filter: blur(var(--liquid-blur)); -webkit-backdrop-filter: blur(var(--liquid-blur));
     transition: all 0.2s ease;
 }
-.upload-button:hover { color: var(--color-text-primary);
-    border-color: rgba(255,255,255,0.3); transform: scale(1.05); }
-
+.upload-button:hover { color: var(--color-text-primary); border-color: rgba(255,255,255,0.3); transform: scale(1.05); }

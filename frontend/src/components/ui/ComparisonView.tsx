@@ -5,6 +5,18 @@ import './ComparisonView.css';
 
 type ComparisonMode = 'slider' | 'side-by-side';
 
+/**
+ * @typedef {object} ComparisonViewProps
+ * @property {GenerationDetails | null} generationDetails - The details of the generated image.
+ * @property {SourceImage | null} sourceImage - The original source image.
+ * @property {boolean} isVisible - Whether the view is currently visible.
+ * @property {ComparisonMode} mode - The current comparison mode ('slider' or 'side-by-side').
+ * @property {(mode: ComparisonMode) => void} onModeChange - Callback to change the comparison mode.
+ * @property {boolean} [isModal=false] - If true, renders in a modal-specific layout.
+ * @property {(name: string) => void} [onSetName] - Callback to set the creator's name.
+ * @property {() => void} [onHide] - Callback to hide the generation from the gallery.
+ * @property {() => void} [onVote] - Callback to vote for the generation.
+ */
 interface ComparisonViewProps {
     generationDetails: GenerationDetails | null;
     sourceImage: SourceImage | null;
@@ -17,11 +29,15 @@ interface ComparisonViewProps {
     onVote?: () => void;
 }
 
+// MODIFIED: Added a constant to control the scale of the slider view
+const SLIDER_VIEW_SCALE_FACTOR = 0.95; // 95% of the viewport
+
 const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sourceImage, isVisible, mode, onModeChange, isModal = false, onSetName, onHide, onVote }) => {
     const sliderContainerRef = useRef<HTMLDivElement>(null);
     const [clipPosition, setClipPosition] = useState(50);
     const [creatorName, setCreatorName] = useState('');
     const [nameSaved, setNameSaved] = useState(false);
+    const [isPromptVisible, setIsPromptVisible] = useState(false);
 
     useEffect(() => {
         if (generationDetails) {
@@ -50,6 +66,10 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
     const originalImageUrl = sourceImage?.url || `${API_BASE_URL}/images/${generationDetails.original_image_filename}`;
     const outputImageUrl = generationDetails.generated_image_url ? `${API_BASE_URL}/images/${generationDetails.generated_image_url}` : '';
     
+    const viewWrapperStyle = {
+        transform: mode === 'slider' ? `scale(${SLIDER_VIEW_SCALE_FACTOR})` : 'scale(1)',
+    };
+
     return (
         <div className={`comparison-container ${isVisible ? 'visible' : ''}`}>
             {!isModal && (
@@ -60,45 +80,63 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
                     </div>
                 </div>
             )}
-            <div className="comparison-main-area">
-                {mode === 'side-by-side' && (
-                    <div className="comparison-view side-by-side">
-                        <div className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}><div className="image-header">SOURCE</div></div>
-                        <div className="image-panel" style={{backgroundImage: `url("${outputImageUrl}")`}}><div className="image-header">ALMERE 2075</div></div>
-                     </div>
-                )}
-                {mode === 'slider' && (
-                    <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleSliderMove} onTouchMove={handleSliderMove}>
-                        <div className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}>
-                            <div className="image-header">SOURCE</div>
+           <div className="comparison-main-area">
+                <div className="comparison-view-wrapper" style={viewWrapperStyle}>
+                    {mode === 'side-by-side' && (
+                        <div className="comparison-view side-by-side">
+                            <div className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}><div className="image-header">SOURCE</div></div>
+                            <div className="image-panel" style={{backgroundImage: `url("${outputImageUrl}")`}}><div className="image-header">ALMERE 2075</div></div>
+                         </div>
+                    )}
+                    {mode === 'slider' && (
+                        <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleSliderMove} onTouchMove={handleSliderMove}>
+                             <div className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}>
+                                <div className="image-header">SOURCE</div>
+                            </div>
+                            <div className="image-panel after-image" style={{backgroundImage: `url("${outputImageUrl}")`, clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
+                                 <div className="image-header">ALMERE 2075</div>
+                            </div>
+                            <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
                         </div>
-                        <div className="image-panel after-image" style={{backgroundImage: `url("${outputImageUrl}")`, clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
-                             <div className="image-header">ALMERE 2075</div>
-                        </div>
-                        <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
-                     </div>
-                )}
+                    )}
+                </div>
             </div>
            
             <div className="comparison-footer">
                 <div className="footer-left">
-                     <div className="info-tags">
-                         <b>Concepts:</b> {generationDetails.tags_used?.join(', ') || 'N/A'}
+                    <div className="info-tags-chips">
+                        <b>Concepts:</b> 
+                        {generationDetails.tags_used?.map(tag => <span key={tag} className="tag-chip">{tag}</span>) || <span className="tag-chip">N/A</span>}
                     </div>
                     <div className="info-creator">
                         <b>By:</b> {generationDetails.creator_name || 'Anonymous'}
                     </div>
                 </div>
-                {!isModal && onSetName && (
-                    <div className="footer-center">
+
+                <div className="footer-center">
+                    {!isModal && onSetName ? (
                         <div className="name-input-container">
                             <input type="text" placeholder="Sign your creation..." value={creatorName} onChange={(e) => setCreatorName(e.target.value)} disabled={nameSaved} />
                             <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()} className={nameSaved ? "save-button-saved" : "save-button"}>
-                                 {nameSaved ? '✓ SAVED' : 'SAVE NAME'}
+                                {nameSaved ? '✓ SAVED' : 'SAVE NAME'}
                             </button>
                         </div>
-                    </div>
-                 )}
+                    ) : (
+                        <div className="prompt-container">
+                            <button 
+                                className="prompt-button"
+                                onMouseEnter={() => setIsPromptVisible(true)}
+                                onMouseLeave={() => setIsPromptVisible(false)}
+                            >
+                                SHOW PROMPT
+                            </button>
+                            {isPromptVisible && generationDetails.prompt_text && (
+                                <div className="prompt-panel">{generationDetails.prompt_text}</div>
+                            )}
+                        </div>
+                    )}
+                </div>
+                 
                 <div className="footer-right">
                     {!isModal && onHide && (
                         <button className="hide-button" onClick={onHide} title="Remove from public gallery">REMOVE</button>
@@ -107,7 +145,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
                         <button className="modal-like-button" onClick={onVote}>
                             👍 {generationDetails.votes}
                         </button>
-                    )}
+                     )}
                  </div>
             </div>
         </div>
@@ -115,4 +153,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
 };
 
 export default ComparisonView;
+
+
 

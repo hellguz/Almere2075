@@ -25,22 +25,25 @@ main {
 .header-center { flex: 2; display: flex; justify-content: center; }
 
 .back-button, .community-gallery-button {
-  background: var(--liquid-bg);
-  border: 1px solid var(--liquid-border);
+  background: var(--liquid-bg); border: 1px solid var(--liquid-border);
   color: var(--color-text-primary); padding: 10px 20px;
   border-radius: 25px; cursor: pointer; font-weight: 600; font-size: 14px;
-  backdrop-filter: blur(var(--liquid-blur));
-  -webkit-backdrop-filter: blur(var(--liquid-blur));
+  backdrop-filter: blur(var(--liquid-blur)); -webkit-backdrop-filter: blur(var(--liquid-blur));
   transition: all 0.2s ease;
 }
 .back-button:hover, .community-gallery-button:hover {
-  background: var(--button-hover-bg); transform: scale(1.05);
-}
+  background: var(--button-hover-bg); transform: scale(1.05); }
 
 @media (max-width: 900px) {
-  .header-center { display: none; }
+  /* MODIFIED: Show header-center on mobile */
+  .header-center { 
+    /* The widget inside is scaled down, so we can give it less space */
+    flex: 1.5;
+  }
 }
 @media (max-width: 768px) {
   .app-header { height: 60px; padding: 0 15px; }
 }
+
+
 

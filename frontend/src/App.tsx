@@ -19,10 +19,13 @@ import GalleryView from './views/GalleryView';
 import TransformView from './views/TransformView';
 import CommunityGalleryView from './views/CommunityGalleryView';
 
+/**
+ * The main application component, which orchestrates the different views and UI elements.
+ * @returns {JSX.Element} The rendered App component.
+ */
 function App() {
   // useAppLogic handles the application's side effects and async logic.
   const { handlers } = useAppLogic();
-  
   // We get the reactive state directly from the Zustand store.
   const {
     view,
@@ -41,12 +44,15 @@ function App() {
   } = useStore();
 
   const showGalleryBackground = (view === 'transform' || view === 'comparison') && !isCommunityItem;
+  // MODIFIED: Hide the main 'back' button when the community gallery item modal is open
+  // to prevent confusion with the modal's own close button.
+  const showBackButton = view !== 'gallery' && !modalItem;
 
   return (
     <div className="app-container">
       <header className="app-header">
           <div className="header-left">
-             {(view !== 'gallery') && (
+             {showBackButton && (
                 <button onClick={handlers.handleBackToStart} className="back-button">← BACK TO START</button>
              )}
           </div>
@@ -69,7 +75,7 @@ function App() {
             onNewImage={handlers.handleStartTransform}
             onShowTutorial={handlers.handleShowTutorial}
         />
-        <TransformView 
+         <TransformView 
             sourceImage={sourceImageForTransform} 
             isVisible={view === 'transform'} 
             isProcessing={isProcessing}
@@ -77,7 +83,7 @@ function App() {
             tags={availableTags}
             selectedTags={selectedTags}
             onTagToggle={handlers.handleTagToggle}
-        />
+         />
         <ComparisonView
             generationDetails={generationDetails}
             sourceImage={sourceImageForTransform}
@@ -86,7 +92,7 @@ function App() {
             onModeChange={(mode) => handlers.setState('comparisonMode', mode)}
             onSetName={handlers.handleSetName}
             onHide={handlers.handleHide}
-        />
+         />
         <CommunityGalleryView
             isVisible={view === 'community_gallery'}
             items={communityGalleryItems}
@@ -109,4 +115,6 @@ function App() {
 }
 
 export default App;
+
+
 
