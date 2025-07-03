@@ -13,9 +13,15 @@ interface CommunityCardNodeProps {
     onItemSelect: (item: GenerationDetails) => void;
     onVote: (e: React.MouseEvent<HTMLButtonElement>, id: string) => void;
     isInBackground: boolean;
-    isFirst: boolean; // ADDED: Prop to identify the first card for logging
+    isFirst: boolean; // Prop to identify the first card for logging
 }
 
+/**
+ * Represents a single interactive card in the 3D community gallery grid.
+ * It combines a 3D group for position and scale with an HTML overlay for the card content.
+ * @param {CommunityCardNodeProps} props The component props.
+ * @returns {JSX.Element} The rendered CommunityCardNode component.
+ */
 const CommunityCardNode: React.FC<CommunityCardNodeProps> = ({ item, homePosition, baseSize, onItemSelect, onVote, isInBackground, isFirst }) => {
     const groupRef = useRef<Group>(null);
     const homeVec = useMemo(() => new Vector3(...homePosition), [homePosition]);
@@ -48,7 +54,6 @@ const CommunityCardNode: React.FC<CommunityCardNodeProps> = ({ item, homePositio
         const normalizedDist = Math.min(dist / influenceRadius, 1.0);
         const distortedDist = Math.pow(normalizedDist, GALLERY_CONFIG.DISTORTION_POWER) * influenceRadius;
         const targetPosition = new Vector2().addVectors(mousePos, directionVec.normalize().multiplyScalar(distortedDist));
-        
         if (dist > influenceRadius) {
             targetPosition.copy(homePos2D);
         }
@@ -56,7 +61,6 @@ const CommunityCardNode: React.FC<CommunityCardNodeProps> = ({ item, homePositio
         const proximity = 1 - normalizedDist;
         const targetScale = GALLERY_CONFIG.MIN_SCALE + Math.pow(proximity, GALLERY_CONFIG.SCALE_CURVE) * (GALLERY_CONFIG.MAX_SCALE - GALLERY_CONFIG.MIN_SCALE);
         const targetZ = proximity * GALLERY_CONFIG.Z_LIFT;
-
         groupRef.current.position.lerp(new Vector3(targetPosition.x, targetPosition.y, targetZ), GALLERY_CONFIG.DAMPING);
         groupRef.current.scale.lerp(new Vector3(targetScale, targetScale, 1), GALLERY_CONFIG.DAMPING);
     });
@@ -70,8 +74,9 @@ const CommunityCardNode: React.FC<CommunityCardNodeProps> = ({ item, homePositio
             <Html
                 transform
                 occlude
-                // This prop makes the HTML container invisible to the mouse, allowing the
-                // canvas underneath to receive hover events for the fisheye animation.
+                // ADDED: This prop makes the HTML container invisible to the mouse, allowing the
+                // canvas underneath to receive hover events for the fisheye animation. This is
+                // the key to fixing the interaction bugs. It works with the CSS changes.
                 pointerEvents="none"
                 scale={htmlScale}
                 position={[0, 0, 0.1]}

@@ -1,7 +1,7 @@
 /*
   File: /frontend/src/components/community/GalleryItemCard.css
   This file styles the individual card component used in the 3D community gallery.
- */
+*/
 
 .gallery-item-card {
     background: #1c1c1e;
@@ -28,10 +28,12 @@
 .gallery-item-images {
     position: relative;
     width: 100%;
-    /* Fixed aspect ratio for the image part */
-    height: 200px;
+    /* MODIFIED: Replaced fixed height with aspect-ratio for a more robust layout.
+       This prevents the image from stretching if the card container gets distorted. */
+    aspect-ratio: 1 / 1;
     flex-shrink: 0;
     overflow: hidden;
+    background-color: #111; /* Added a background for images that don't load */
 }
 
 .gallery-item-images > img {
