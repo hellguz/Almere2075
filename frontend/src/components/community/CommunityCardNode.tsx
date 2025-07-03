@@ -13,14 +13,22 @@ interface CommunityCardNodeProps {
     onItemSelect: (item: GenerationDetails) => void;
     onVote: (e: React.MouseEvent<HTMLButtonElement>, id: string) => void;
     isInBackground: boolean;
+    isFirst: boolean; // ADDED: Prop to identify the first card for logging
 }
 
-const CommunityCardNode: React.FC<CommunityCardNodeProps> = ({ item, homePosition, baseSize, onItemSelect, onVote, isInBackground }) => {
+const CommunityCardNode: React.FC<CommunityCardNodeProps> = ({ item, homePosition, baseSize, onItemSelect, onVote, isInBackground, isFirst }) => {
     const groupRef = useRef<Group>(null);
     const homeVec = useMemo(() => new Vector3(...homePosition), [homePosition]);
 
     useFrame((state: RootState) => {
         if (!groupRef.current) return;
+
+        // ADDED: Log mouse coordinates for the first card to debug hover issues.
+        // This log should show mouse coordinates continuously changing as you move the mouse.
+        // If they are frozen, it means events are being blocked.
+        if (isFirst && !isInBackground && state.mouse.x !== 0 && state.mouse.y !== 0) {
+            console.log(`[Debug Card ${item.id.substring(0,8)}] Mouse Coords (Normalized): x=${state.mouse.x.toFixed(2)}, y=${state.mouse.y.toFixed(2)}`);
+        }
 
         let mousePos: Vector2;
         if (isInBackground) {
@@ -57,13 +65,13 @@ const CommunityCardNode: React.FC<CommunityCardNodeProps> = ({ item, homePositio
     const htmlScale = baseSize / scalingDivisor;
 
     return (
-        // FIXED: The onClick handler is now on the 3D group.
+        // The onClick handler is on the 3D group, which receives clicks because the HTML overlay is non-interactive.
         <group ref={groupRef} position={homePosition} onClick={() => onItemSelect(item)}>
             <Html
                 transform
                 occlude
-                // FIXED: This prop makes the HTML invisible to the mouse, allowing the
-                // canvas underneath to receive hover events for the animation.
+                // This prop makes the HTML container invisible to the mouse, allowing the
+                // canvas underneath to receive hover events for the fisheye animation.
                 pointerEvents="none"
                 scale={htmlScale}
                 position={[0, 0, 0.1]}

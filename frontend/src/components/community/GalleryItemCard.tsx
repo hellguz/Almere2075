@@ -11,13 +11,13 @@ interface GalleryItemCardProps {
 const GalleryItemCard: React.FC<GalleryItemCardProps> = ({ item, onVote }) => {
 
     const handleVoteClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-        // This is crucial to prevent the group's onClick from also firing.
+        // This stops the click from bubbling up to the parent group's onClick handler.
         e.stopPropagation();
         onVote(e, item.id);
     };
 
     return (
-        // REMOVED: The main onClick handler is gone from this div.
+        // The onClick handler was removed from this div; the parent group now handles it.
         <div className="gallery-item-card">
             <div className="gallery-item-images">
                 {item.generated_image_url && (
@@ -42,7 +42,7 @@ const GalleryItemCard: React.FC<GalleryItemCardProps> = ({ item, onVote }) => {
                         by {item.creator_name || 'Anonymous'}
                     </div>
                 </div>
-                {/* FIXED: This button now uses the specific handler with stopPropagation. */}
+                {/* This button uses the specific handler with stopPropagation to function correctly. */}
                 <button className="like-button" onClick={handleVoteClick}>
                     👍 {item.votes}
                 </button>
@@ -52,3 +52,4 @@ const GalleryItemCard: React.FC<GalleryItemCardProps> = ({ item, onVote }) => {
 };
 
 export default GalleryItemCard;
+

@@ -11,19 +11,18 @@
     /* Set a fixed size for consistent rendering to texture */
     width: 220px;
     height: 280px;
-    transition: border-color 0.2s ease;
     display: flex;
     flex-direction: column;
     font-family: 'Inter', sans-serif;
     color: #F5F5F7;
-    /* This element itself is clickable now */
-    pointer-events: auto;
-    cursor: pointer;
+    /* FIXED: This is the critical change. 'none' allows mouse events (hovers, clicks)
+       to pass through the card to the 3D canvas underneath. This fixes both the
+       fisheye hover effect and the inability to click/select cards. */
+    pointer-events: none;
 }
 
-.gallery-item-card:hover {
-    border-color: #0A84FF; /* --color-system */
-}
+/* REMOVED: This :hover rule is no longer effective because of pointer-events: none.
+   The interaction is now handled by the 3D group's scale and Z-position. */
 
 /* --- Card Image Container --- */
 .gallery-item-images {
@@ -90,6 +89,10 @@
     transition: all 0.2s ease;
     flex-shrink: 0;
     font-size: 0.8rem;
+    /* FIXED: This makes the like button an "island" of interactivity.
+       Even though its parent has pointer-events: none, this button will
+       still capture mouse clicks. */
+    pointer-events: auto;
 }
 
 .like-button:hover {

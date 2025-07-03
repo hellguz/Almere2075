@@ -34,18 +34,12 @@ const DynamicCommunityGallery: React.FC<DynamicCommunityGalleryProps> = ({
   const { viewport } = useThree();
 
   const grid = useMemo(() => {
-    console.group("DynamicCommunityGallery Grid Calculation");
-
     if (!items.length || viewport.width === 0) {
-      console.log("No items or viewport width is zero, aborting calculation.");
-      console.groupEnd();
       return [];
     }
 
     const itemCount = items.length;
     const { width, height } = viewport;
-    console.log(`Viewport Dimensions: ${width.toFixed(2)}w x ${height.toFixed(2)}h`);
-    console.log(`Total Items: ${itemCount}`);
     
     const gridItems = [];
     const tempPoints: Vector2[] = [];
@@ -58,7 +52,6 @@ const DynamicCommunityGallery: React.FC<DynamicCommunityGalleryProps> = ({
     const VERTICAL_SPACING_DIVISOR = 4 / 3;
     const verticalSpacing = hexHeight / VERTICAL_SPACING_DIVISOR;
     
-    // --- FIXED: The 'rows' variable was used before it was defined. ---
     const rows = Math.ceil(height / verticalSpacing);
 
     for (let row = 0; row < rows + 2; row++) {
@@ -88,11 +81,6 @@ const DynamicCommunityGallery: React.FC<DynamicCommunityGalleryProps> = ({
           0,
       ] as [number, number, number];
 
-      // --- ADDED: Log the position being assigned to the first 5 cards ---
-      if (i < 5) {
-          console.log(`[Props] Assigning to Card ${items[i].id} homePosition:`, homePosition);
-      }
-
       gridItems.push({
         index: i,
         item: items[i],
@@ -101,14 +89,12 @@ const DynamicCommunityGallery: React.FC<DynamicCommunityGalleryProps> = ({
       });
     }
     
-    console.groupEnd();
-
     return gridItems;
   }, [items, viewport.width, viewport.height]);
 
   return (
     <group>
-      {grid.map((gridItem) => (
+      {grid.map((gridItem, index) => (
         <CommunityCardNode
           key={gridItem.item.id}
           item={gridItem.item}
@@ -117,6 +103,7 @@ const DynamicCommunityGallery: React.FC<DynamicCommunityGalleryProps> = ({
           onItemSelect={onItemSelect}
           onVote={onVote}
           isInBackground={isInBackground}
+          isFirst={index === 0} // ADDED: Pass the isFirst prop for logging
         />
       ))}
     </group>

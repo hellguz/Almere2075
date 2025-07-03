@@ -69,13 +69,13 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
     }, [modalItem, onVote]);
     
     // Logic to distinguish between a drag and a simple click/tap
-    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    const handlePointerDown = (e: React.PointerEvent) => {
         panState.current.isPanning = true;
         panState.current.hasDragged = false; // Reset drag state on new interaction
         panState.current.startCoords = { x: e.clientX, y: e.clientY };
     };
 
-    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const handlePointerMove = (e: React.PointerEvent) => {
         if (!panState.current.isPanning) return;
         const dx = e.clientX - panState.current.startCoords.x;
         const dy = e.clientY - panState.current.startCoords.y;
@@ -103,20 +103,23 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                 <p>Explore visions of Almere 2075 created by others. <b>Drag to explore</b> and <b>tap a card to see details</b>. Give a "👍" to your favorites!</p>
             </div>
             
-            <div 
-                className="community-canvas-container"
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerUp}
-                onPointerLeave={handlePointerUp}
-            >
-                <Canvas orthographic camera={{ position: [0, 0, 10], zoom: 100 }}>
+            {/* FIXED: The pointer handlers are now on the Canvas itself, not the wrapper div.
+                This ensures events are handled correctly by react-three-fiber. */}
+            <div className="community-canvas-container">
+                <Canvas 
+                    orthographic 
+                    camera={{ position: [0, 0, 10], zoom: 100 }}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
+                >
                     <ambientLight intensity={3} />
                     {items.length > 0 && (
                         <DynamicCommunityGallery
                             items={items}
                             onItemSelect={handleItemSelect} // Use the new safe handler
-                            onVote={onVote} // Vote is already safe
+                            onVote={(e, id) => onVote(id)}   // Adapt the handler signature
                             isInBackground={!!modalItem}
                         />
                     )}
