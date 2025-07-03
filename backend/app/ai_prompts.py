@@ -1,118 +1,150 @@
-# ADDED: Definitive list of tags based on student concepts.
+# ADDED: Definitive list of tags based on student concepts, now integrated into the user's preferred prompt structure.
 AVAILABLE_TAGS = [
     {
-        "id": "sponge_city",
-        "name": "Sponge City",
-        "description": "Transform hard surfaces into lush 'Sponge Parks' and canals that absorb rainwater, preventing floods and creating vibrant blue-green landscapes."
+        "id": "sponge-parks",
+        "name": "Sponge Parks & Bio-Filters",
+        "description": "Introduce lush, sunken green spaces that absorb rainwater, preventing floods while creating vibrant community hubs. These parks can feature rain gardens, bio-filtering wetlands, and new water channels."
     },
     {
-        "id": "urban_farming",
-        "name": "Urban Farming",
-        "description": "Integrate high-tech 'Vertical Farms', rooftop greenhouses, and 'Edible Streetscapes' to create a city that produces its own fresh food."
+        "id": "amphibious-arch",
+        "name": "Amphibious Architecture",
+        "description": "Retrofit buildings to float or be elevated on stilts. Add floating social infrastructure and amphibious roads to create a city that lives with water, not against it."
     },
     {
-        "id": "circular_living",
-        "name": "Circular Living",
-        "description": "Introduce community repair hubs, waste-to-resource facilities, and urban mining, creating a zero-waste society where everything is reused."
+        "id": "modular-housing",
+        "name": "Adaptive Modular Housing",
+        "description": "Replace some buildings with flexible, modular housing systems. These can be stacked vertically on existing structures or fill in empty lots, featuring green roofs and adaptable interiors."
     },
     {
-        "id": "adaptive_architecture",
-        "name": "Adaptive Architecture",
-        "description": "Replace or augment existing buildings with futuristic modular, kinetic, or even amphibious structures that can adapt to changing needs and environments."
+        "id": "urban-farming",
+        "name": "Vertical Farms & Agri-Towers",
+        "description": "Integrate sleek, tall towers for hydroponic and aquaponic farming near residential areas, providing local food and creating a unique skyline."
     },
     {
-        "id": "vertical_communities",
-        "name": "Vertical Communities",
-        "description": "Densify the city by adding new lightweight, modular housing levels on top of existing buildings, creating mixed-use vertical neighborhoods."
+        "id": "edible-landscapes",
+        "name": "Edible Landscapes",
+        "description": "Transform sidewalks, public squares, and rooftops into productive community gardens and edible streetscapes with fruit trees and vegetable plots."
     },
     {
-        "id": "future_mobility",
-        "name": "Future Mobility",
-        "description": "Create a car-free city center with autonomous water taxis, delivery drones, and elevated pedestrian walkways for a quiet, efficient, and clean transport system."
+        "id": "circular-economy",
+        "name": "Circular Economy Hubs",
+        "description": "Repurpose existing buildings into hubs for repair, reuse, and local production. Add community workshops and small-scale recycling facilities to the street level."
+    },
+    {
+        "id": "future-mobility",
+        "name": "New Mobility",
+        "description": "Introduce a car-free environment with pedestrian-friendly streets, new tram lines, elevated bike paths, and canals used for transporting goods with small electric boats."
+    },
+    {
+        "id": "shared-spaces",
+        "name": "Urban Commons & Shared Spaces",
+        "description": "Activate public spaces by adding shared kitchens, outdoor workshops, and educational labs, fostering a strong sense of community and collective responsibility."
     }
 ]
 
+# This detailed knowledge base provides the AI with rich visual language for each concept.
+CONCEPT_KNOWLEDGE_BASE = {
+    "sponge-parks": "Deep, sunken, lush green areas replacing concrete plazas or wide sidewalks. Terraced landscaping with native plants, grasses, and flowers. Small, crystal-clear water channels or pools integrated into the parks. Wooden boardwalks or stone paths crisscrossing the green areas.",
+    "amphibious-arch": "Existing buildings retrofitted with visible foundations and hydraulic stilts that allow them to float or be elevated. Add beautiful floating platforms made of light wood for cafes or social gatherings. Buildings are connected by lightweight, intricate bridges.",
+    "modular-housing": "Sleek, modern housing modules made of sustainable materials like cross-laminated timber (CLT) and recycled metal with a polished finish. Stacked to add new floors on top of existing buildings or used to construct new mid-rise buildings. They feature integrated balconies with blooming flowers, green walls, and large smart-glass windows.",
+    "urban-farming": "Elegant, slender towers with glass facades revealing glowing hydroponic and aquaponic systems inside. Integrated near residential clusters, some with visible sky-bridges connecting them to other buildings for food distribution. They are architecturally striking.",
+    "edible-landscapes": "Sidewalks and public squares transformed into productive and beautiful community gardens. Fruit trees line the streets, and plots of vegetables and herbs are neatly arranged in ornate, raised beds. Rooftops are covered in lush green gardens.",
+    "circular-economy": "Ground floors of existing buildings repurposed into clean, open-front workshops for repairing electronics, furniture, or textiles. Small-scale 3D printing labs and material recycling stations are visible behind glass walls. These are bright, inviting spaces for making and learning.",
+    "future-mobility": "A completely car-free environment. Streets are reclaimed for people, with wide pedestrian areas, dedicated bike lanes, and sleek, silent hanging trams or modern ground trams. Canals are clean and used by small, autonomous electric boats for logistics. Elevated, glowing pathways and bridges for pedestrians and cyclists.",
+    "shared-spaces": "Public squares and ground floors activated with high-tech shared facilities. Look for open-air communal kitchens with solar-powered cooktops, educational holographic displays, outdoor workbenches with integrated tools, and interactive art installations."
+}
 
 def create_system_prompt(tags: list[str]) -> str:
     """
-    Generates a detailed system prompt for GPT-4 to create a high-quality prompt for the FLUX image model.
-    This function dynamically injects selected student concepts into a master prompt that enforces
-    strict rules about recognizability, surgical editing, and narrative storytelling.
-
-    Args:
-        tags: A list of tag IDs selected by the user.
-
-    Returns:
-        A string containing the complete system prompt for the AI.
+    This function generates the system prompt based on the user's preferred template,
+    but enriched with the detailed concepts derived from the student projects.
     """
+    
     tag_names = [tag['name'] for tag in AVAILABLE_TAGS if tag['id'] in tags]
-
+    
+    # Create a dynamic instruction string based on the provided tags.
     tag_instruction = ""
     if tag_names:
         tag_instruction = (
             "You MUST creatively and visibly integrate the following concepts into your transformation: "
-            f"**{', '.join(tag_names)}**. These concepts are your primary guide and must be featured prominently."
+            f"**{', '.join(tag_names)}**. These concepts are your primary guide for the futuristic elements."
         )
     else:
         tag_instruction = (
-            "Your transformation should be guided by general principles of a bright, solarpunk future: "
-            "sustainability, lush green infrastructure, and modern modular architecture."
+            "Your transformation should be guided by general principles of sustainability, "
+            "green infrastructure, and modern modular architecture."
         )
 
+    # Build the rich Concept Palette from the selected tags
+    palette_section = ["\n**Almere 2075 Concept Palette (Based on Student Concepts)**"]
+    # Add Architectural Typologies
+    palette_section.append("\n* **Architectural Typologies:**")
+    if any(t in tags for t in ["modular-housing", "amphibious-arch", "circular-economy", "urban-farming"]):
+        if "modular-housing" in tags: palette_section.append("  * Adaptive Modular Housing, Kinetic Timber & Glass Residences: " + CONCEPT_KNOWLEDGE_BASE["modular-housing"])
+        if "amphibious-arch" in tags: palette_section.append("  * Amphibious & Plinth Buildings: " + CONCEPT_KNOWLEDGE_BASE["amphibious-arch"])
+        if "circular-economy" in tags: palette_section.append("  * Community Repair & Biocycle Hubs: " + CONCEPT_KNOWLEDGE_BASE["circular-economy"])
+        if "urban-farming" in tags: palette_section.append("  * Vertical Farm Towers: " + CONCEPT_KNOWLEDGE_BASE["urban-farming"])
+    else:
+        palette_section.append("  * General futuristic, sustainable architecture.")
+
+    # Add Green Infrastructure
+    palette_section.append("\n* **Green & Living Infrastructure:**")
+    if any(t in tags for t in ["sponge-parks", "edible-landscapes"]):
+        if "sponge-parks" in tags: palette_section.append("  * Sponge Parks & Flood-Adaptive Plazas: " + CONCEPT_KNOWLEDGE_BASE["sponge-parks"])
+        if "edible-landscapes" in tags: palette_section.append("  * Edible Streetscapes & Rooftop Greenhouses: " + CONCEPT_KNOWLEDGE_BASE["edible-landscapes"])
+    else:
+        palette_section.append("  * General lush greenery, parks, and water features.")
+    
+    # Add Technology & Narrative
+    palette_section.append("\n* **Technology & Narrative Elements:**")
+    if any(t in tags for t in ["future-mobility", "shared-spaces"]):
+         if "future-mobility" in tags: palette_section.append("  * New Mobility (Water Taxis, Drones, Elevated Transport): " + CONCEPT_KNOWLEDGE_BASE["future-mobility"])
+         if "shared-spaces" in tags: palette_section.append("  * Urban Commons & Shared Spaces: " + CONCEPT_KNOWLEDGE_BASE["shared-spaces"])
+    else:
+        palette_section.append("  * General futuristic technology like drones, robotics, and interactive displays.")
+
+    final_palette = "".join(palette_section)
+
     return f"""
-You are the "Almere 2075 Visionary Prompter," a specialized AI assistant. Your sole purpose is to generate a single, concise, and highly effective image-to-image prompt for the `black-forest-labs/flux-kontext-pro` model.
-Your goal is to transform a contemporary photograph into a photorealistic, optimistic, and recognizable vision of Almere in 2075, based *exclusively* on the student-developed concepts provided.
+You are the "Almere 2075 Cinematic Architect."
+Your mission is to function as a visionary concept artist, creating ONE exceptionally detailed and evocative prompt for the FLUX.1 Kontext model.
+You will transform a contemporary photo into a compelling, photorealistic scene that showcases a beautiful, modern, and sustainable future.
 
+**THE ABSOLUTE LAW: At least 50% of the original image area MUST remain completely untouched, pixel-for-pixel. Your edits must be surgical additions or replacements within the other 50%.**
+
+**The Golden Rule: Prioritize Recognizability Above All**
+Your primary objective is to generate a prompt that results in a recognizable *edit* of the original photo, not a wholesale replacement. Your prompts must be surgical and explicitly state what to preserve.
+
+**Core Creative Guidance:**
+{tag_instruction}
+
+**Core Mandates & Preservation Rules**
+
+* **Start with Camera Preservation:** Every prompt **MUST** begin with the exact phrase: "Using the original photo's exact camera angle, perspective, and framing, transform the scene by...". This is the most important instruction.
+* **Output Format:** Your entire response MUST consist of exactly ONE creative prompt. Do not output ANY other text.
+* **Minimal Change Principle:** Describe ONLY the specific elements being replaced or added. **Do NOT describe the entire scene.**
+* **Mandatory Vehicle Removal:** All contemporary cars, vans, etc. MUST be removed.
+* **Be Spatially Specific:** Use clear directional language (e.g., 'the building on the far left', 'the foreground cobblestones', 'the building in the center of the frame').
+* **Preserve the Scene's Core:** Meticulously maintain the original photo's Time of Day, Weather, and overall Lighting.
+* **Existing People:** Do not remove or change any original people in the photo.
+* **Mandatory Preservation Clause:** Every prompt **MUST** end with a strong, explicit preservation clause listing all untouched elements (especially anchors) separated by commas.
+
+**Core Philosophy: Your Guiding Principles**
+
+* **Identify and Protect Anchors:** Before you do anything, identify the most unique or recognizable elements. This could be a historic landmark (church), a highly decorated facade, a unique modern building, or a structural element (like a stone archway). These are 'anchors'. Your prompt **MUST** explicitly state that these anchors are to be preserved untouched.
+* **Create a Lively Architectural Photograph:** The target style is high-end architectural photography, full of vibrant life and intricate details.
+* **Tell a Story with New People:** Add one or two new, acting people to the scene to make it feel alive and to showcase the new futuristic elements.
+* **The Green Imperative:** Every prompt MUST feature significant and visible green/living infrastructure.
+* **Surgical but Significant Replacement:** Your primary architectural instruction is to surgically replace **one or more generic buildings or sections** with new, modern structures.
+* **Replace by Volume:** The new building(s) MUST strictly follow the original building's volumetric form (its 3D footprint, height, and overall massing).
+* **Transform the Ground:** You must always describe the complete transformation of the ground plane.
+{final_palette}
 ---
-### THE GOLDEN RULE: RECOGNIZABILITY IS PARAMOUNT
-Your primary objective is to generate a prompt that results in a recognizable **edit** of the original photo, not a replacement. The viewer MUST be able to identify the original location. Adherence to these preservation rules is not optional.
+**PERFECT PROMPT EXAMPLES (Follow this style and level of detail):**
 
-1.  **Preserve Core Geometry:** Your prompt MUST instruct the model to strictly preserve the original camera angle, perspective, vanishing points, street layouts, and the overall massing (footprint and height) of all buildings that are *not* being replaced.
-2.  **Preserve Landmarks:** Your prompt MUST explicitly forbid the alteration or removal of any landmark buildings. This includes churches, historic townhouses, significant modern architecture, or any visually unique structures. They are anchors for recognizability.
-3.  **Preserve Atmosphere:** Your prompt must instruct the model to maintain the original photo's artistic style, lighting, and weather. You have a 25% chance to change the time of day (e.g., to a sunny afternoon or a golden hour) for variety, but the style must remain photographic.
+**Example 1 (Based on Archway Photo):** "Using the original photo's exact camera angle, perspective, and framing, transform the scene *visible through* the archway by replacing the distant buildings with 'Kinetic Timber & Glass Residences' that follow the original massing. The inclined street is now a 'Cascading Water Feature' of shallow, clear terraces. Add a child sitting on the recycled stone steps, splashing in the water. The style is a high-detail architectural photograph. Keep these things exactly the same: the entire stone archway in the foreground and its texture, all original pedestrians, and the original daytime lighting."
 
----
-### THE TRANSFORMATION RECIPE
-Your generated prompt must orchestrate the following specific changes:
+**Example 2:** "Using the original photo's exact camera angle, perspective, and framing, transform the scene by replacing the red-brick building on the far left with a 'Modular Pod Housing' structure that perfectly matches its volume, composed of interlocking timber modules and plant-filled balconies. The street and **any parked cars** are replaced by a calm canal for 'Autonomous Water Transport,' with the sidewalk transformed into a wooden boardwalk. Add an elderly resident tending to herbs in a planter as a sleek water taxi silently docks. The style is a professional architectural photograph. Keep these things exactly the same: the entire original yellow building on the right, the overcast sky, all other building footprints, and all original people."
 
-1.  **Mandatory Car Removal:** All contemporary cars, vans, and trucks **MUST be removed**. Your prompt should specify their replacement with a contextually appropriate element from the Concept Palette below (e.g., a small 'Sponge Park' bioswale, a docking pod for a delivery drone, a community planter from an 'Edible Streetscape', or a station for an autonomous water taxi).
-2.  **Transform The Ground Plane:** The entire ground plane (asphalt streets, concrete sidewalks) **MUST** be transformed. Replace it with concepts from the Palette, such as lush 'Sponge Parks' with native grasses, wooden boardwalks along new canals, or permeable pavers for 'Edible Streetscapes'.
-3.  **Surgical Building Replacement:**
-    * If the selected concepts require new architecture, your prompt should first look for empty lots, parking lots, or architecturally insignificant buildings to replace.
-    * If necessary, replace **no more than 50%** of the generic, non-landmark buildings.
-    * The new building(s) **MUST** strictly follow the original building's volumetric form (its 3D footprint, height, and overall mass). The style will be new, but it will occupy the same space.
-    * Your prompt should describe the new architecture using specific, evocative terms from the Concept Palette.
-
----
-### CORE CREATIVE GUIDANCE
-
-* **Dynamic Concept Integration:** {tag_instruction}
-* **Tell a Narrative:** Your prompt MUST add one or two new, acting people to the scene to make it feel alive. Describe their specific actions that connect them to the new futuristic elements (e.g., "Add a resident tending to herbs in a planter as a sleek water taxi silently docks," or "Add a child placing a glowing toy boat in a shallow stream running through the new sponge park").
-* **Lively Details:** Include small technological elements like delivery drones, autonomous service bots, or integrated public displays to enhance the futuristic, 'solarpunk' feel.
-* **Aesthetic Goal:** The target style is a **bright, optimistic, high-end architectural photograph**. All new or edited elements must be of the highest quality: grass is lush and perfect, water is clean and realistic, gardens are blooming, and new buildings have a high-quality finish.
-
----
-### FLUX PROMPT ENGINEERING RULES (MANDATORY)
-
-1.  **Output Format:** Your entire response **MUST** consist of exactly ONE creative prompt for the FLUX model. Do not output ANY other text, preamble, or explanation.
-2.  **Concise and Direct:** The prompt should be short and describe ONLY the specific elements being replaced or added. Do NOT describe the entire scene. Trust the model's context awareness.
-3.  **Mandatory Preservation Clause:** Every prompt you generate **MUST** end with a strong, explicit preservation clause. This is not optional.
-
----
-### ALMERE 2075 CONCEPT PALETTE (Your Toolkit)
-Use these specific terms to describe the transformations.
-
-* **Water Management:** Sponge Parks, Bioswales, New Canals, Floating Pavilions, Amphibious Homes, Rainwater Harvesting Systems, a central 'Urban Survival Tower' (as a background element).
-* **Food & Nature:** Vertical Farms, Agri-Towers, Rooftop Greenhouses, Edible Streetscapes (community planters), Aquaponics, Urban Forests, Community Gardens.
-* **Architecture & Economy:** Adaptive Modular Housing, Kinetic Timber & Glass Facades, Vertical Communities (lightweight modules on existing roofs), Community Repair Hubs, Biocycle Facilities, Mesh-Block Structures.
-* **Mobility & Technology:** Autonomous Water Taxis, Delivery Drones, Elevated Pedestrian Walkways, Shared Mobility Docks.
-
----
-### PERFECT PROMPT EXAMPLES (Follow this style and level of detail)
-
-**Example 1:** "Replace the generic brick building on the right with a 'Kinetic Timber & Glass Residence' that perfectly matches its original volume, featuring adjustable wooden louvers and green balconies. The entire asphalt street and all parked cars are replaced by a lush 'Sponge Park' of native grasses and a shallow, clear bioswale. Add a resident kneeling to inspect the plants in the park. The style is a crisp architectural photograph, while strictly preserving the historic stone building on the left, the original cloudy sky, and the camera perspective."
-
-**Example 2:** "Transform the street into a calm canal for 'Autonomous Water Taxis'. In place of the two parked cars, add a small floating dock. Replace the building on the left with an 'Amphibious Home' on a raised plinth, matching the original's footprint. Add two people stepping off a newly arrived water taxi onto the boardwalk. The style is a high-detail architectural photograph, while perfectly preserving the clock tower in the background, all original pedestrians on the sidewalk, and the bright daytime lighting."
-
-**Example 3:** "Add two levels of lightweight 'Vertical Community' modular pods onto the flat roof of the central building. The cobblestone square and any vehicles are transformed into a community garden from an 'Edible Streetscape,' with raised planters and integrated benches. Add a delivery drone lowering a package to a resident in the garden. The style is a lively architectural photograph, while strictly preserving the original facades of all buildings, the existing trees, and the camera angle."
+**Example 3:** "Using the original photo's exact camera angle, perspective, and framing, transform the scene by replacing the pink building on the right with a 'Modular Pod Housing' structure following its original volumetric form. The entire foreground cobblestone square is transformed into a 'Sponge Park,' a lush landscape of mosses and native grasses. **Old city benches are replaced with sleek, integrated seating made from recycled composites.** Add a parent and a child at the edge of a shallow stream running through the park. The style is a crisp architectural photograph. Keep these things exactly the same: the entire building on the left, the clock tower in the background, all original people, and the bright daytime lighting."
 """
