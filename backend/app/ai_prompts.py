@@ -44,7 +44,7 @@ AVAILABLE_TAGS = [
 
 # This detailed knowledge base provides the AI with rich visual language for each concept.
 CONCEPT_KNOWLEDGE_BASE = {
-    "sponge-parks": "Deep, sunken, lush green areas with perfect grass and patches of vibrant wildflowers, replacing concrete plazas or wide sidewalks. Terraced landscaping with native plants. Small, crystal-clear water channels or pools integrated into the parks. Wooden boardwalks or stone paths crisscrossing the green areas.",
+    "sponge-parks": "Deep, sunken, lush green areas with a healthy, dense mix of various native Dutch grasses and small wildflowers like clover, replacing concrete plazas or wide sidewalks. Terraced landscaping with native plants. Small, crystal-clear water channels or pools integrated into the parks. Wooden boardwalks or stone paths crisscrossing the green areas.",
     "amphibious-arch": "Existing buildings retrofitted with visible foundations and hydraulic stilts that allow them to float or be elevated. Add beautiful floating platforms made of light wood for cafes or social gatherings. Buildings are connected by lightweight, intricate bridges.",
     "modular-housing": "Sleek, modern housing modules made of sustainable materials like cross-laminated timber (CLT) and recycled metal with a polished finish. Stacked to add new floors on top of existing buildings or used to construct new mid-rise buildings. They feature integrated balconies with blooming flowers and small herb planters, green walls, and large smart-glass windows.",
     "urban-farming": "Elegant, slender towers with glass facades revealing glowing hydroponic and aquaponic systems inside. Integrated near residential clusters, some with visible sky-bridges connecting them to other buildings for food distribution. They are architecturally striking and emit a soft, pleasant light.",
@@ -56,8 +56,15 @@ CONCEPT_KNOWLEDGE_BASE = {
 
 def create_system_prompt(tags: list[str]) -> str:
     """
-    This function generates the system prompt based on the user's preferred template,
-    but enriched with the detailed concepts derived from the student projects.
+    This function generates the final, definitive system prompt for the GPT model.
+    It combines a strict "Preservation First" structure with rich concept details
+    and a carefully balanced level of creative freedom for the AI.
+
+    Args:
+        tags: A list of tag IDs selected by the user.
+
+    Returns:
+        A string containing the complete system prompt for the AI.
     """
     
     tag_names = [tag['name'] for tag in AVAILABLE_TAGS if tag['id'] in tags]
@@ -126,31 +133,31 @@ Your primary objective is to generate a prompt that results in a recognizable *e
 * **Minimal Change Principle:** Describe ONLY the specific elements being replaced or added. **Do NOT describe the entire scene.**
 * **Verb Choice for Control:** Use verbs precisely. Use 'Replace' for targeted substitution. Use 'Change' for modifying an attribute.
 * **Mandatory Vehicle Removal:** All contemporary cars, vans, etc. MUST be removed.
-* **Be Spatially Specific:** Use clear directional language (e.g., 'the building on the far left', 'the foreground cobblestones', 'the building in the center of the frame').
+* **Be Spatially Specific:** Use clear directional language (e.g., 'the building on the far left', 'the foreground cobblestones').
 * **Existing People:** Do not remove or change any original people in the photo.
 
 **Core Philosophy: Your Guiding Principles**
 
-* **Identify and Protect Anchors:** First, identify the most unique or recognizable elements. This could be a historic landmark, a highly decorated facade, a unique modern building, or a structural element (like a stone archway). These are 'anchors'. Your prompt **MUST** explicitly state that these anchors are to be preserved untouched.
-* **Ambitious but Surgical Replacement:** Your primary architectural instruction is to surgically replace **one or more generic buildings or sections with an ambitious, high-impact design**. While the footprint must be respected, the new structure should be a bold and beautiful statement.
+* **Identify and Protect Anchors:** First, identify the most unique or recognizable elements. This could be a historic landmark (church), a highly decorated facade, a unique modern building, or a structural element (like a stone archway). These are 'anchors'. Your prompt **MUST** explicitly state that these anchors are to be preserved untouched.
+* **Ambitious but Surgical Replacement:** Your primary architectural instruction is to surgically replace **one or more generic buildings or sections with an ambitious, high-impact design**. The new structure should be a bold and beautiful statement.
 * **Emulate High-End Architectural Photography:** The final image must have the look and feel of a professional architectural photograph: very high quality, with sharp details, beautiful lighting, and a sense of realism.
 * **Randomize Atmosphere:** For every prompt, randomly select a new, beautiful time of day and weather. Create a dramatic and optimistic atmosphere from options like: 'warm golden hour sunlight', 'a dramatic sunset with fiery clouds', 'a bright, crisp morning after a rainstorm with wet, reflective surfaces', 'a vibrant, well-lit night scene with a starry sky', or 'a moody overcast day with soft, diffuse light'.
-* **Enrich with Subtle Details:** Always add small, enriching details like lush greenery on balconies, vibrant flowers in planters, perfect grass, clean surfaces, and subtle integrated technology like glowing pathway lights or small service drones.
+* **Artistic Freedom for Subtle Details:** After applying the main concepts, you have permission to add small, unprompted, harmonious details. This could include specific types of flowers in planters, unique bench designs made of recycled materials, or subtle glowing light strips along pathways. These details should enrich the scene, not overwhelm it.
 * **Tell a Story with New People:** Add one or two new, acting people to the scene to showcase the new futuristic elements.
 * **Transform the Ground:** You must always describe the complete transformation of the ground plane.
 {final_palette}
 ---
 **PROMPT WRITING RULES & EXAMPLES (Follow this structure and level of detail)**
 
-* **Rule: Preservation First.** Your prompt **MUST** start with a detailed preservation clause. Begin with the phrase "While keeping the following elements exactly the same:". If there are 3 or more items to preserve, use a bulleted list for clarity. Otherwise, use a comma-separated sentence. This list **must** include the camera position, all anchor/landmark buildings, and the overall urban layout.
+* **Rule: Preservation First.** Your prompt **MUST** start with a detailed preservation clause. Begin with the phrase "Keep the following elements exactly the same:". If there are many items to preserve, use a bulleted list for clarity. Otherwise, use a simple comma-separated sentence. This list **must** include the camera position, all anchor/landmark buildings, and the overall urban layout.
 
 **Example 1 (Bulleted List):**
-"While keeping the following elements exactly the same:
+"Keep the following elements exactly the same:
 * The entire stone archway in the foreground and its texture
-* All original pedestrians
-* The exact camera angle and perspective
-...surgically replace the distant buildings visible *through* the archway with 'Kinetic Timber & Glass Residences' that follow the original massing and have cascading greenery. Change the inclined street into a 'Cascading Water Feature' of shallow, clear terraces. Add a child sitting on the recycled stone steps, splashing in the water, under a dramatic sunset with fiery clouds."
+* All original pedestrians and their positions
+* The exact camera angle, perspective, and urban layout
+Then, surgically replace the distant buildings visible *through* the archway with 'Kinetic Timber & Glass Residences' that follow the original massing and have cascading greenery. Change the inclined street into a 'Cascading Water Feature' of shallow, clear terraces. Add a child sitting on the recycled stone steps, splashing in the water, under a dramatic sunset with fiery clouds."
 
 **Example 2 (Comma-Separated List):**
-"While keeping the entire original yellow building on the right and the exact layout of the street perfectly untouched, in warm golden hour sunlight, replace the red-brick building on the far left with an ambitious 'Modular Pod Housing' structure that perfectly matches its volume, composed of interlocking timber modules and plant-filled balconies. Change the street and **any parked cars** into a calm canal for 'Autonomous Water Transport,' with the sidewalk transformed into a wooden boardwalk with integrated glowing lights. Add an elderly resident tending to herbs in a planter as a sleek water taxi silently docks."
+"Keep the entire original yellow building on the right and the exact layout of the street perfectly untouched. Then, in warm golden hour sunlight, replace the red-brick building on the far left with an ambitious 'Modular Pod Housing' structure that perfectly matches its volume, composed of interlocking timber modules and plant-filled balconies. Change the street and **any parked cars** into a calm canal for 'Autonomous Water Transport,' with the sidewalk transformed into a wooden boardwalk with integrated glowing lights. Add an elderly resident tending to herbs in a planter as a sleek water taxi silently docks."
 """
