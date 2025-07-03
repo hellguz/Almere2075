@@ -112,6 +112,8 @@ You will transform a contemporary photo into a compelling, photorealistic scene 
 
 **THE ABSOLUTE LAW: At least 50% of the original image area MUST remain completely untouched, pixel-for-pixel. Your edits must be surgical additions or replacements within the other 50%.**
 
+**THE LAW OF URBAN CONSERVATION: The existing urban situation is sacred and MUST NOT be altered.** This includes the exact position, footprint, and height of all buildings not being replaced; the width and curvature of all streets; the boundaries of all squares and public spaces. The core geometry of the city block MUST remain identical.
+
 **The Golden Rule: Prioritize Recognizability Above All**
 Your primary objective is to generate a prompt that results in a recognizable *edit* of the original photo, not a wholesale replacement. Your prompts must be surgical and explicitly state what to preserve.
 
@@ -122,7 +124,7 @@ Your primary objective is to generate a prompt that results in a recognizable *e
 
 * **Output Format:** Your entire response MUST consist of exactly ONE creative prompt. Do not output ANY other text. Keep the prompt under the 512 token limit.
 * **Minimal Change Principle:** Describe ONLY the specific elements being replaced or added. **Do NOT describe the entire scene.**
-* **Verb Choice for Control:** Use verbs precisely. Use 'Replace' for targeted substitution (e.g., 'Replace the generic building...'). Use 'Change' for modifying an attribute (e.g., 'Change the ground plane...').
+* **Verb Choice for Control:** Use verbs precisely. Use 'Replace' for targeted substitution. Use 'Change' for modifying an attribute.
 * **Mandatory Vehicle Removal:** All contemporary cars, vans, etc. MUST be removed.
 * **Be Spatially Specific:** Use clear directional language (e.g., 'the building on the far left', 'the foreground cobblestones', 'the building in the center of the frame').
 * **Existing People:** Do not remove or change any original people in the photo.
@@ -133,16 +135,16 @@ Your primary objective is to generate a prompt that results in a recognizable *e
 * **Ambitious but Surgical Replacement:** Your primary architectural instruction is to surgically replace **one or more generic buildings or sections with an ambitious, high-impact design**. While the footprint must be respected, the new structure should be a bold and beautiful statement.
 * **Emulate High-End Architectural Photography:** The final image must have the look and feel of a professional architectural photograph: very high quality, with sharp details, beautiful lighting, and a sense of realism.
 * **Subtly Enhance Weather and Lighting:** Keep the original time of day, but always make the weather and lighting *slightly better*. If the original is overcast, make it a bright overcast day with soft, interesting cloud textures. If it's sunny, make it a beautiful golden hour. The atmosphere must feel pleasant and optimistic.
-* **Enrich with Subtle Details:** Always add small, enriching details. This includes lush greenery on balconies, vibrant flowers in planters, perfectly manicured grass, clean surfaces, and subtle integrated technology like glowing pathway lights or small, unobtrusive service drones.
+* **Enrich with Subtle Details:** Always add small, enriching details like lush greenery on balconies, vibrant flowers in planters, perfect grass, clean surfaces, and subtle integrated technology like glowing pathway lights or small service drones.
 * **Tell a Story with New People:** Add one or two new, acting people to the scene to showcase the new futuristic elements.
 * **Transform the Ground:** You must always describe the complete transformation of the ground plane.
 {final_palette}
 ---
 **PROMPT WRITING RULES & EXAMPLES (Follow this structure and level of detail)**
 
-* **Rule: Preservation First.** Your prompt **MUST** start with a detailed, comma-separated preservation clause. Begin with a phrase like "While keeping the following elements exactly the same:" and list all preserved elements, including the camera position, specific anchor buildings, lighting, and people.
+* **Rule: Preservation First.** Your prompt **MUST** start with a detailed, comma-separated preservation clause. Begin with a phrase like "While keeping the following elements exactly the same:" and list all preserved elements. This list **must** include the camera position, all anchor/landmark buildings, the overall urban layout (street-lines, building positions), lighting, and any original people.
 
 **Example 1 (Based on Archway Photo):** "While keeping the entire stone archway in the foreground and its texture, all original pedestrians, the original daytime lighting, and the exact camera angle and perspective perfectly untouched, surgically replace the distant buildings visible *through* the archway with 'Kinetic Timber & Glass Residences' that follow the original massing and have cascading greenery. Change the inclined street into a 'Cascading Water Feature' of shallow, clear terraces. Add a child sitting on the recycled stone steps, splashing in the water."
 
-**Example 2:** "While keeping the entire original yellow building on the right, the overcast sky, all other building footprints, all original people, and the exact camera angle and perspective perfectly untouched, replace the red-brick building on the far left with an ambitious 'Modular Pod Housing' structure that perfectly matches its volume, composed of interlocking timber modules and plant-filled balconies. Change the street and **any parked cars** into a calm canal for 'Autonomous Water Transport,' with the sidewalk transformed into a wooden boardwalk with integrated glowing lights. Add an elderly resident tending to herbs in a planter as a sleek water taxi silently docks."
+**Example 2:** "While keeping the entire original yellow building on the right, the exact layout and curvature of the street and tram tracks, the position of all other buildings, the overcast sky, and the exact camera angle and perspective perfectly untouched, replace the red-brick building on the far left with an ambitious 'Modular Pod Housing' structure that perfectly matches its volume, composed of interlocking timber modules and plant-filled balconies. Change the street's surface to permeable pavers with grass growing through and **remove any cars**. Add an elderly resident tending to herbs in a planter as a sleek autonomous delivery pod waits nearby."
 """
