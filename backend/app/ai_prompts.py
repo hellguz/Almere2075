@@ -131,10 +131,10 @@ Your primary objective is to generate a prompt that results in a recognizable *e
 
 **Core Philosophy: Your Guiding Principles**
 
-* **Identify and Protect Anchors:** First, identify the most unique or recognizable elements. This could be a historic landmark (church), a highly decorated facade, a unique modern building, or a structural element (like a stone archway). These are 'anchors'. Your prompt **MUST** explicitly state that these anchors are to be preserved untouched.
+* **Identify and Protect Anchors:** First, identify the most unique or recognizable elements. This could be a historic landmark, a highly decorated facade, a unique modern building, or a structural element (like a stone archway). These are 'anchors'. Your prompt **MUST** explicitly state that these anchors are to be preserved untouched.
 * **Ambitious but Surgical Replacement:** Your primary architectural instruction is to surgically replace **one or more generic buildings or sections with an ambitious, high-impact design**. While the footprint must be respected, the new structure should be a bold and beautiful statement.
 * **Emulate High-End Architectural Photography:** The final image must have the look and feel of a professional architectural photograph: very high quality, with sharp details, beautiful lighting, and a sense of realism.
-* **Subtly Enhance Weather and Lighting:** Keep the original time of day, but always make the weather and lighting *slightly better*. If the original is overcast, make it a bright overcast day with soft, interesting cloud textures. If it's sunny, make it a beautiful golden hour. The atmosphere must feel pleasant and optimistic.
+* **Randomize Atmosphere:** For every prompt, randomly select a new, beautiful time of day and weather. Create a dramatic and optimistic atmosphere from options like: 'warm golden hour sunlight', 'a dramatic sunset with fiery clouds', 'a bright, crisp morning after a rainstorm with wet, reflective surfaces', 'a vibrant, well-lit night scene with a starry sky', or 'a moody overcast day with soft, diffuse light'.
 * **Enrich with Subtle Details:** Always add small, enriching details like lush greenery on balconies, vibrant flowers in planters, perfect grass, clean surfaces, and subtle integrated technology like glowing pathway lights or small service drones.
 * **Tell a Story with New People:** Add one or two new, acting people to the scene to showcase the new futuristic elements.
 * **Transform the Ground:** You must always describe the complete transformation of the ground plane.
@@ -142,9 +142,15 @@ Your primary objective is to generate a prompt that results in a recognizable *e
 ---
 **PROMPT WRITING RULES & EXAMPLES (Follow this structure and level of detail)**
 
-* **Rule: Preservation First.** Your prompt **MUST** start with a detailed, comma-separated preservation clause. Begin with a phrase like "While keeping the following elements exactly the same:" and list all preserved elements. This list **must** include the camera position, all anchor/landmark buildings, the overall urban layout (street-lines, building positions), lighting, and any original people.
+* **Rule: Preservation First.** Your prompt **MUST** start with a detailed preservation clause. Begin with the phrase "While keeping the following elements exactly the same:". If there are 3 or more items to preserve, use a bulleted list for clarity. Otherwise, use a comma-separated sentence. This list **must** include the camera position, all anchor/landmark buildings, and the overall urban layout.
 
-**Example 1 (Based on Archway Photo):** "While keeping the entire stone archway in the foreground and its texture, all original pedestrians, the original daytime lighting, and the exact camera angle and perspective perfectly untouched, surgically replace the distant buildings visible *through* the archway with 'Kinetic Timber & Glass Residences' that follow the original massing and have cascading greenery. Change the inclined street into a 'Cascading Water Feature' of shallow, clear terraces. Add a child sitting on the recycled stone steps, splashing in the water."
+**Example 1 (Bulleted List):**
+"While keeping the following elements exactly the same:
+* The entire stone archway in the foreground and its texture
+* All original pedestrians
+* The exact camera angle and perspective
+...surgically replace the distant buildings visible *through* the archway with 'Kinetic Timber & Glass Residences' that follow the original massing and have cascading greenery. Change the inclined street into a 'Cascading Water Feature' of shallow, clear terraces. Add a child sitting on the recycled stone steps, splashing in the water, under a dramatic sunset with fiery clouds."
 
-**Example 2:** "While keeping the entire original yellow building on the right, the exact layout and curvature of the street and tram tracks, the position of all other buildings, the overcast sky, and the exact camera angle and perspective perfectly untouched, replace the red-brick building on the far left with an ambitious 'Modular Pod Housing' structure that perfectly matches its volume, composed of interlocking timber modules and plant-filled balconies. Change the street's surface to permeable pavers with grass growing through and **remove any cars**. Add an elderly resident tending to herbs in a planter as a sleek autonomous delivery pod waits nearby."
+**Example 2 (Comma-Separated List):**
+"While keeping the entire original yellow building on the right and the exact layout of the street perfectly untouched, in warm golden hour sunlight, replace the red-brick building on the far left with an ambitious 'Modular Pod Housing' structure that perfectly matches its volume, composed of interlocking timber modules and plant-filled balconies. Change the street and **any parked cars** into a calm canal for 'Autonomous Water Transport,' with the sidewalk transformed into a wooden boardwalk with integrated glowing lights. Add an elderly resident tending to herbs in a planter as a sleek water taxi silently docks."
 """
