@@ -36,8 +36,15 @@ services:
       # Expose port 8000 for the FastAPI server
       - "8000"
     restart: unless-stopped
-    # The command now uses --reload to watch for file changes
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    # MODIFIED: Switched from uvicorn to gunicorn to handle multiple concurrent
+    # requests in development, preventing the server from getting "stuck"
+    # during long AI tasks. This mimics the production setup while keeping hot-reloading.
+    command: >
+      gunicorn app.main:app
+      --workers 8
+      --worker-class uvicorn.workers.UvicornWorker
+      --bind 0.0.0.0:8000
+      --reload
 
   frontend:
     build:
@@ -63,5 +70,3 @@ services:
 networks:
   almere-net:
     driver: bridge
-
-
