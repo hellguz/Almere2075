@@ -44,8 +44,10 @@
 
 .tutorial-slider-container {
     width: 100%;
+    max-width: 500px;
     aspect-ratio: 16 / 9;
     position: relative;
+    align-self: center;
     border-radius: 8px;
     overflow: hidden;
     cursor: ew-resize;
@@ -91,7 +93,7 @@
 
 .tutorial-description {
     margin-top: 20px;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
     line-height: 1.6;
     color: var(--color-text-secondary);
     overflow-y: auto;

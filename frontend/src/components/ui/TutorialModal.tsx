@@ -3,7 +3,6 @@ import { API_BASE_URL } from '../../config';
 import type { GenerationDetails } from '../../types';
 import './TutorialModal.css';
 
-// MODIFIED: Updated fallback image paths to be correct
 const FALLBACK_ORIGINAL_URL = '/api/images/weimar/IMG_20250628_213414260.jpg';
 const FALLBACK_GENERATED_URL = '/api/images/generated/a433b906-ee2a-45fc-9d61-7702dd8ee903.png';
 
@@ -32,7 +31,6 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => 
                     
                     if (galleryItems && galleryItems.length > 0 && galleryItems[0].generated_image_url) {
                         const firstItem = galleryItems[0];
-                        // FIXED: Construct image URLs correctly based on the new data structure
                         setOriginalImageUrl(`${API_BASE_URL}/images/${firstItem.dataset}/${firstItem.original_image_filename}`);
                         setGeneratedImageUrl(`${API_BASE_URL}/${firstItem.generated_image_url}`);
                     }
@@ -82,13 +80,19 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => 
 
                 <div className="tutorial-description">
                     <p>
-                        Let us imagine the future, more specifically the year 2075 in Almere, Netherlands.
-                        Due to a multitude of threats posing to this city, the city had to react to the threats by implementing some ideas for a sustainable future from student projects created in Bauhaus University Weimar in 2025. Let us all explore how these changes might affect how the current city looks.
-                        For simplicity and to make these changes more personal for exhibition visitors, we decided to show how the same changes would affect how Weimar looks.
+                        This installation invites you to explore the future of urban living. It showcases a speculative design study by students of Bauhaus-Universität Weimar, who have reimagined the Dutch city of Almere for the year 2075. The project confronts critical future challenges, such as rising sea levels and resource scarcity, by proposing innovative urban and architectural solutions. To make these future scenarios tangible, this tool uses AI to transform photographs of our own city, Weimar, alongside images of Almere. You are invited to visualize how familiar spaces could evolve when faced with the need for radical new strategies like 'Sponge Parks' that manage water or 'Circular Economy Hubs' that localize production.
                     </p>
                     <p>
-                        <b>How to use the app:</b> Select an image from the gallery or upload your own, choose the concepts you want to apply, and click 'Transform'.
-                        Your creation will appear in the Community Gallery where all participants can vote for images of the others, which results in more happy points for Almere!
+                        <b>Participate in this process of urban transformation:</b>
+                        <br />
+                        <b>1. Select a Site:</b> Begin by selecting a contemporary photograph from either the Weimar or Almere gallery, or upload an image of your own.
+                        <br />
+                        <b>2. Apply a Strategy:</b> Choose from a palette of design concepts developed by the students. Each represents a different strategy for a more resilient future.
+                        <br />
+                        <b>3. Generate Your Vision:</b> Activate the AI to generate a unique visual narrative, showing how your chosen site adapts based on the selected strategy.
+                    </p>
+                    <p>
+                        Every image created contributes to the Community Gallery, a collective archive of possible futures. We encourage you to explore the gallery, see the visions created by others, and vote for the most compelling transformations. Your participation helps shape a dynamic picture of our shared urban future.
                     </p>
                 </div>
 
