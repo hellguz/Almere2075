@@ -4,7 +4,6 @@ import type { GenerationDetails, SourceImage } from '../../types';
 import './ComparisonView.css';
 
 type ComparisonMode = 'slider' | 'side-by-side';
-
 /**
  * @typedef {object} ComparisonViewProps
  * @property {GenerationDetails | null} generationDetails - The details of the generated image.
@@ -43,7 +42,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
     const [clipPosition, setClipPosition] = useState(50);
     const [creatorName, setCreatorName] = useState('');
     const [nameSaved, setNameSaved] = useState(false);
-
     // MODIFIED: This effect now ONLY runs for the main view, not the modal view,
     // to prevent it from incorrectly resizing the component when it's inside the modal.
     useEffect(() => {
@@ -59,14 +57,12 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
             return () => window.removeEventListener('resize', setViewHeight);
         }
     }, [isVisible, isModal]);
-
     useEffect(() => {
         if (generationDetails) {
             setCreatorName(generationDetails.creator_name || '');
             setNameSaved(!!generationDetails.creator_name);
         }
     }, [generationDetails]);
-
     const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
         if (!sliderContainerRef.current) return;
         const rect = sliderContainerRef.current.getBoundingClientRect();
@@ -74,7 +70,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
         if (clientX === undefined) return;
         setClipPosition(Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)));
     };
-
     const handleNameSubmit = () => {
         if (creatorName.trim() && onSetName) {
             onSetName(creatorName);
@@ -84,8 +79,9 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
 
     if (!generationDetails) return null;
     
-    const originalImageUrl = sourceImage?.url || `${API_BASE_URL}/images/${generationDetails.original_image_filename}`;
-    const outputImageUrl = generationDetails.generated_image_url ? `${API_BASE_URL}/images/${generationDetails.generated_image_url}` : '';
+    // MODIFIED: The original image URL is now constructed using the 'dataset' field.
+    const originalImageUrl = sourceImage?.url || `${API_BASE_URL}/images/${generationDetails.dataset}/${generationDetails.original_image_filename}`;
+    const outputImageUrl = generationDetails.generated_image_url ? `${API_BASE_URL}/${generationDetails.generated_image_url}` : '';
     
     const viewWrapperStyle = {
         transform: mode === 'slider' ? `scale(${SLIDER_VIEW_SCALE_FACTOR})` : 'scale(1)',
@@ -101,7 +97,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
             )}
         </div>
     );
-
     return (
         <div className={`comparison-container ${isVisible ? 'visible' : ''}`} ref={viewRef}>
             {!isModal && (
@@ -124,10 +119,10 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
                         <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleSliderMove} onTouchMove={handleSliderMove}>
                              <div className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}>
                                 <div className="image-header">SOURCE</div>
-                            </div>
+                             </div>
                             <div className="image-panel after-image" style={{backgroundImage: `url("${outputImageUrl}")`, clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
                                  <div className="image-header">ALMERE 2075</div>
-                            </div>
+                             </div>
                             <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
                         </div>
                     )}
@@ -147,30 +142,30 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
 
                 <div className="footer-center">
                     {!isModal && onSetName && (
-                         <div className="name-input-container">
+                          <div className="name-input-container">
                             <input type="text" placeholder="Sign your creation..." value={creatorName} onChange={(e) => setCreatorName(e.target.value)} disabled={nameSaved} />
                             <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()} className={nameSaved ? "save-button-saved" : "save-button"}>
-                                {nameSaved ? '✓ SAVED' : 'SAVE NAME'}
+                                 {nameSaved ? '✓ SAVED' : 'SAVE NAME'}
                             </button>
                         </div>
                     )}
-                </div>
+                 </div>
                  
                 <div className="footer-right">
                     {!isModal && onHide && (
                         <>
-                            {promptButton}
+                             {promptButton}
                             <button className="hide-button" onClick={onHide} title="Remove from public gallery">REMOVE</button>
                         </>
                     )}
                     {isModal && onVote && (
                         <>
                             <button className="modal-like-button" onClick={onVote}>
-                                👍 {generationDetails.votes}
+                                 👍 {generationDetails.votes}
                             </button>
                             {promptButton}
                         </>
-                     )}
+                    )}
                  </div>
             </div>
         </div>
@@ -178,3 +173,4 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
 };
 
 export default ComparisonView;
+

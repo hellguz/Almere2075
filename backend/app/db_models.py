@@ -19,6 +19,8 @@ class Generation(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     
     status = Column(SQLAlchemyEnum(JobStatus), default=JobStatus.PENDING, nullable=False)
+    # ADDED: To distinguish between weimar and almere datasets
+    dataset = Column(String, nullable=False, default='weimar', server_default='weimar')
     original_image_filename = Column(String, nullable=False)
     generated_image_url = Column(String, nullable=True)
     prompt_text = Column(String, nullable=True)

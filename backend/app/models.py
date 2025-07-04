@@ -14,6 +14,8 @@ class TransformImageRequest(BaseModel):
     prompt: str
     tags: List[str]
     original_filename: str
+    # ADDED: To know which image set this transformation belongs to.
+    dataset: str
 
 class SetCreatorNameRequest(BaseModel):
     name: str
@@ -28,6 +30,8 @@ class Tag(BaseModel):
 class GenerationInfo(BaseModel):
     id: str
     status: JobStatus
+    # ADDED: To filter galleries and construct correct image paths
+    dataset: str
     original_image_filename: str
     generated_image_url: Optional[str] = None
     prompt_text: Optional[str] = None
@@ -58,3 +62,4 @@ class GamificationStatsResponse(BaseModel):
     happiness_score: int
     target_score: int
     deadline_iso: str
+

@@ -14,6 +14,7 @@ export interface Tag {
 export interface GenerationDetails {
     id: string;
     status: JobStatus;
+    dataset: string; // ADDED: To know if it's 'weimar' or 'almere'
     original_image_filename: string;
     generated_image_url: string | null;
     prompt_text: string | null;
@@ -48,6 +49,7 @@ export interface LogMessage {
 
 export interface AppState {
     view: 'gallery' | 'transform' | 'comparison' | 'community_gallery';
+    dataset: 'weimar' | 'almere'; // ADDED
     comparisonMode: 'slider' | 'side-by-side';
     sourceImageForTransform: SourceImage | null;
     isProcessing: boolean;
