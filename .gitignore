@@ -33,6 +33,7 @@ ENV/
 almere_app.db
 */thumbnails
 backend/images/generated/*
+backend/images/*/uploads/*
 
 # Node / Frontend
 node_modules/

@@ -54,6 +54,10 @@ THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 WEIMAR_THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 ALMERE_THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 DATABASE_DIR.mkdir(parents=True, exist_ok=True)
+# Also create the 'uploads' subdirectories
+(WEIMAR_IMAGES_DIR / 'uploads').mkdir(parents=True, exist_ok=True)
+(ALMERE_IMAGES_DIR / 'uploads').mkdir(parents=True, exist_ok=True)
+
 
 # API Clients
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -206,8 +210,7 @@ async def get_gallery_index(dataset: str = Query('weimar', enum=['weimar', 'alme
 
     if not dataset_dir.exists(): return []
     gallery_data = []
-    # MODIFIED: Added a filter to exclude filenames containing '_hidden'
-    image_files = sorted([f for f in dataset_dir.iterdir() if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS and '_hidden' not in f.name])
+    image_files = sorted([f for f in dataset_dir.iterdir() if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS])
     for f in image_files:
         thumbnail_filename = f"{f.stem}.jpeg"
         if (thumb_dir / thumbnail_filename).exists():
@@ -252,28 +255,34 @@ async def transform_image(request: models.TransformImageRequest, background_task
     
     image_str = request.imageBase64
     final_image_filename_for_db = request.original_filename
-    dataset_dir = IMAGES_DIR / request.dataset
 
     if image_str.startswith('data:'):
         try:
             header, encoded = image_str.split(",", 1)
+            # FIXED: This line was accidentally deleted, causing the error. It's now restored.
             mime_type = header.split(":")[1].split(";")[0]
+            
+            # Add padding to the base64 string if it's missing.
+            missing_padding = len(encoded) % 4
+            if missing_padding:
+                encoded += '=' * (4 - missing_padding)
+
+            image_data = base64.b64decode(encoded)
+            
             extension = mimetypes.guess_extension(mime_type) or '.jpg'
-            
-            # MODIFIED: Append '_hidden' to filenames of user-uploaded images
-            new_filename = f"{uuid.uuid4()}_hidden{extension}"
-            
-            dataset_dir.mkdir(parents=True, exist_ok=True)
-            save_path = dataset_dir / new_filename
+            new_filename = f"{uuid.uuid4()}{extension}"
+            save_dir = IMAGES_DIR / request.dataset / 'uploads'
+            save_path = save_dir / new_filename
             
             with open(save_path, "wb") as f:
                 f.write(image_data)
             
             create_thumbnail(save_path, request.dataset)
             
-            final_image_filename_for_db = new_filename
+            # Store the path relative to the dataset folder
+            final_image_filename_for_db = f"uploads/{new_filename}"
         except Exception as e:
-            print(f"Error saving uploaded image: {e}")
+            print(f"Error decoding or saving uploaded image: {e}")
             raise HTTPException(status_code=500, detail="Could not process and save uploaded image.")
     
     new_generation = db_models.Generation(
