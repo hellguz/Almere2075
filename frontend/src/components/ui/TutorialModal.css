@@ -58,8 +58,10 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-size: cover;
+    /* MODIFIED: Changed from 'cover' to 'contain' to show the full image */
+    background-size: contain;
     background-position: center;
+    background-repeat: no-repeat;
 }
 
 .tutorial-slider-container .slider-line {
