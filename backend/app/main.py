@@ -32,7 +32,6 @@ load_dotenv()
 # --- Configuration ---
 THUMBNAIL_SIZE = (400, 400)
 IMAGES_DIR = Path("/app/images")
-# MODIFIED: Added specific directories for datasets
 WEIMAR_IMAGES_DIR = IMAGES_DIR / "weimar"
 ALMERE_IMAGES_DIR = IMAGES_DIR / "almere"
 GENERATED_IMAGES_DIR = IMAGES_DIR / "generated"
@@ -48,7 +47,6 @@ GAMIFICATION_DEADLINE = datetime(2025, 7, 13, 23, 59, 59, tzinfo=timezone.utc)
 
 # --- Ensure static directories exist ---
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
-# MODIFIED: Create all dataset-specific directories
 WEIMAR_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 ALMERE_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 GENERATED_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
@@ -81,21 +79,18 @@ def resolve_image_to_data_url(image_string: str) -> str:
         # Input is already a Data URL, return it as is.
         return image_string
     
-    # Otherwise, assume it's a relative path like /api/images/weimar/foo.jpg
     relative_path = image_string.replace('/api/images/', '', 1)
     file_path = IMAGES_DIR / Path(relative_path)
 
     if not file_path.is_file():
         raise FileNotFoundError(f"Image file not found: {file_path}")
 
-    # Read the file's binary content and encode it to Base64
     with open(file_path, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
     
-    # Guess the MIME type (e.g., 'image/jpeg') to build the Data URL header
     mime_type, _ = mimetypes.guess_type(file_path)
     if not mime_type:
-        mime_type = "image/jpeg" # Provide a sensible fallback
+        mime_type = "image/jpeg"
     
     return f"data:{mime_type};base64,{encoded_string}"
 
@@ -149,7 +144,6 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
 
         print(f"[{job_id}] Prediction successful. Downloading image...")
         
-        # --- FIXED: Download image from Replicate and save locally ---
         replicate_url = prediction.output
         try:
             response = requests.get(replicate_url, stream=True, timeout=30)
@@ -164,7 +158,6 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
                     f.write(chunk)
             
             print(f"[{job_id}] Image saved to {save_path}")
-            # FIXED: The stored URL must be relative to the /api/images mount point
             generation.generated_image_url = f"images/generated/{local_filename}"
             generation.status = db_models.JobStatus.COMPLETED
             db.commit()
@@ -188,7 +181,6 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
 async def lifespan(app: FastAPI):
     print("Application starting up...")
     database.init_db()
-    # MODIFIED: Scan both dataset directories for images and create thumbnails
     for dataset in ['weimar', 'almere']:
         image_dir = IMAGES_DIR / dataset
         if image_dir.exists():
@@ -201,25 +193,24 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-# MODIFIED: These static mounts now correctly serve from the nested directory structure
 app.mount("/api/images", StaticFiles(directory=IMAGES_DIR), name="images")
 app.mount("/api/thumbnails", StaticFiles(directory=THUMBNAILS_DIR), name="thumbnails")
 
 @app.get("/api/gallery")
 async def get_gallery_index(dataset: str = Query('weimar', enum=['weimar', 'almere'])):
     """
-    Gets the list of available images for a specific dataset.
+    Gets the list of available images for a specific dataset, filtering out hidden ones.
     """
     dataset_dir = WEIMAR_IMAGES_DIR if dataset == 'weimar' else ALMERE_IMAGES_DIR
     thumb_dir = WEIMAR_THUMBNAILS_DIR if dataset == 'weimar' else ALMERE_THUMBNAILS_DIR
 
     if not dataset_dir.exists(): return []
     gallery_data = []
-    image_files = sorted([f for f in dataset_dir.iterdir() if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS])
+    # MODIFIED: Added a filter to exclude filenames containing '_hidden'
+    image_files = sorted([f for f in dataset_dir.iterdir() if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS and '_hidden' not in f.name])
     for f in image_files:
         thumbnail_filename = f"{f.stem}.jpeg"
         if (thumb_dir / thumbnail_filename).exists():
-            # FIXED: Return the thumbnail path relative to the thumbnails directory (without leading slash)
             gallery_data.append({"filename": f"{dataset}/{f.name}", "thumbnail": f"{dataset}/{thumbnail_filename}"})
     return gallery_data
 
@@ -268,10 +259,10 @@ async def transform_image(request: models.TransformImageRequest, background_task
             header, encoded = image_str.split(",", 1)
             mime_type = header.split(":")[1].split(";")[0]
             extension = mimetypes.guess_extension(mime_type) or '.jpg'
-            image_data = base64.b64decode(encoded)
             
-            new_filename = f"{uuid.uuid4()}{extension}"
-            # MODIFIED: Save uploaded images to the correct dataset directory
+            # MODIFIED: Append '_hidden' to filenames of user-uploaded images
+            new_filename = f"{uuid.uuid4()}_hidden{extension}"
+            
             dataset_dir.mkdir(parents=True, exist_ok=True)
             save_path = dataset_dir / new_filename
             
@@ -311,15 +302,11 @@ async def get_job_status(job_id: str, db: Session = Depends(get_db)):
     response = {"status": job.status, "result": None, "error": None, "generation_data": None}
     if job.status == db_models.JobStatus.COMPLETED:
         job_data = models.GenerationInfo.from_orm(job)
-        # The 'result' field is kept for legacy compatibility if any old logic uses it,
-        # but new logic should rely on the full generation_data object.
         response["result"] = job.generated_image_url
         response["generation_data"] = job_data
     elif job.status == db_models.JobStatus.FAILED:
         response["error"] = "AI transformation failed. See server logs for details."
     return response
-
-# --- New Endpoints for Gallery, Voting, and Gamification ---
 
 @app.get("/api/public-gallery", response_model=list[models.GenerationInfo])
 def get_public_gallery(dataset: str = Query('weimar', enum=['weimar', 'almere']), db: Session = Depends(get_db)):
