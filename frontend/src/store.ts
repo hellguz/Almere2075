@@ -190,7 +190,7 @@ const storeCreator: StoreCreator = (set, get) => {
             }
         },
         handleSelectGalleryImage: (texture: Texture) => {
-            const { galleryImages, dataset } = get();
+            const { galleryImages } = get();
             const thumbnailSrc = texture.image.src;
             const fullImage = galleryImages.find(img => thumbnailSrc.endsWith(img.thumbnail));
             if (fullImage) {
