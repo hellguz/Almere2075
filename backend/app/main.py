@@ -30,7 +30,7 @@ vote_timestamps = {}
 load_dotenv()
 
 # --- Configuration ---
-THUMBNAIL_SIZE = (600, 600)
+THUMBNAIL_SIZE = (1000, 1000)
 IMAGES_DIR = Path("/app/images")
 WEIMAR_IMAGES_DIR = IMAGES_DIR / "weimar"
 ALMERE_IMAGES_DIR = IMAGES_DIR / "almere"
