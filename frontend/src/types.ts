@@ -16,7 +16,11 @@ export interface GenerationDetails {
     status: JobStatus;
     dataset: string; // ADDED: To know if it's 'weimar' or 'almere'
     original_image_filename: string;
+    // ADDED: The path to the thumbnail of the original image.
+    original_image_thumb_url?: string;
     generated_image_url: string | null;
+    // ADDED: The path to the thumbnail of the generated image.
+    generated_image_thumb_url?: string;
     prompt_text: string | null;
     tags_used: string[] | null;
     creator_name: string | null;
@@ -59,4 +63,6 @@ export interface AppState {
     isCommunityItem: boolean;
     showTutorial: boolean;
 }
+
+
 

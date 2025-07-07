@@ -38,6 +38,7 @@ GENERATED_IMAGES_DIR = IMAGES_DIR / "generated"
 THUMBNAILS_DIR = Path("/app/thumbnails")
 WEIMAR_THUMBNAILS_DIR = THUMBNAILS_DIR / "weimar"
 ALMERE_THUMBNAILS_DIR = THUMBNAILS_DIR / "almere"
+GENERATED_THUMBNAILS_DIR = THUMBNAILS_DIR / "generated"
 DATABASE_DIR = Path("/app/database")
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
 VOTE_RATE_LIMIT_SECONDS = 60 # 1 minute
@@ -53,6 +54,7 @@ GENERATED_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 WEIMAR_THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 ALMERE_THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
+GENERATED_THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 DATABASE_DIR.mkdir(parents=True, exist_ok=True)
 # Also create the 'uploads' subdirectories
 (WEIMAR_IMAGES_DIR / 'uploads').mkdir(parents=True, exist_ok=True)
@@ -98,17 +100,16 @@ def resolve_image_to_data_url(image_string: str) -> str:
     
     return f"data:{mime_type};base64,{encoded_string}"
 
-def create_thumbnail(image_path: Path, dataset: str):
+def create_thumbnail(image_path: Path, thumbnail_dir: Path):
     """
-    Creates a thumbnail for a given image and saves it to the correct dataset directory.
-    
+    Creates a thumbnail for a given image and saves it to the specified directory.
     Args:
         image_path: The path to the source image.
-        dataset: The dataset ('weimar' or 'almere') the image belongs to.
+        thumbnail_dir: The directory where the thumbnail should be saved.
     """
     try:
-        dataset_thumb_dir = WEIMAR_THUMBNAILS_DIR if dataset == 'weimar' else ALMERE_THUMBNAILS_DIR
-        thumbnail_path = dataset_thumb_dir / f"{image_path.stem}.jpeg"
+        thumbnail_dir.mkdir(parents=True, exist_ok=True)
+        thumbnail_path = thumbnail_dir / f"{image_path.stem}.jpeg"
         if thumbnail_path.exists(): return
         with Image.open(image_path) as img:
             img.thumbnail(THUMBNAIL_SIZE)
@@ -120,7 +121,7 @@ def create_thumbnail(image_path: Path, dataset: str):
 def run_ai_transformation_task(job_id: str, image_string_from_request: str, prompt: str, db: Session):
     """
     This is the actual long-running task, now updating the database.
-    It now downloads the generated image and saves it locally.
+    It now downloads the generated image, saves it locally, and creates a thumbnail.
     """
     generation = db.query(db_models.Generation).filter(db_models.Generation.id == job_id).first()
     if not generation:
@@ -161,8 +162,11 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
             
+            create_thumbnail(save_path, GENERATED_THUMBNAILS_DIR)
+            
             print(f"[{job_id}] Image saved to {save_path}")
             generation.generated_image_url = f"images/generated/{local_filename}"
+            generation.generated_image_thumb_url = f"generated/{save_path.stem}.jpeg"
             generation.status = db_models.JobStatus.COMPLETED
             db.commit()
 
@@ -181,20 +185,10 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
 
 
 # --- FastAPI App & Endpoints ---
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print("Application starting up...")
-    database.init_db()
-    for dataset in ['weimar', 'almere']:
-        image_dir = IMAGES_DIR / dataset
-        if image_dir.exists():
-            for image_file in image_dir.iterdir():
-                if image_file.is_file() and image_file.suffix.lower() in ALLOWED_EXTENSIONS:
-                    create_thumbnail(image_file, dataset)
-    yield
-    print("Application shutting down.")
+# MODIFIED: The lifespan manager is now empty as all startup logic has been moved
+# to the dedicated startup.py script. This makes the main app cleaner.
+app = FastAPI()
 
-app = FastAPI(lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 app.mount("/api/images", StaticFiles(directory=IMAGES_DIR), name="images")
@@ -255,14 +249,13 @@ async def transform_image(request: models.TransformImageRequest, background_task
     
     image_str = request.imageBase64
     final_image_filename_for_db = request.original_filename
+    original_thumb_url_for_db = f"{request.dataset}/{Path(final_image_filename_for_db).stem}.jpeg"
 
     if image_str.startswith('data:'):
         try:
             header, encoded = image_str.split(",", 1)
-            # FIXED: This line was accidentally deleted, causing the error. It's now restored.
             mime_type = header.split(":")[1].split(";")[0]
             
-            # Add padding to the base64 string if it's missing.
             missing_padding = len(encoded) % 4
             if missing_padding:
                 encoded += '=' * (4 - missing_padding)
@@ -271,16 +264,18 @@ async def transform_image(request: models.TransformImageRequest, background_task
             
             extension = mimetypes.guess_extension(mime_type) or '.jpg'
             new_filename = f"{uuid.uuid4()}{extension}"
+            
             save_dir = IMAGES_DIR / request.dataset / 'uploads'
             save_path = save_dir / new_filename
             
             with open(save_path, "wb") as f:
                 f.write(image_data)
             
-            create_thumbnail(save_path, request.dataset)
+            thumb_dir = (WEIMAR_THUMBNAILS_DIR if request.dataset == 'weimar' else ALMERE_THUMBNAILS_DIR) / 'uploads'
+            create_thumbnail(save_path, thumb_dir)
             
-            # Store the path relative to the dataset folder
             final_image_filename_for_db = f"uploads/{new_filename}"
+            original_thumb_url_for_db = f"{request.dataset}/uploads/{save_path.stem}.jpeg"
         except Exception as e:
             print(f"Error decoding or saving uploaded image: {e}")
             raise HTTPException(status_code=500, detail="Could not process and save uploaded image.")
@@ -288,6 +283,7 @@ async def transform_image(request: models.TransformImageRequest, background_task
     new_generation = db_models.Generation(
         dataset=request.dataset,
         original_image_filename=final_image_filename_for_db,
+        original_image_thumb_url=original_thumb_url_for_db,
         prompt_text=request.prompt,
         tags_used=[tag_info['name'] for tag_info in AVAILABLE_TAGS if tag_info['id'] in request.tags],
         status=db_models.JobStatus.PENDING

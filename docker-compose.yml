@@ -25,12 +25,14 @@ services:
       dockerfile: Dockerfile
     container_name: almere-backend-prod
     env_file: .env
-    # MODIFIED: Added volumes to persist the SQLite database and all images.
+    # MODIFIED: Added a volume to persist thumbnails alongside the database and images.
     # The database is stored in the host's `./database` directory.
     # Source and generated images are stored in the host's `./backend/images` directory.
     volumes:
       - ./database:/app/database
       - ./backend/images:/app/images
+      # MODIFIED: Add this line to persist generated thumbnails
+      - ./backend/thumbnails:/app/thumbnails
     networks:
       - almere-net
     expose:
@@ -55,7 +57,3 @@ services:
 networks:
   almere-net:
     driver: bridge
-
-
-
-

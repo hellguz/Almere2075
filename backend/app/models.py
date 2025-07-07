@@ -33,7 +33,11 @@ class GenerationInfo(BaseModel):
     # ADDED: To filter galleries and construct correct image paths
     dataset: str
     original_image_filename: str
+    # ADDED: URL for the original image's thumbnail.
+    original_image_thumb_url: Optional[str] = None
     generated_image_url: Optional[str] = None
+    # ADDED: URL for the generated image's thumbnail.
+    generated_image_thumb_url: Optional[str] = None
     prompt_text: Optional[str] = None
     tags_used: Optional[List[str]] = None
     creator_name: Optional[str] = None
@@ -62,4 +66,6 @@ class GamificationStatsResponse(BaseModel):
     happiness_score: int
     target_score: int
     deadline_iso: str
+
+
 

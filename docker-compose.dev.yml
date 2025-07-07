@@ -30,6 +30,8 @@ services:
       - ./backend:/app
       # MODIFIED: Add a volume to persist the SQLite database across restarts
       - ./database:/app/database
+      # MODIFIED: Add this line to persist generated thumbnails
+      - ./backend/thumbnails:/app/thumbnails
     networks:
       - almere-net
     expose:
