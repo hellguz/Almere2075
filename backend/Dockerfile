@@ -20,9 +20,7 @@ RUN chown -R app:app /app
 # Switch to the non-root user
 USER app
 
-# Command to run the application
-# --- MODIFIED: Increased the number of worker processes to 4 ---
-# This allows the server to handle multiple long-running AI tasks concurrently
-# without blocking new incoming requests, improving performance under load.
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
-
+# MODIFIED: Command to run the application is now a shell command
+# This allows running the startup script first, then the main server.
+# This is a robust way to handle pre-start tasks like migrations and data backfilling.
+CMD ["sh", "-c", "python startup.py && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4"]

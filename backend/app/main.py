@@ -7,7 +7,7 @@ import mimetypes
 import uuid
 import requests
 from datetime import datetime, timezone
-from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Depends
+from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
@@ -23,17 +23,22 @@ from . import db_models, models, database
 from .ai_prompts import AVAILABLE_TAGS, create_system_prompt
 
 # --- Globals & In-Memory Stores ---
-# Used for rate-limiting votes. Maps IP to last vote timestamp.
+# Used for rate-limiting votes.
 vote_timestamps = {}
 
 # Load environment variables
 load_dotenv()
 
 # --- Configuration ---
-THUMBNAIL_SIZE = (400, 400)
+THUMBNAIL_SIZE = (1000, 1000)
 IMAGES_DIR = Path("/app/images")
-GENERATED_IMAGES_DIR = IMAGES_DIR / "generated" # ADDED: Directory for generated images
+WEIMAR_IMAGES_DIR = IMAGES_DIR / "weimar"
+ALMERE_IMAGES_DIR = IMAGES_DIR / "almere"
+GENERATED_IMAGES_DIR = IMAGES_DIR / "generated"
 THUMBNAILS_DIR = Path("/app/thumbnails")
+WEIMAR_THUMBNAILS_DIR = THUMBNAILS_DIR / "weimar"
+ALMERE_THUMBNAILS_DIR = THUMBNAILS_DIR / "almere"
+GENERATED_THUMBNAILS_DIR = THUMBNAILS_DIR / "generated"
 DATABASE_DIR = Path("/app/database")
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
 VOTE_RATE_LIMIT_SECONDS = 60 # 1 minute
@@ -43,9 +48,18 @@ GAMIFICATION_DEADLINE = datetime(2025, 7, 13, 23, 59, 59, tzinfo=timezone.utc)
 
 # --- Ensure static directories exist ---
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
-GENERATED_IMAGES_DIR.mkdir(parents=True, exist_ok=True) # ADDED
+WEIMAR_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+ALMERE_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+GENERATED_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
+WEIMAR_THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
+ALMERE_THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
+GENERATED_THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 DATABASE_DIR.mkdir(parents=True, exist_ok=True)
+# Also create the 'uploads' subdirectories
+(WEIMAR_IMAGES_DIR / 'uploads').mkdir(parents=True, exist_ok=True)
+(ALMERE_IMAGES_DIR / 'uploads').mkdir(parents=True, exist_ok=True)
+
 
 # API Clients
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -71,27 +85,31 @@ def resolve_image_to_data_url(image_string: str) -> str:
         # Input is already a Data URL, return it as is.
         return image_string
     
-    # Otherwise, assume it's a relative path like /api/images/foo.jpg
     relative_path = image_string.replace('/api/images/', '', 1)
     file_path = IMAGES_DIR / Path(relative_path)
 
     if not file_path.is_file():
         raise FileNotFoundError(f"Image file not found: {file_path}")
 
-    # Read the file's binary content and encode it to Base64
     with open(file_path, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode('utf-8')
     
-    # Guess the MIME type (e.g., 'image/jpeg') to build the Data URL header
     mime_type, _ = mimetypes.guess_type(file_path)
     if not mime_type:
-        mime_type = "image/jpeg" # Provide a sensible fallback
+        mime_type = "image/jpeg"
     
     return f"data:{mime_type};base64,{encoded_string}"
 
-def create_thumbnail(image_path: Path):
+def create_thumbnail(image_path: Path, thumbnail_dir: Path):
+    """
+    Creates a thumbnail for a given image and saves it to the specified directory.
+    Args:
+        image_path: The path to the source image.
+        thumbnail_dir: The directory where the thumbnail should be saved.
+    """
     try:
-        thumbnail_path = THUMBNAILS_DIR / f"{image_path.stem}.jpeg"
+        thumbnail_dir.mkdir(parents=True, exist_ok=True)
+        thumbnail_path = thumbnail_dir / f"{image_path.stem}.jpeg"
         if thumbnail_path.exists(): return
         with Image.open(image_path) as img:
             img.thumbnail(THUMBNAIL_SIZE)
@@ -103,7 +121,7 @@ def create_thumbnail(image_path: Path):
 def run_ai_transformation_task(job_id: str, image_string_from_request: str, prompt: str, db: Session):
     """
     This is the actual long-running task, now updating the database.
-    MODIFIED: It now downloads the generated image and saves it locally.
+    It now downloads the generated image, saves it locally, and creates a thumbnail.
     """
     generation = db.query(db_models.Generation).filter(db_models.Generation.id == job_id).first()
     if not generation:
@@ -131,7 +149,6 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
 
         print(f"[{job_id}] Prediction successful. Downloading image...")
         
-        # --- FIXED: Download image from Replicate and save locally ---
         replicate_url = prediction.output
         try:
             response = requests.get(replicate_url, stream=True, timeout=30)
@@ -145,8 +162,11 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
             
+            create_thumbnail(save_path, GENERATED_THUMBNAILS_DIR)
+            
             print(f"[{job_id}] Image saved to {save_path}")
-            generation.generated_image_url = f"generated/{local_filename}" # Store relative path
+            generation.generated_image_url = f"images/generated/{local_filename}"
+            generation.generated_image_thumb_url = f"generated/{save_path.stem}.jpeg"
             generation.status = db_models.JobStatus.COMPLETED
             db.commit()
 
@@ -165,32 +185,30 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
 
 
 # --- FastAPI App & Endpoints ---
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    print("Application starting up...")
-    database.init_db()
-    if IMAGES_DIR.exists():
-        for image_file in IMAGES_DIR.iterdir():
-            if image_file.is_file() and image_file.suffix.lower() in ALLOWED_EXTENSIONS:
-                create_thumbnail(image_file)
-    yield
-    print("Application shutting down.")
+# MODIFIED: The lifespan manager is now empty as all startup logic has been moved
+# to the dedicated startup.py script. This makes the main app cleaner.
+app = FastAPI()
 
-app = FastAPI(lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 app.mount("/api/images", StaticFiles(directory=IMAGES_DIR), name="images")
 app.mount("/api/thumbnails", StaticFiles(directory=THUMBNAILS_DIR), name="thumbnails")
 
 @app.get("/api/gallery")
-async def get_gallery_index():
-    if not IMAGES_DIR.exists(): return []
+async def get_gallery_index(dataset: str = Query('weimar', enum=['weimar', 'almere'])):
+    """
+    Gets the list of available images for a specific dataset, filtering out hidden ones.
+    """
+    dataset_dir = WEIMAR_IMAGES_DIR if dataset == 'weimar' else ALMERE_IMAGES_DIR
+    thumb_dir = WEIMAR_THUMBNAILS_DIR if dataset == 'weimar' else ALMERE_THUMBNAILS_DIR
+
+    if not dataset_dir.exists(): return []
     gallery_data = []
-    image_files = sorted([f for f in IMAGES_DIR.iterdir() if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS])
+    image_files = sorted([f for f in dataset_dir.iterdir() if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS])
     for f in image_files:
         thumbnail_filename = f"{f.stem}.jpeg"
-        if (THUMBNAILS_DIR / thumbnail_filename).exists():
-            gallery_data.append({"filename": f.name, "thumbnail": thumbnail_filename})
+        if (thumb_dir / thumbnail_filename).exists():
+            gallery_data.append({"filename": f"{dataset}/{f.name}", "thumbnail": f"{dataset}/{thumbnail_filename}"})
     return gallery_data
 
 @app.get("/api/tags", response_model=list[models.Tag])
@@ -231,29 +249,41 @@ async def transform_image(request: models.TransformImageRequest, background_task
     
     image_str = request.imageBase64
     final_image_filename_for_db = request.original_filename
+    original_thumb_url_for_db = f"{request.dataset}/{Path(final_image_filename_for_db).stem}.jpeg"
 
     if image_str.startswith('data:'):
         try:
             header, encoded = image_str.split(",", 1)
             mime_type = header.split(":")[1].split(";")[0]
-            extension = mimetypes.guess_extension(mime_type) or '.jpg'
+            
+            missing_padding = len(encoded) % 4
+            if missing_padding:
+                encoded += '=' * (4 - missing_padding)
+
             image_data = base64.b64decode(encoded)
             
+            extension = mimetypes.guess_extension(mime_type) or '.jpg'
             new_filename = f"{uuid.uuid4()}{extension}"
-            save_path = IMAGES_DIR / new_filename
+            
+            save_dir = IMAGES_DIR / request.dataset / 'uploads'
+            save_path = save_dir / new_filename
             
             with open(save_path, "wb") as f:
                 f.write(image_data)
             
-            create_thumbnail(save_path)
+            thumb_dir = (WEIMAR_THUMBNAILS_DIR if request.dataset == 'weimar' else ALMERE_THUMBNAILS_DIR) / 'uploads'
+            create_thumbnail(save_path, thumb_dir)
             
-            final_image_filename_for_db = new_filename
+            final_image_filename_for_db = f"uploads/{new_filename}"
+            original_thumb_url_for_db = f"{request.dataset}/uploads/{save_path.stem}.jpeg"
         except Exception as e:
-            print(f"Error saving uploaded image: {e}")
+            print(f"Error decoding or saving uploaded image: {e}")
             raise HTTPException(status_code=500, detail="Could not process and save uploaded image.")
     
     new_generation = db_models.Generation(
+        dataset=request.dataset,
         original_image_filename=final_image_filename_for_db,
+        original_image_thumb_url=original_thumb_url_for_db,
         prompt_text=request.prompt,
         tags_used=[tag_info['name'] for tag_info in AVAILABLE_TAGS if tag_info['id'] in request.tags],
         status=db_models.JobStatus.PENDING
@@ -277,20 +307,23 @@ async def get_job_status(job_id: str, db: Session = Depends(get_db)):
     response = {"status": job.status, "result": None, "error": None, "generation_data": None}
     if job.status == db_models.JobStatus.COMPLETED:
         job_data = models.GenerationInfo.from_orm(job)
-        # The 'result' field is kept for legacy compatibility if any old logic uses it,
-        # but new logic should rely on the full generation_data object.
         response["result"] = job.generated_image_url
         response["generation_data"] = job_data
     elif job.status == db_models.JobStatus.FAILED:
         response["error"] = "AI transformation failed. See server logs for details."
     return response
 
-# --- New Endpoints for Gallery, Voting, and Gamification ---
-
 @app.get("/api/public-gallery", response_model=list[models.GenerationInfo])
-def get_public_gallery(db: Session = Depends(get_db)):
+def get_public_gallery(dataset: str = Query('weimar', enum=['weimar', 'almere']), db: Session = Depends(get_db)):
+    """
+    Gets completed and visible generations, filtered by the selected dataset.
+    """
     generations = db.query(db_models.Generation)\
-        .filter(db_models.Generation.is_visible == True, db_models.Generation.status == db_models.JobStatus.COMPLETED)\
+        .filter(
+            db_models.Generation.is_visible == True, 
+            db_models.Generation.status == db_models.JobStatus.COMPLETED,
+            db_models.Generation.dataset == dataset
+        )\
         .order_by(db_models.Generation.votes.desc(), db_models.Generation.created_at.desc())\
         .all()
     return generations
@@ -343,4 +376,3 @@ def get_gamification_stats(db: Session = Depends(get_db)):
         "target_score": GAMIFICATION_TARGET_SCORE,
         "deadline_iso": GAMIFICATION_DEADLINE.isoformat()
     }
-

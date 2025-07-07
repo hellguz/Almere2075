@@ -19,12 +19,20 @@ class Generation(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     
     status = Column(SQLAlchemyEnum(JobStatus), default=JobStatus.PENDING, nullable=False)
+    # ADDED: To distinguish between weimar and almere datasets
+    dataset = Column(String, nullable=False, default='weimar', server_default='weimar')
     original_image_filename = Column(String, nullable=False)
+    # MODIFIED: Added thumbnail URL for the original image for faster gallery loading.
+    original_image_thumb_url = Column(String, nullable=True)
     generated_image_url = Column(String, nullable=True)
+    # MODIFIED: Added thumbnail URL for the generated image.
+    generated_image_thumb_url = Column(String, nullable=True)
     prompt_text = Column(String, nullable=True)
     tags_used = Column(JSON, nullable=True)
     creator_name = Column(String, nullable=True)
     votes = Column(Integer, default=0, nullable=False)
     is_visible = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 

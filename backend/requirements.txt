@@ -10,4 +10,8 @@ python-multipart
 SQLAlchemy
 # ADDED: For downloading generated images
 requests
+# ADDED: Process manager to run multiple workers in development
+gunicorn
+
+
 

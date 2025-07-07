@@ -44,10 +44,10 @@
   line-height: 1.5; }
 .info-tooltip:hover .info-tooltip-text { display: block; }
 
-/* MODIFIED: Add a more general mobile compact state */
+/* MODIFIED: Changed scale to make widget smaller on mobile */
 @media (max-width: 768px) {
     .gamification-widget {
-        transform: scale(0.7); /* Smaller scale for all mobile */
+        transform: scale(0.8); /* Further reduced scale */
     }
     .countdown-label {
         display: none; /* Hide "Until Deadline" label to save space */
@@ -62,17 +62,13 @@
 /* MODIFIED: Hide more text on very narrow screens to prevent crowding */
 @media (max-width: 420px) {
     .score-label, .score-target {
-        display: none;
-    }
+        display: none; }
     .widget-deadline {
         padding-left: 10px;
-        border-left: 1px solid var(--liquid-border);
-    }
+        border-left: 1px solid var(--liquid-border); }
     .countdown-text {
-        font-size: 1.1rem;
-    }
+        font-size: 1.1rem; }
     .gamification-widget {
         padding: 10px 12px;
-        gap: 10px;
-    }
+        gap: 10px; }
 }

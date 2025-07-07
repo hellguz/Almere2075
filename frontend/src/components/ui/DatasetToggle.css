@@ -1,0 +1,43 @@
+/* ADDED: Styles for the new dataset toggle component */
+.dataset-toggle {
+    display: flex;
+    background: var(--liquid-bg);
+    border-radius: 20px;
+    border: 1px solid var(--liquid-border);
+    padding: 4px;
+    backdrop-filter: blur(var(--liquid-blur));
+}
+
+.dataset-toggle button {
+    border: none;
+    background: transparent;
+    color: var(--color-text-secondary);
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.dataset-toggle button:hover {
+    color: var(--color-text-primary);
+}
+
+.dataset-toggle button.active {
+    background: var(--color-text-primary);
+    color: var(--color-background);
+}
+
+/* MODIFIED: Added mobile styles to make toggle smaller */
+@media (max-width: 768px) {
+    .dataset-toggle {
+        padding: 3px;
+        border-radius: 16px;
+    }
+    .dataset-toggle button {
+        padding: 5px 10px;
+        font-size: 11px;
+        border-radius: 14px;
+    }
+}

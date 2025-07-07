@@ -5,6 +5,7 @@ import DynamicGallery from '../components/gallery/DynamicGallery';
 import type { GalleryImage, SourceImage } from '../types';
 import type { Texture } from 'three';
 import './GalleryView.css';
+import { useStore } from '../store'; // ADDED: Import the store
 
 interface GalleryViewProps {
     images: GalleryImage[];
@@ -19,6 +20,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
     const viewRef = useRef<HTMLDivElement>(null);
     const [showInstructions, setShowInstructions] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const dataset = useStore(state => state.dataset); // ADDED: Get the current dataset
 
     useEffect(() => {
         const setViewHeight = () => {
@@ -28,17 +30,15 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
         };
 
         if (isVisible) {
-            setViewHeight();
-            window.addEventListener('resize', setViewHeight);
+             setViewHeight();
+             window.addEventListener('resize', setViewHeight);
         }
 
         return () => {
             window.removeEventListener('resize', setViewHeight);
         };
     }, [isVisible]);
-
     const panState = useRef({ isPanning: false, startCoords: { x: 0, y: 0 }, hasDragged: false });
-    
     useEffect(() => {
         const handleInteraction = () => setShowInstructions(false);
         window.addEventListener('mousemove', handleInteraction, { once: true });
@@ -50,8 +50,6 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
             clearTimeout(timer);
         };
     }, []);
-
-    // FIXED: The event handlers are on the Canvas's outer div, not the inner canvas element.
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         panState.current.isPanning = true;
         panState.current.hasDragged = false;
@@ -59,10 +57,8 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
     };
     const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
         if (!panState.current.isPanning) return;
-        
         const dx = e.clientX - panState.current.startCoords.x;
         const dy = e.clientY - panState.current.startCoords.y;
-
         if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
             panState.current.hasDragged = true;
         }
@@ -95,23 +91,26 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
             {!isInBackground && (
                 <>
                     <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
-                        DRAG TO EXPLORE. TAP AN IMAGE TO BEGIN.
+                         DRAG TO EXPLORE. TAP AN IMAGE TO BEGIN.
                     </div>
                     <div className="main-actions-container">
                         <button className="upload-button" onClick={onShowTutorial}>❓HOW IT WORKS</button>
-                        <button className="upload-button" onClick={() => fileInputRef.current?.click()}>⬆️ UPLOAD AN IMAGE</button>
+                        {/* MODIFIED: The Upload button is now only visible when not in 'almere' mode */}
+                        {dataset !== 'almere' && (
+                             <button className="upload-button" onClick={() => fileInputRef.current?.click()}>⬆️ UPLOAD AN IMAGE</button>
+                        )}
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}/>
                 </>
             )}
             <Canvas 
-                orthographic camera={{ position: [0, 0, 10], zoom: 100 }}
+                 orthographic camera={{ position: [0, 0, 10], zoom: 100 }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
             >
-                <ambientLight intensity={3} />
+                 <ambientLight intensity={3} />
                 {images.length > 0 && 
                     <DynamicGallery 
                         images={images} 

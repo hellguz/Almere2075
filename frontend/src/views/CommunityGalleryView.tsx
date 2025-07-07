@@ -13,6 +13,7 @@ import './CommunityGalleryView.css';
  * @property {(item: GenerationDetails) => void} onItemSelect - Callback to select an item for modal view.
  * @property {() => void} onModalClose - Callback to close the modal.
  * @property {() => void} fetchGallery - Callback to fetch/refresh the gallery items.
+ * @property {'weimar' | 'almere'} dataset - The current dataset.
  */
 interface CommunityGalleryViewProps {
     isVisible: boolean;
@@ -22,10 +23,16 @@ interface CommunityGalleryViewProps {
     onItemSelect: (item: GenerationDetails) => void;
     onModalClose: () => void;
     fetchGallery: () => void;
+    dataset: 'weimar' | 'almere';
 }
 
 type ComparisonMode = 'slider' | 'side-by-side';
 
+/**
+ * Renders the community gallery grid and the modal for viewing individual items.
+ * @param {CommunityGalleryViewProps} props The component props.
+ * @returns {JSX.Element} The rendered component.
+ */
 const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
     isVisible,
     items,
@@ -34,6 +41,7 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
     onItemSelect,
     onModalClose,
     fetchGallery,
+    dataset, // ADDED
 }) => {
     const [modalComparisonMode, setModalComparisonMode] = useState<ComparisonMode>('side-by-side');
     const modalRef = useRef<HTMLDivElement>(null);
@@ -48,17 +56,19 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                     viewRef.current.style.height = `${window.innerHeight}px`;
                 }
             };
+            
             setViewHeight();
             window.addEventListener('resize', setViewHeight);
             return () => window.removeEventListener('resize', setViewHeight);
         }
     }, [isVisible]);
 
+    // MODIFIED: Re-fetch gallery when view becomes visible OR when dataset changes.
     useEffect(() => {
         if (isVisible && !modalItem) {
             fetchGallery();
         }
-    }, [isVisible, modalItem, fetchGallery]);
+    }, [isVisible, modalItem, fetchGallery, dataset]);
 
     useEffect(() => {
         if (modalItem && modalRef.current) {
@@ -67,12 +77,12 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                     modalRef.current.style.height = `${window.innerHeight}px`;
                 }
             };
+            
             setModalHeight();
             window.addEventListener('resize', setModalHeight);
             return () => window.removeEventListener('resize', setModalHeight);
         }
     }, [modalItem]);
-
 
     const handleVoteClick = (e: React.MouseEvent<HTMLButtonElement>, itemId: string) => {
         e.stopPropagation();
@@ -87,30 +97,41 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
     return (
         <div className={`community-gallery-view ${isVisible ? 'visible' : ''}`} ref={viewRef}>
             <div className="gallery-info-text">
-                <p>Explore visions of Almere 2075 created by others. <b>Give a "👍" to your favorites</b> to help the city reach its happiness goal!</p>
+                <p>Explore visions of Almere 2075 from the <b>{dataset.toUpperCase()}</b> dataset. <b>Give a "👍" to your favorites</b> to help the city reach its happiness goal!</p>
             </div>
             <div className="gallery-grid-container">
-                {items.map(item => (
-                    <div key={item.id} className="gallery-item" onClick={() => onItemSelect(item)}>
-                        <div className="gallery-item-images">
-                            {item.generated_image_url && <img src={`${API_BASE_URL}/images/${item.generated_image_url}`} alt="Generated" className="gallery-item-thumb generated"/>}
-                            <img src={`${API_BASE_URL}/images/${item.original_image_filename}`} alt="Original" className="gallery-item-thumb original"/>
-                        </div>
-                        <div className="gallery-item-info">
-                            <div className="gallery-item-details">
-                                <div className="gallery-item-tags">
-                                    {item.tags_used?.slice(0, 3).join(', ') || 'General Concept'}
-                                </div>
-                                <div className="gallery-item-creator">
-                                   by {item.creator_name || 'Anonymous'}
-                                </div>
+                 {items.map(item => {
+                    // MODIFIED: Use new thumbnail URLs for the grid, with fallbacks to full images.
+                    const generatedThumbUrl = item.generated_image_thumb_url
+                        ? `${API_BASE_URL}/thumbnails/${item.generated_image_thumb_url}`
+                        : (item.generated_image_url ? `${API_BASE_URL}/${item.generated_image_url}` : '');
+
+                    const originalThumbUrl = item.original_image_thumb_url
+                        ? `${API_BASE_URL}/thumbnails/${item.original_image_thumb_url}`
+                        : `${API_BASE_URL}/images/${item.dataset}/${item.original_image_filename}`;
+
+                    return (
+                        <div key={item.id} className="gallery-item" onClick={() => onItemSelect(item)}>
+                            <div className="gallery-item-images">
+                                {generatedThumbUrl && <img src={generatedThumbUrl} alt="Generated" className="gallery-item-thumb generated"/>}
+                                <img src={originalThumbUrl} alt="Original" className="gallery-item-thumb original"/>
                             </div>
-                            <button className="like-button" onClick={(e) => handleVoteClick(e, item.id)}>
-                                👍 {item.votes}
-                            </button>
+                            <div className="gallery-item-info">
+                                <div className="gallery-item-details">
+                                    <div className="gallery-item-tags">
+                                        {item.tags_used?.slice(0, 3).join(', ') || 'General Concept'}
+                                    </div>
+                                    <div className="gallery-item-creator">
+                                        by {item.creator_name || 'Anonymous'}
+                                    </div>
+                                </div>
+                                <button className="like-button" onClick={(e) => handleVoteClick(e, item.id)}>
+                                  👍 {item.votes}
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {modalItem && (
