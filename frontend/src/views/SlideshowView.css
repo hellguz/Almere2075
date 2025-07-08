@@ -74,18 +74,18 @@
 /* Text Overlay */
 .slideshow-text-overlay {
     position: absolute;
-    top: 30px;
+    top: 10px;
     left: 50%;
     transform: translateX(-50%);
     width: auto;
     height: auto;
     padding: 10px 25px;
-    font-size: 1.8rem;
+    font-size: 1.2rem;
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
     z-index: 5;
-    background: var(--liquid-bg);
+    /* background: var(--liquid-bg); */
     border: 1px solid var(--liquid-border);
     border-radius: 25px;
     backdrop-filter: blur(var(--liquid-blur));
@@ -96,8 +96,8 @@
 /* Tags Overlay */
 .slideshow-tags-overlay {
     position: absolute;
-    bottom: 30px;
-    bottom: calc(30px + env(safe-area-inset-bottom));
+    bottom: 15px;
+    bottom: calc(15px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -105,7 +105,7 @@
     flex-wrap: wrap;
     justify-content: center;
     padding: 10px;
-    background: var(--liquid-bg);
+    /* background: var(--liquid-bg); */
     border: 1px solid var(--liquid-border);
     border-radius: 16px;
     backdrop-filter: blur(var(--liquid-blur));
