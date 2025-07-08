@@ -21,7 +21,8 @@
 }
 
 .floating-controls-top { 
-    position: absolute; top: 20px;
+    /* MODIFIED: Using CSS variable to account for the ticker's height */
+    position: absolute; top: calc(var(--top-offset, 0px) + 20px);
     right: 25px; z-index: 20; }
 .view-mode-toggle { 
     display: flex; background: var(--liquid-bg); border-radius: 20px; 
@@ -58,7 +59,6 @@
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center; border-radius: 8px;
-  /* ADDED: Black background to prevent image overflow artifacts */
   background-color: #000;
 }
 .image-header { 
@@ -91,8 +91,8 @@
 
 .comparison-footer {
     position: absolute;
-    bottom: 20px;
-    bottom: calc(20px + env(safe-area-inset-bottom));
+    bottom: calc(var(--bottom-offset, 0px) + 20px);
+    bottom: calc(var(--bottom-offset, 0px) + 20px + env(safe-area-inset-bottom));
     left: 50%;
     width: 90%; max-width: 900px;
     display: flex; justify-content: space-between; align-items: center;
@@ -281,8 +281,8 @@
     padding: 8px 12px;
     gap: 10px;
     border-radius: 12px;
-    bottom: 15px;
-    bottom: calc(15px + env(safe-area-inset-bottom));
+    bottom: calc(var(--bottom-offset, 0px) + 15px);
+    bottom: calc(var(--bottom-offset, 0px) + 15px + env(safe-area-inset-bottom));
   }
   
   .comparison-footer:not(.is-modal) {
@@ -330,7 +330,7 @@
   }
   
   .floating-controls-top {
-      top: 70px;
+      top: calc(var(--top-offset, 0px) + 70px);
       left: 50%;
       transform: translateX(-50%);
       right: auto;

@@ -13,12 +13,12 @@ export const tickerConfig: TickerConfig = {
     /**
      * Set to true to display the news ticker at the top of the screen.
      */
-    showTopTicker: true,
+    showTopTicker: false,
 
     /**
      * Set to true to display the news ticker at the bottom of the screen.
      */
-    showBottomTicker: false,
+    showBottomTicker: true,
 
     /**
      * The height of the ticker bar. Use any valid CSS unit (e.g., '40px').

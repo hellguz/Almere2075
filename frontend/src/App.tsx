@@ -3,7 +3,7 @@ import './App.css';
 // Hooks and Store
 import { useStore } from './store';
 import { useIsMobile } from './hooks/useIsMobile';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // UI Components
 import LogPanel from './components/ui/LogPanel';
@@ -11,8 +11,8 @@ import GamificationWidget from './components/ui/GamificationWidget';
 import ComparisonView from './components/ui/ComparisonView';
 import TutorialModal from './components/ui/TutorialModal';
 import DatasetToggle from './components/ui/DatasetToggle';
-import NewsTicker from './components/ui/NewsTicker'; // ADDED: Import NewsTicker
-import { tickerConfig } from './tickerConfig'; // ADDED: Import ticker config
+import NewsTicker from './components/ui/NewsTicker';
+import { tickerConfig } from './tickerConfig';
 
 // Views
 import GalleryView from './views/GalleryView';
@@ -51,21 +51,27 @@ function App() {
     return <SlideshowView />;
   }
 
+  // MODIFIED: This style now sets CSS variables for both top and bottom offsets.
+  const appWrapperStyle = {
+    '--bottom-offset': tickerConfig.showBottomTicker ? tickerConfig.tickerHeight : '0px',
+    '--top-offset': tickerConfig.showTopTicker ? tickerConfig.tickerHeight : '0px',
+    display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', background: '#000'
+  } as React.CSSProperties;
+
+
   const showGalleryBackground = (view === 'transform' || view === 'comparison') && !state.isCommunityItem;
   const showBackButton = view !== 'gallery' && !state.modalItem;
   return (
-    // MODIFIED: Wrapped the entire app in a flex container to hold the tickers and the main app
-    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', background: '#000' }}>
+    <div style={appWrapperStyle}>
       {tickerConfig.showTopTicker && <NewsTicker position="top" />}
       <div className="app-container">
-        <header className="app-header" style={{ top: tickerConfig.showTopTicker ? tickerConfig.tickerHeight : '0' }}>
+        <header className="app-header">
             <div className="header-left">
                {showBackButton && (
                   <button onClick={actions.handleBackToStart} className="back-button">
                     {isMobile ? '← BACK' : '← BACK TO START'}
                   </button>
                )}
-               {/* MODIFIED: Toggle is now here and only shows on the main gallery screen */}
                {view === 'gallery' && <DatasetToggle />}
             </div>
             <div className="header-center">

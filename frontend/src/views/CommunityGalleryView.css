@@ -25,8 +25,11 @@
 /* --- Header Text --- */
 .gallery-info-text {
     flex-shrink: 0;
-    padding: 85px 15px 15px;
-    padding-top: calc(85px + env(safe-area-inset-top));
+    /* MODIFIED: Using CSS variable to account for the ticker's height */
+    padding: 15px;
+    padding-top: calc(var(--top-offset, 0px) + 85px);
+    padding-top: calc(var(--top-offset, 0px) + 85px + env(safe-area-inset-top));
+    padding-bottom: 15px;
     text-align: center;
     color: var(--color-text-secondary);
     font-size: 0.9rem;
@@ -84,7 +87,8 @@
 /* Image hover effect */
 .gallery-item-thumb.generated { opacity: 1; }
 .gallery-item:hover .gallery-item-thumb.generated { opacity: 0; }
-.gallery-item-thumb.original { opacity: 0; }
+.gallery-item-thumb.original { opacity: 0;
+}
 .gallery-item:hover .gallery-item-thumb.original { opacity: 1; }
 
 
@@ -192,15 +196,15 @@
 .gallery-grid-container::-webkit-scrollbar { width: 6px; }
 .gallery-grid-container::-webkit-scrollbar-track { background: transparent; }
 .gallery-grid-container::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-bg); border-radius: 3px; }
-.gallery-grid-container::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg); }
+.gallery-grid-container::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover-bg);
+}
 
 
 /* MODIFIED: Mobile layout adjustments */
 @media (max-width: 768px) {
     .gallery-info-text {
-        /* Increased top padding to clear the new, taller mobile header */
-        padding-top: 140px; 
-        padding-top: calc(140px + env(safe-area-inset-top));
+        padding-top: calc(var(--top-offset, 0px) + 140px);
+        padding-top: calc(var(--top-offset, 0px) + 140px + env(safe-area-inset-top));
     }
 }
 

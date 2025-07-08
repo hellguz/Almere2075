@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { API_BASE_URL } from '../config';
 import type { GenerationDetails } from '../types';
-import NewsTicker from '../components/ui/NewsTicker'; // ADDED: Import NewsTicker
-import { tickerConfig } from '../tickerConfig'; // ADDED: Import ticker config
+import NewsTicker from '../components/ui/NewsTicker';
+import { tickerConfig } from '../tickerConfig';
 import './SlideshowView.css';
 
 /**
@@ -182,13 +182,19 @@ const SlideshowView: React.FC = () => {
             return () => clearTimeout(timer);
         }
     }, [isLoading, animationKey]);
+    
+    // Set CSS variables for ticker offsets
+    const viewStyle = {
+        '--bottom-offset': tickerConfig.showBottomTicker ? tickerConfig.tickerHeight : '0px',
+        '--top-offset': tickerConfig.showTopTicker ? tickerConfig.tickerHeight : '0px',
+    } as React.CSSProperties;
 
     if (isLoading) {
-        return <div className="slideshow-view"><div className="slideshow-loading">Loading Slideshow...</div></div>;
+        return <div className="slideshow-view" style={viewStyle}><div className="slideshow-loading">Loading Slideshow...</div></div>;
     }
 
     if (!currentGen) {
-        return <div className="slideshow-view"><div className="slideshow-loading">Error: Could not load any images. Please check the connection and refresh.</div></div>;
+        return <div className="slideshow-view" style={viewStyle}><div className="slideshow-loading">Error: Could not load any images. Please check the connection and refresh.</div></div>;
     }
 
     const isFinalPass = iterationCount === 3;
@@ -197,7 +203,7 @@ const SlideshowView: React.FC = () => {
     const nextOriginalUrl = getImageUrl(nextGen, 'original');
     
     return (
-        <div className="slideshow-view">
+        <div className="slideshow-view" style={viewStyle}>
             {tickerConfig.showTopTicker && <NewsTicker position="top" />}
             <div className="slideshow-content-wrapper">
                 <div key={animationKey} className={`slideshow-content ${isAnimating ? 'is-animating' : ''}`}>
