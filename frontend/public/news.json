@@ -2,31 +2,79 @@
     "newsItems": [
         {
             "id": 1,
-            "text": "ALMERE-STAD - Record rainfall overwhelms Weerwater flood defenses for the third time this month. City officials urge residents in low-lying districts to prepare for temporary relocation as water levels now measure 1.5 meters above historic highs."
+            "text": "BREAKING NEWS: Almere clinic reports record number of heat-related illnesses during summer months."
         },
         {
             "id": 2,
-            "text": "POORT - Critical lithium shortages halt all non-essential municipal drone deliveries. Repair and recycling centers are prioritizing emergency service batteries. Residents are advised to conserve power on all personal devices."
+            "text": "Dating app adds 'housing compatibility' feature for couples planning to combine units."
         },
         {
             "id": 3,
-            "text": "BUITEN - PFA contamination levels in surface water reach critical alert status following industrial runoff. Public access to canals and lakes is temporarily suspended. Water purification hubs are operating at maximum capacity."
+            "text": "Housing waitlist reaches 18,000 as population growth outpaces construction."
         },
         {
             "id": 4,
-            "text": "CENTRUM - The Urban Survival Tower was activated last night during a city-wide power grid failure caused by a substation flood. Emergency food and medical pods were successfully deployed to all designated districts."
+            "text": "Import delays extend to 12 weeks as global shipping networks remain disrupted."
         },
         {
             "id": 5,
-            "text": "HAVEN - City Council announces mandatory textile rationing. The new 'Re-Thread' program requires all citizens to register garments for repair and reuse, as global textile supply chains have officially collapsed."
+            "text": "Coastal districts relocate 500 residents as sea levels reach new historic high."
         },
         {
             "id": 6,
-            "text": "NOBELHORST - Sand pirates reportedly intercepted near the Markermeer. The group was attempting to illegally dredge sand, a resource now more valuable than gold for construction and flood defense maintenance."
+            "text": "School children learn swimming before walking to navigate neighborhood canals."
         },
         {
             "id": 7,
-            "text": "OOSTERWOLD - A rogue AI managing a vertical farm malfunctioned, causing a total crop failure of the city's primary protein source. Food distribution will be limited to emergency rations for the next 48 hours."
+            "text": "Morning commute by canal boat delayed due to energy barge traffic at district hub."
+        },
+        {
+            "id": 8,
+            "text": "Grandmother's vintage sewing machine valued higher than new electronics at local market."
+        },
+        {
+            "id": 9,
+            "text": "Children's soccer league postpones matches due to park flooding - players to use elevated courts instead."
+        },
+        {
+            "id": 10,
+            "text": "CITY-WIDE ALERT: Lithium-ion battery recycling now mandatory for all residents as critical shortages worsen. Drop-off points at Urban Commons hubs are reportedly overwhelmed."
+        },
+        {
+            "id": 11,
+            "text": "HEALTH ADVISORY: PFA contamination levels in Weerwater have spiked again following recent floods. Residents are reminded that only water from designated purification towers is safe for consumption."
+        },
+        {
+            "id": 12,
+            "text": "SPONGE PARK STATUS: City engineers report sponge parks are at 98% saturation after an overnight deluge. While central districts remain dry, the system is at its limit."
+        },
+        {
+            "id": 13,
+            "text": "CONSTRUCTION HALTED: Work on the new Flevo Hospital wing has stopped due to a critical sand shortage. Officials are prioritizing sand for flood defense reinforcement."
+        },
+        {
+            "id": 14,
+            "text": "BLACK MARKET: A black market for imported cotton has surged as local textile production struggles to meet demand. Authorities warn against counterfeit fabrics."
+        },
+        {
+            "id": 15,
+            "text": "RE:FLEX HOUSING: The re:flex housing portal crashed from high traffic as thousands applied for new 'Reclaim' units on the old Rabobank tower."
+        },
+        {
+            "id": 16,
+            "text": "CARBON PASSPORT ALERT: The carbon passport system has flagged over 2,000 residents for excessive energy consumption this quarter. Those affected face a temporary suspension of personal vehicle charging privileges."
+        },
+        {
+            "id": 17,
+            "text": "BIOCYCLE HUB SUCCESS: The biocycle hub in district B-2 reports record methane generation from organic waste, securing the district's energy independence for the fifth consecutive month."
+        },
+        {
+            "id": 18,
+            "text": "PUBLIC SAFETY WARNING: A parasitic fungus has been detected in the edible streetscape along the Landdrostdreef. Foraging in the area is strictly prohibited until further notice."
+        },
+        {
+            "id": 19,
+            "text": "VERTICAL FARM OFFLINE: Vertical Farm #4 is offline for emergency maintenance, causing city-wide vegetable shortages. Salads have been temporarily removed from public canteen menus."
         }
     ]
 }
