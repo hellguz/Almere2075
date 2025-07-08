@@ -45,6 +45,7 @@ const SlideshowView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [animationKey, setAnimationKey] = useState(0);
     const [iterationCount, setIterationCount] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(false);
 
     const sliderRef = useRef<HTMLDivElement>(null);
     
@@ -69,24 +70,19 @@ const SlideshowView: React.FC = () => {
         if (!slider) return;
 
         const handleAnimationEnd = () => {
-            console.log(`[Cycle ${animationKey}] All 4 passes finished. Swapping to next image and restarting cycle.`);
             if (nextGen) {
                 setCurrentGen(nextGen);
-                // Fetch the *next* generation ahead of time
                 fetchRandomGeneration(dataset)
                     .then(setNextGen)
                     .catch(err => {
                         console.error("COULD NOT FETCH NEXT IMAGE. Slideshow will pause after next cycle.", err);
-                        // Attempt to recover after a delay
                         setTimeout(() => {
                            fetchRandomGeneration(dataset).then(setNextGen).catch(() => {});
                         }, 5000);
                     });
-            } else {
-                console.error("`nextGen` was null, cannot proceed. Restarting with current image.");
             }
-            // Reset state for the new cycle and trigger a re-mount of the animation container
             setIterationCount(0);
+            setIsAnimating(false); // Pause animation briefly for state to update
             setAnimationKey(k => k + 1);
         };
 
@@ -105,13 +101,12 @@ const SlideshowView: React.FC = () => {
         
         slider.addEventListener('animationiteration', handleAnimationIteration);
         return () => slider.removeEventListener('animationiteration', handleAnimationIteration);
-    }, [animationKey]); // Re-attach listener only when the whole animation restarts.
+    }, [animationKey]);
 
 
     // Preloading effect
     useEffect(() => {
         if (nextGen) {
-            console.log(`Preloading images for next item: ${nextGen.id}`);
             preloadImage(getImageUrl(nextGen, 'original')).catch(console.error);
             preloadImage(getImageUrl(nextGen, 'generated')).catch(console.error);
         }
@@ -121,7 +116,6 @@ const SlideshowView: React.FC = () => {
     useEffect(() => {
         const init = async () => {
             try {
-                console.log("Initializing slideshow...");
                 const [initialGen, secondGen] = await Promise.all([
                     fetchRandomGeneration(dataset),
                     fetchRandomGeneration(dataset),
@@ -137,7 +131,6 @@ const SlideshowView: React.FC = () => {
                 setCurrentGen(initialGen);
                 setNextGen(secondGen);
                 setIsLoading(false);
-                console.log("Initialization complete. Starting animation.");
             } catch (error) {
                 console.error("FATAL: Could not initialize slideshow.", error);
                 setIsLoading(false);
@@ -146,6 +139,16 @@ const SlideshowView: React.FC = () => {
         init();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dataset]);
+
+    // Effect to start animation once loading is complete
+    useEffect(() => {
+        if (!isLoading) {
+            // Use a timeout to ensure all state is settled before starting the animation
+            const timer = setTimeout(() => setIsAnimating(true), 100);
+            return () => clearTimeout(timer);
+        }
+    }, [isLoading, animationKey]);
+
 
     if (isLoading) {
         return <div className="slideshow-view"><div className="slideshow-loading">Loading Slideshow...</div></div>;
@@ -160,8 +163,11 @@ const SlideshowView: React.FC = () => {
     const currentGeneratedUrl = getImageUrl(currentGen, 'generated');
     const nextOriginalUrl = getImageUrl(nextGen, 'original');
 
-    // FIXED: Cast style objects to React.CSSProperties using 'as' to allow for custom properties
-    // and prevent the TypeScript error.
+    // Determine which year to display based on the animation pass
+    // Pass 0 & 2 (L->R) reveals '2075'. Pass 1 & 3 (R->L) reveals '2025'.
+    // Before animation starts, show '2025'.
+    const displayYear = !isAnimating ? '2025' : (iterationCount % 2 === 0 ? '2075' : '2025');
+
     const currentOriginalStyle = {
         '--bg-image': `url("${currentOriginalUrl}")`,
         opacity: isFinalPass ? 0 : 1,
@@ -174,39 +180,29 @@ const SlideshowView: React.FC = () => {
         '--bg-image': `url("${currentGeneratedUrl}")`,
     } as React.CSSProperties;
 
-
     return (
         <div className="slideshow-view">
-            <div key={animationKey} className="slideshow-content is-animating">
-                {/* Layer 1: The current original image. Visible during passes 1-3, fades out on pass 4. */}
+            <div key={animationKey} className={`slideshow-content ${isAnimating ? 'is-animating' : ''}`}>
                 <div
                     className="slideshow-image-base"
                     style={currentOriginalStyle}
                 />
-
-                {/* Layer 2: The NEXT original image. Hidden until it fades in on pass 4. */}
                 <div
                     className="slideshow-image-base"
                     style={nextOriginalStyle}
                 />
-
-                {/* Layer 3: The 'after' generated image, which is wiped back and forth on top. */}
                 <div
                     className="after-image"
                     style={afterImageStyle}
                 />
                 
-                {/* Text Layers */}
                 <div className="slideshow-text-overlay">
-                    <div className="slideshow-text before">{capitalizedDataset} 2025</div>
-                    <div className="slideshow-text after">{capitalizedDataset} 2075</div>
+                    {capitalizedDataset} {displayYear}
                 </div>
 
-                {/* The slider which drives the events */}
                 <div ref={sliderRef} className="slideshow-slider" />
             </div>
 
-            {/* Static Tags Overlay */}
             <div className="slideshow-tags-overlay">
                 {currentGen?.tags_used?.map(tag => (
                     <div key={tag} className="slideshow-tag-chip">{tag}</div>

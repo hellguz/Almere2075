@@ -42,7 +42,7 @@
 }
 
 .after-image {
-    z-index: 2; /* The generated image is on top of the base images */
+    z-index: 2; /* The generated image is always on top */
     clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%);
 }
 
@@ -54,35 +54,33 @@
     height: 100%;
     background: var(--color-accent-white);
     box-shadow: 0 0 20px 2px var(--color-accent-glow);
-    /* MODIFIED: Ensure slider is on top of everything */
     z-index: 10;
 }
 
 /* Text Overlay */
+/* MODIFIED: Changed text overlay to be a chip */
 .slideshow-text-overlay {
     position: absolute;
     top: 30px;
-    left: 0;
-    width: 100%;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    height: auto;
+    padding: 10px 25px;
     font-size: 1.8rem;
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
-    /* MODIFIED: Ensure text is on top of images */
     z-index: 5;
+    background: var(--liquid-bg);
+    border: 1px solid var(--liquid-border);
+    border-radius: 25px;
+    backdrop-filter: blur(var(--liquid-blur));
+    -webkit-backdrop-filter: blur(var(--liquid-blur));
+    white-space: nowrap;
 }
 
-.slideshow-text {
-    position: absolute;
-}
-
-.slideshow-text.after {
-    clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%);
-}
+/* REMOVED: The before/after text classes are no longer needed */
 
 /* Tags Overlay */
 .slideshow-tags-overlay {
@@ -101,7 +99,6 @@
     border-radius: 16px;
     backdrop-filter: blur(var(--liquid-blur));
     -webkit-backdrop-filter: blur(var(--liquid-blur));
-    /* MODIFIED: Ensure tags are on top of images */
     z-index: 5;
 }
 
@@ -137,8 +134,8 @@
     animation-direction: alternate;
 }
 
-.is-animating .after-image,
-.is-animating .slideshow-text.after {
+/* MODIFIED: The text animation is removed */
+.is-animating .after-image {
     animation-name: clip-reveal-alt;
     animation-duration: 8s;
     animation-timing-function: linear;
