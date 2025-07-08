@@ -3,7 +3,7 @@ import './App.css';
 // Hooks and Store
 import { useStore } from './store';
 import { useIsMobile } from './hooks/useIsMobile';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 // UI Components
 import LogPanel from './components/ui/LogPanel';
@@ -16,7 +16,6 @@ import DatasetToggle from './components/ui/DatasetToggle';
 import GalleryView from './views/GalleryView';
 import TransformView from './views/TransformView';
 import CommunityGalleryView from './views/CommunityGalleryView';
-import SlideshowView from './views/SlideshowView';
 
 /**
  * The main application component, which orchestrates the different views and UI elements.
@@ -24,33 +23,25 @@ import SlideshowView from './views/SlideshowView';
  */
 function App() {
   const isMobile = useIsMobile();
+  
   // Get all state and actions from the store
   const { state, actions } = useStore(state => ({ state: state, actions: state.actions }));
   const { view, dataset } = state;
 
-  // NEW: Add routing logic for the slideshow
-  const [isSlideshow] = useState(window.location.pathname === '/slides');
-
   // Effect for fetching initial data on mount
   useEffect(() => {
-    // Don't fetch interactive-app data if we are in slideshow mode
-    if (isSlideshow) return;
     actions.fetchInitialData();
-  }, [actions, isSlideshow]);
+  }, [actions]);
 
   // Effect for fetching dataset-specific data when the dataset changes
   useEffect(() => {
-    // Don't fetch interactive-app data if we are in slideshow mode
-    if (isSlideshow) return;
     actions.fetchGalleryImages();
-  }, [dataset, actions, isSlideshow]);
+  }, [dataset, actions]);
 
-  if (isSlideshow) {
-    return <SlideshowView />;
-  }
 
   const showGalleryBackground = (view === 'transform' || view === 'comparison') && !state.isCommunityItem;
   const showBackButton = view !== 'gallery' && !state.modalItem;
+
   return (
     <div className="app-container">
       <header className="app-header">
@@ -65,7 +56,7 @@ function App() {
           </div>
           <div className="header-center">
             <GamificationWidget />
-           </div>
+          </div>
           <div className="header-right">
             {(view === 'gallery') && (
                 <button className="community-gallery-button" onClick={() => actions.setState('view', 'community_gallery')}>COMMUNITY GALLERY</button>
@@ -75,7 +66,7 @@ function App() {
 
       <main>
         <GalleryView 
-             images={state.galleryImages} 
+            images={state.galleryImages} 
             isVisible={view === 'gallery' || showGalleryBackground}
             isInBackground={showGalleryBackground}
             onImageClick={actions.handleSelectGalleryImage}
@@ -94,7 +85,7 @@ function App() {
         <ComparisonView
             generationDetails={state.generationDetails}
             sourceImage={state.sourceImageForTransform}
-             isVisible={view === 'comparison'}
+            isVisible={view === 'comparison'}
             mode={state.comparisonMode}
             onModeChange={(mode) => actions.setState('comparisonMode', mode)}
             onSetName={actions.handleSetName}
@@ -112,7 +103,7 @@ function App() {
         />
       </main>
       
-       <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
+      <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
       
       <TutorialModal 
           isVisible={state.showTutorial} 
@@ -123,3 +114,4 @@ function App() {
 }
 
 export default App;
+

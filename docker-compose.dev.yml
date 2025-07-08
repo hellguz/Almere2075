@@ -41,16 +41,12 @@ services:
     # MODIFIED: Switched from uvicorn to gunicorn to handle multiple concurrent
     # requests in development, preventing the server from getting "stuck"
     # during long AI tasks. This mimics the production setup while keeping hot-reloading.
-    #
-    # FIXED: The command now executes startup.py before launching the Gunicorn
-    # server, ensuring thumbnails are generated in the dev environment.
     command: >
-      sh -c "python startup.py &&
       gunicorn app.main:app
       --workers 8
       --worker-class uvicorn.workers.UvicornWorker
       --bind 0.0.0.0:8000
-      --reload"
+      --reload
 
   frontend:
     build:
