@@ -46,6 +46,7 @@ const SlideshowView: React.FC = () => {
     const [animationKey, setAnimationKey] = useState(0);
     const [iterationCount, setIterationCount] = useState(0);
     const [isAnimating, setIsAnimating] = useState(false);
+    const [visibleYear, setVisibleYear] = useState('2025');
 
     const sliderRef = useRef<HTMLDivElement>(null);
     const dataset = useMemo(() => {
@@ -100,6 +101,40 @@ const SlideshowView: React.FC = () => {
         slider.addEventListener('animationiteration', handleAnimationIteration);
         return () => slider.removeEventListener('animationiteration', handleAnimationIteration);
     }, [animationKey]);
+
+    // Effect to handle the year text change based on slider position.
+    useEffect(() => {
+        let animFrameId: number;
+    
+        const updateYearBasedOnSlider = () => {
+            if (sliderRef.current) {
+                // Get the computed 'left' value as a percentage.
+                const leftPercent = parseFloat(getComputedStyle(sliderRef.current).left) / window.innerWidth * 100;
+    
+                const isLTR = iterationCount % 2 === 0; // Animation direction
+                let year = '2025';
+    
+                if (isLTR) { // Moving left to right (0 -> 100), reveal 2075
+                    year = leftPercent > 50 ? '2075' : '2025';
+                } else { // Moving right to left (100 -> 0), reveal 2025
+                    year = leftPercent < 50 ? '2075' : '2025';
+                }
+                setVisibleYear(year);
+            }
+            animFrameId = requestAnimationFrame(updateYearBasedOnSlider);
+        };
+    
+        if (isAnimating) {
+            animFrameId = requestAnimationFrame(updateYearBasedOnSlider);
+        } else {
+            // Reset year for the next cycle's start
+            setVisibleYear('2025');
+        }
+    
+        return () => {
+            cancelAnimationFrame(animFrameId);
+        };
+    }, [isAnimating, iterationCount]);
 
     // Preloading effect
     useEffect(() => {
@@ -158,45 +193,25 @@ const SlideshowView: React.FC = () => {
     const currentOriginalUrl = getImageUrl(currentGen, 'original');
     const currentGeneratedUrl = getImageUrl(currentGen, 'generated');
     const nextOriginalUrl = getImageUrl(nextGen, 'original');
-    // Determine which year to display based on the animation pass
-    // Pass 0 & 2 (L->R) reveals '2075'. Pass 1 & 3 (R->L) reveals '2025'.
-    // Before animation starts, show '2025'.
-    const displayYear = !isAnimating ? '2025' : (iterationCount % 2 === 0 ? '2075' : '2025');
-
-    const currentOriginalStyle = {
-        '--bg-image': `url("${currentOriginalUrl}")`,
-        opacity: isFinalPass ? 0 : 1,
-    } as React.CSSProperties;
-    const nextOriginalStyle = {
-        '--bg-image': `url("${nextOriginalUrl}")`,
-        opacity: isFinalPass ? 1 : 0,
-    } as React.CSSProperties;
-    const afterImageStyle = {
-        '--bg-image': `url("${currentGeneratedUrl}")`,
-    } as React.CSSProperties;
-
+    
     return (
         <div className="slideshow-view">
             <div key={animationKey} className={`slideshow-content ${isAnimating ? 'is-animating' : ''}`}>
-                <div
-                    className="slideshow-image-base"
-                    style={currentOriginalStyle}
-                 />
-                <div
-                    className="slideshow-image-base"
-                    style={nextOriginalStyle}
-                />
-                <div
-                     className="after-image"
-                    style={afterImageStyle}
-                />
-                
-                {/* REVERTED: The text overlay is now inside the content container again */}
-                <div className="slideshow-text-overlay">
-                    {capitalizedDataset} {displayYear}
+                <div className="slideshow-image-base" style={{ opacity: isFinalPass ? 0 : 1 }}>
+                    <div className="image-sizer" style={{ backgroundImage: `url("${currentOriginalUrl}")` }}></div>
                 </div>
-
+                <div className="slideshow-image-base" style={{ opacity: isFinalPass ? 1 : 0 }}>
+                    <div className="image-sizer" style={{ backgroundImage: `url("${nextOriginalUrl}")` }}></div>
+                </div>
+                <div className="after-image">
+                    <div className="image-sizer" style={{ backgroundImage: `url("${currentGeneratedUrl}")` }}></div>
+                </div>
+                
                 <div ref={sliderRef} className="slideshow-slider" />
+            </div>
+
+            <div className="slideshow-text-overlay">
+                {capitalizedDataset} {visibleYear}
             </div>
 
             <div className="slideshow-tags-overlay">
