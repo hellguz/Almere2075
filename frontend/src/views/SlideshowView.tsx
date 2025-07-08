@@ -160,18 +160,19 @@ const SlideshowView: React.FC = () => {
     const currentGeneratedUrl = getImageUrl(currentGen, 'generated');
     const nextOriginalUrl = getImageUrl(nextGen, 'original');
 
-    // MODIFIED: Cast style object to React.CSSProperties to allow for custom properties.
-    const currentOriginalStyle: React.CSSProperties = {
+    // FIXED: Cast style objects to React.CSSProperties using 'as' to allow for custom properties
+    // and prevent the TypeScript error.
+    const currentOriginalStyle = {
         '--bg-image': `url("${currentOriginalUrl}")`,
         opacity: isFinalPass ? 0 : 1,
-    };
-    const nextOriginalStyle: React.CSSProperties = {
+    } as React.CSSProperties;
+    const nextOriginalStyle = {
         '--bg-image': `url("${nextOriginalUrl}")`,
         opacity: isFinalPass ? 1 : 0,
-    };
-    const afterImageStyle: React.CSSProperties = {
+    } as React.CSSProperties;
+    const afterImageStyle = {
         '--bg-image': `url("${currentGeneratedUrl}")`,
-    };
+    } as React.CSSProperties;
 
 
     return (
