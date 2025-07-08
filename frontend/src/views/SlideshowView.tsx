@@ -48,12 +48,10 @@ const SlideshowView: React.FC = () => {
     const [isAnimating, setIsAnimating] = useState(false);
 
     const sliderRef = useRef<HTMLDivElement>(null);
-    
     const dataset = useMemo(() => {
         const params = new URLSearchParams(window.location.search);
         return params.get('set') || 'almere';
     }, []);
-
     const capitalizedDataset = useMemo(() => dataset.charAt(0).toUpperCase() + dataset.slice(1), [dataset]);
 
     const getImageUrl = useCallback((gen: GenerationDetails | null, type: 'original' | 'generated'): string => {
@@ -77,7 +75,7 @@ const SlideshowView: React.FC = () => {
                     .catch(err => {
                         console.error("COULD NOT FETCH NEXT IMAGE. Slideshow will pause after next cycle.", err);
                         setTimeout(() => {
-                           fetchRandomGeneration(dataset).then(setNextGen).catch(() => {});
+                            fetchRandomGeneration(dataset).then(setNextGen).catch(() => {});
                         }, 5000);
                     });
             }
@@ -102,7 +100,6 @@ const SlideshowView: React.FC = () => {
         slider.addEventListener('animationiteration', handleAnimationIteration);
         return () => slider.removeEventListener('animationiteration', handleAnimationIteration);
     }, [animationKey]);
-
 
     // Preloading effect
     useEffect(() => {
@@ -149,7 +146,6 @@ const SlideshowView: React.FC = () => {
         }
     }, [isLoading, animationKey]);
 
-
     if (isLoading) {
         return <div className="slideshow-view"><div className="slideshow-loading">Loading Slideshow...</div></div>;
     }
@@ -162,7 +158,6 @@ const SlideshowView: React.FC = () => {
     const currentOriginalUrl = getImageUrl(currentGen, 'original');
     const currentGeneratedUrl = getImageUrl(currentGen, 'generated');
     const nextOriginalUrl = getImageUrl(nextGen, 'original');
-
     // Determine which year to display based on the animation pass
     // Pass 0 & 2 (L->R) reveals '2075'. Pass 1 & 3 (R->L) reveals '2025'.
     // Before animation starts, show '2025'.
@@ -186,16 +181,17 @@ const SlideshowView: React.FC = () => {
                 <div
                     className="slideshow-image-base"
                     style={currentOriginalStyle}
-                />
+                 />
                 <div
                     className="slideshow-image-base"
                     style={nextOriginalStyle}
                 />
                 <div
-                    className="after-image"
+                     className="after-image"
                     style={afterImageStyle}
                 />
                 
+                {/* REVERTED: The text overlay is now inside the content container again */}
                 <div className="slideshow-text-overlay">
                     {capitalizedDataset} {displayYear}
                 </div>
