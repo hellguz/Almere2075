@@ -63,20 +63,10 @@ const SlideshowView: React.FC = () => {
         return gen.generated_image_url ? `${API_BASE_URL}/${gen.generated_image_url}` : '';
     }, []);
 
-    // MODIFIED: Combined and improved effect for handling all animation events.
+    // Effect to handle the end of the full 4-pass cycle.
     useEffect(() => {
         const slider = sliderRef.current;
         if (!slider) return;
-
-        console.log(`[Cycle ${animationKey}] Attaching listeners. Current image: ${currentGen?.id}, Next image: ${nextGen?.id}`);
-
-        const handleAnimationIteration = () => {
-            setIterationCount(c => {
-                const newCount = c + 1;
-                console.log(`[Cycle ${animationKey}] Pass ${newCount} complete.`);
-                return newCount;
-            });
-        };
 
         const handleAnimationEnd = () => {
             console.log(`[Cycle ${animationKey}] All 4 passes finished. Swapping to next image and restarting cycle.`);
@@ -100,15 +90,23 @@ const SlideshowView: React.FC = () => {
             setAnimationKey(k => k + 1);
         };
 
-        slider.addEventListener('animationiteration', handleAnimationIteration);
         slider.addEventListener('animationend', handleAnimationEnd);
-
-        return () => {
-            console.log(`[Cycle ${animationKey}] Cleaning up listeners.`);
-            slider.removeEventListener('animationiteration', handleAnimationIteration);
-            slider.removeEventListener('animationend', handleAnimationEnd);
-        };
+        return () => slider.removeEventListener('animationend', handleAnimationEnd);
     }, [animationKey, dataset, nextGen, currentGen]);
+
+    // Effect to handle each individual pass to control the image layers.
+    useEffect(() => {
+        const slider = sliderRef.current;
+        if (!slider) return;
+
+        const handleAnimationIteration = () => {
+            setIterationCount(c => c + 1);
+        };
+        
+        slider.addEventListener('animationiteration', handleAnimationIteration);
+        return () => slider.removeEventListener('animationiteration', handleAnimationIteration);
+    }, [animationKey]); // Re-attach listener only when the whole animation restarts.
+
 
     // Preloading effect
     useEffect(() => {
@@ -142,7 +140,7 @@ const SlideshowView: React.FC = () => {
                 console.log("Initialization complete. Starting animation.");
             } catch (error) {
                 console.error("FATAL: Could not initialize slideshow.", error);
-                setIsLoading(false); // Stop loading screen to show error
+                setIsLoading(false);
             }
         };
         init();
@@ -157,19 +155,45 @@ const SlideshowView: React.FC = () => {
         return <div className="slideshow-view"><div className="slideshow-loading">Error: Could not load any images. Please check the connection and refresh.</div></div>;
     }
 
+    const isFinalPass = iterationCount === 3;
     const currentOriginalUrl = getImageUrl(currentGen, 'original');
     const currentGeneratedUrl = getImageUrl(currentGen, 'generated');
     const nextOriginalUrl = getImageUrl(nextGen, 'original');
 
-    // On the 4th pass (iteration 3), the base image should be the *next* original.
-    const baseImageUrl = iterationCount === 3 ? nextOriginalUrl : currentOriginalUrl;
+    // MODIFIED: Cast style object to React.CSSProperties to allow for custom properties.
+    const currentOriginalStyle: React.CSSProperties = {
+        '--bg-image': `url("${currentOriginalUrl}")`,
+        opacity: isFinalPass ? 0 : 1,
+    };
+    const nextOriginalStyle: React.CSSProperties = {
+        '--bg-image': `url("${nextOriginalUrl}")`,
+        opacity: isFinalPass ? 1 : 0,
+    };
+    const afterImageStyle: React.CSSProperties = {
+        '--bg-image': `url("${currentGeneratedUrl}")`,
+    };
+
 
     return (
         <div className="slideshow-view">
             <div key={animationKey} className="slideshow-content is-animating">
-                {/* Image Layers */}
-                <div className="slideshow-image visible" style={{ backgroundImage: `url("${baseImageUrl}")` }} />
-                <div className="slideshow-image after visible" style={{ backgroundImage: `url("${currentGeneratedUrl}")` }} />
+                {/* Layer 1: The current original image. Visible during passes 1-3, fades out on pass 4. */}
+                <div
+                    className="slideshow-image-base"
+                    style={currentOriginalStyle}
+                />
+
+                {/* Layer 2: The NEXT original image. Hidden until it fades in on pass 4. */}
+                <div
+                    className="slideshow-image-base"
+                    style={nextOriginalStyle}
+                />
+
+                {/* Layer 3: The 'after' generated image, which is wiped back and forth on top. */}
+                <div
+                    className="after-image"
+                    style={afterImageStyle}
+                />
                 
                 {/* Text Layers */}
                 <div className="slideshow-text-overlay">

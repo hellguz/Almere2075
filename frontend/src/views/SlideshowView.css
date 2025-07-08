@@ -26,24 +26,23 @@
     height: 100%;
 }
 
-.slideshow-image {
+.slideshow-image-base,
+.after-image {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: 0;
+    background: #000 var(--bg-image) center / contain no-repeat;
     transition: opacity 0.5s ease-in-out;
 }
 
-.slideshow-image.visible {
-    opacity: 1;
+.slideshow-image-base {
+    z-index: 1;
 }
 
-.slideshow-image.after {
+.after-image {
+    z-index: 2; /* The generated image is on top of the base images */
     clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%);
 }
 
@@ -55,6 +54,8 @@
     height: 100%;
     background: var(--color-accent-white);
     box-shadow: 0 0 20px 2px var(--color-accent-glow);
+    /* MODIFIED: Ensure slider is on top of everything */
+    z-index: 10;
 }
 
 /* Text Overlay */
@@ -71,6 +72,8 @@
     font-weight: 600;
     letter-spacing: 1px;
     text-transform: uppercase;
+    /* MODIFIED: Ensure text is on top of images */
+    z-index: 5;
 }
 
 .slideshow-text {
@@ -98,6 +101,8 @@
     border-radius: 16px;
     backdrop-filter: blur(var(--liquid-blur));
     -webkit-backdrop-filter: blur(var(--liquid-blur));
+    /* MODIFIED: Ensure tags are on top of images */
+    z-index: 5;
 }
 
 .slideshow-tag-chip {
@@ -110,7 +115,7 @@
     white-space: nowrap;
 }
 
-/* --- NEW: Simplified Animation Logic --- */
+/* --- Animation Logic --- */
 
 @keyframes slide-across {
     from { left: 0%; }
@@ -132,7 +137,7 @@
     animation-direction: alternate;
 }
 
-.is-animating .slideshow-image.after,
+.is-animating .after-image,
 .is-animating .slideshow-text.after {
     animation-name: clip-reveal-alt;
     animation-duration: 8s;
