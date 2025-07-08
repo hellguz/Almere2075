@@ -58,6 +58,8 @@
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center; border-radius: 8px;
+  /* ADDED: Black background to prevent image overflow artifacts */
+  background-color: #000;
 }
 .image-header { 
   font-size: 12px;
@@ -75,7 +77,6 @@
 .slider-line { 
     position: absolute; top: 0; height: 100%; width: 2px; 
     background: var(--color-accent-white);
-    /* MODIFIED: Enhanced the glow to be brighter near the line. */
     box-shadow: 0 0 7px rgba(255, 255, 255, 0.9), 0 0 20px 2px var(--color-accent-glow); 
     transform: translateX(-1px); pointer-events: none; z-index: 4; 
 }
