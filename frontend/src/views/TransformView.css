@@ -3,9 +3,12 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    padding: 70px 15px 15px 15px;
-    padding-top: calc(70px + env(safe-area-inset-top));
-    padding-bottom: calc(15px + env(safe-area-inset-bottom));
+    /* MODIFIED: Using CSS variable to account for the ticker's height */
+    padding: 15px;
+    padding-top: calc(var(--top-offset, 0px) + 85px); /* Header is 80px high, so 85 gives a little margin */
+    padding-top: calc(var(--top-offset, 0px) + 85px + env(safe-area-inset-top));
+    padding-bottom: calc(var(--bottom-offset, 0px) + 15px);
+    padding-bottom: calc(var(--bottom-offset, 0px) + 15px + env(safe-area-inset-bottom));
 }
 
 .transform-content {
@@ -129,7 +132,6 @@
 .scanline {
     position: absolute; top: 0; left: 0; width: 100%; height: 3px;
     background: var(--color-accent-white);
-    /* MODIFIED: Enhanced the glow to be brighter near the line. */
     box-shadow: 0 0 7px rgba(255, 255, 255, 0.9), 0 0 20px 2px var(--color-accent-glow);
     animation: scan 20s infinite ease-in-out; z-index: 10;
 }
@@ -143,9 +145,8 @@
 /* MODIFIED: Mobile layout adjustments for Transform View */
 @media (max-width: 768px) {
     .transform-view {
-        /* Reduce top padding to bring content up */
-        padding-top: 65px;
-        padding-top: calc(60px + env(safe-area-inset-top));
+        padding-top: calc(var(--top-offset, 0px) + 85px);
+        padding-top: calc(var(--top-offset, 0px) + 85px + env(safe-area-inset-top));
     }
     .transform-content {
         gap: 10px; /* Tighter gap */

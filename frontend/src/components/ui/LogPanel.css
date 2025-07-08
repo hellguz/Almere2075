@@ -1,8 +1,8 @@
 .process-log-wrapper {
     position: fixed;
-    /* MODIFIED: Adjusted for safe area */
-    bottom: 20px;
-    bottom: calc(20px + env(safe-area-inset-bottom));
+    /* MODIFIED: Using CSS variable to account for the ticker's height */
+    bottom: calc(var(--bottom-offset) + 20px);
+    bottom: calc(var(--bottom-offset) + 20px + env(safe-area-inset-bottom));
     right: 20px;
     width: 500px;
     max-width: calc(100% - 40px);
@@ -49,13 +49,11 @@
 
 @media (max-width: 768px) {
   .process-log-wrapper {
-      /* MODIFIED: Adjusted for safe area and robust positioning */
-      bottom: 10px;
-      bottom: calc(10px + env(safe-area-inset-bottom));
+      bottom: calc(var(--bottom-offset) + 10px);
+      bottom: calc(var(--bottom-offset) + 10px + env(safe-area-inset-bottom));
       right: 10px;
       left: 10px;
       width: auto;
       height: 30vh; 
   }
 }
-
