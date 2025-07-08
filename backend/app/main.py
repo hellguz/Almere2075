@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageOps
 import openai
 import replicate
 from dotenv import load_dotenv
@@ -102,19 +102,25 @@ def resolve_image_to_data_url(image_string: str) -> str:
 
 def create_thumbnail(image_path: Path, thumbnail_dir: Path):
     """
-    Creates a thumbnail for a given image and saves it to the specified directory.
+    Creates a thumbnail for a given image, correctly handling EXIF orientation,
+    and saves it to the specified directory.
+
     Args:
-        image_path: The path to the source image.
-        thumbnail_dir: The directory where the thumbnail should be saved.
+        image_path (Path): The path to the source image.
+        thumbnail_dir (Path): The directory where the thumbnail should be saved.
     """
     try:
         thumbnail_dir.mkdir(parents=True, exist_ok=True)
         thumbnail_path = thumbnail_dir / f"{image_path.stem}.jpeg"
         if thumbnail_path.exists(): return
         with Image.open(image_path) as img:
+            # FIXED: Apply EXIF orientation data to fix rotation issues on portrait images.
+            img = ImageOps.exif_transpose(img)
+            
             img.thumbnail(THUMBNAIL_SIZE)
             if img.mode in ("RGBA", "P"): img = img.convert("RGB")
-            img.save(thumbnail_path, "JPEG")
+            img.save(thumbnail_path, "JPEG", quality=90)
+ 
     except Exception as e:
         print(f"Error creating thumbnail for {image_path.name}: {e}")
 
@@ -147,6 +153,7 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
         if not prediction.output or not isinstance(prediction.output, str):
             raise ValueError(f"Model returned invalid output: {prediction.output}")
 
+  
         print(f"[{job_id}] Prediction successful. Downloading image...")
         
         replicate_url = prediction.output
@@ -161,7 +168,7 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
             with open(save_path, 'wb') as f:
                 for chunk in response.iter_content(chunk_size=8192):
                     f.write(chunk)
-            
+           
             create_thumbnail(save_path, GENERATED_THUMBNAILS_DIR)
             
             print(f"[{job_id}] Image saved to {save_path}")
@@ -170,6 +177,7 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
             generation.status = db_models.JobStatus.COMPLETED
             db.commit()
 
+    
         except requests.exceptions.RequestException as e:
             raise IOError(f"Failed to download image from Replicate: {e}") from e
 
@@ -180,6 +188,7 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
         print(f"[{job_id}] --------------------------------")
         generation.status = db_models.JobStatus.FAILED
         db.commit()
+  
     finally:
         db.close()
 
@@ -238,6 +247,7 @@ async def generate_prompt(request: models.GeneratePromptRequest):
             max_tokens=500,
         )
         generated_prompt = response.choices[0].message.content.strip()
+       
         return {"prompt": generated_prompt, "tags_used": selected_tags_ids}
     except Exception as e:
         print(f"!!! UNHANDLED EXCEPTION IN generate_prompt: {e}")
@@ -253,6 +263,7 @@ async def transform_image(request: models.TransformImageRequest, background_task
 
     if image_str.startswith('data:'):
         try:
+   
             header, encoded = image_str.split(",", 1)
             mime_type = header.split(":")[1].split(";")[0]
             
@@ -260,6 +271,7 @@ async def transform_image(request: models.TransformImageRequest, background_task
             if missing_padding:
                 encoded += '=' * (4 - missing_padding)
 
+          
             image_data = base64.b64decode(encoded)
             
             extension = mimetypes.guess_extension(mime_type) or '.jpg'
@@ -267,13 +279,14 @@ async def transform_image(request: models.TransformImageRequest, background_task
             
             save_dir = IMAGES_DIR / request.dataset / 'uploads'
             save_path = save_dir / new_filename
-            
+        
             with open(save_path, "wb") as f:
                 f.write(image_data)
             
             thumb_dir = (WEIMAR_THUMBNAILS_DIR if request.dataset == 'weimar' else ALMERE_THUMBNAILS_DIR) / 'uploads'
             create_thumbnail(save_path, thumb_dir)
             
+     
             final_image_filename_for_db = f"uploads/{new_filename}"
             original_thumb_url_for_db = f"{request.dataset}/uploads/{save_path.stem}.jpeg"
         except Exception as e:
@@ -300,6 +313,7 @@ async def transform_image(request: models.TransformImageRequest, background_task
 
 @app.get("/api/job-status/{job_id}", response_model=models.JobStatusResponse)
 async def get_job_status(job_id: str, db: Session = Depends(get_db)):
+    
     job = db.query(db_models.Generation).filter(db_models.Generation.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -363,6 +377,7 @@ def set_creator_name(job_id: str, request: models.SetCreatorNameRequest, db: Ses
     if not generation:
         raise HTTPException(status_code=404, detail="Generation not found.")
     
+    
     generation.creator_name = request.name
     db.commit()
     return {"message": "Creator name updated."}
@@ -395,6 +410,7 @@ def get_random_generation(dataset: str = Query('almere', enum=['weimar', 'almere
         .first()
 
     if not random_generation:
+  
         raise HTTPException(
             status_code=404,
             detail=f"No completed and visible generations with an image found for dataset '{dataset}'."

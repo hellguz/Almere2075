@@ -120,7 +120,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, sour
                              <div className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}>
                                 <div className="image-header">SOURCE</div>
                              </div>
-                            <div className="image-panel after-image" style={{backgroundImage: `url("${outputImageUrl}")`, clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
+                            <div className="image-panel" style={{backgroundImage: `url("${outputImageUrl}")`, clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
                                  <div className="image-header">ALMERE 2075</div>
                              </div>
                             <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>

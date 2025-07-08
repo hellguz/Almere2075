@@ -8,6 +8,7 @@
     color: white;
     font-family: var(--font-family);
     overflow: hidden;
+    --slideshow-image-container-size: 80%;
 }
 
 .slideshow-loading {
@@ -33,8 +34,20 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: #000 var(--bg-image) center / contain no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     transition: opacity 0.5s ease-in-out;
+}
+
+.image-sizer {
+    width: var(--slideshow-image-container-size);
+    height: var(--slideshow-image-container-size);
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* ADDED: Black background to prevent image overflow artifacts */
+    background-color: #000;
 }
 
 .slideshow-image-base {
@@ -44,6 +57,7 @@
 .after-image {
     z-index: 2; /* The generated image is always on top */
     clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%);
+    background: transparent;
 }
 
 .slideshow-slider {
@@ -53,12 +67,11 @@
     width: 3px;
     height: 100%;
     background: var(--color-accent-white);
-    box-shadow: 0 0 20px 2px var(--color-accent-glow);
-    z-index: 10;
+    box-shadow: 0 0 7px rgba(255, 255, 255, 0.9), 0 0 20px 2px var(--color-accent-glow);
+    z-index: 4;
 }
 
 /* Text Overlay */
-/* MODIFIED: Changed text overlay to be a chip */
 .slideshow-text-overlay {
     position: absolute;
     top: 30px;
@@ -79,8 +92,6 @@
     -webkit-backdrop-filter: blur(var(--liquid-blur));
     white-space: nowrap;
 }
-
-/* REMOVED: The before/after text classes are no longer needed */
 
 /* Tags Overlay */
 .slideshow-tags-overlay {
@@ -103,42 +114,47 @@
 }
 
 .slideshow-tag-chip {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--color-text-primary);
-    font-size: 14px; /* Same as community gallery button */
-    font-weight: 500;
-    padding: 8px 16px;
-    border-radius: 20px;
+    background: var(--liquid-bg);
+    border: 1px solid var(--liquid-border);
+    backdrop-filter: blur(var(--liquid-blur));
+    -webkit-backdrop-filter: blur(var(--liquid-blur));
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 30px;
     white-space: nowrap;
 }
 
 /* --- Animation Logic --- */
 
 @keyframes slide-across {
-    from { left: 0%; }
+    from { left: 0%;
+    }
     to { left: 100%; }
 }
 
 @keyframes clip-reveal-alt {
-    from { clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%); }
-    to { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+    from { clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%);
+    }
+    to { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    }
 }
 
 /* A single class to run the entire 4-pass animation cycle */
 .is-animating .slideshow-slider {
     animation-name: slide-across;
     animation-duration: 8s;
-    animation-timing-function: linear;
+    animation-timing-function: ease-in-out;
     animation-fill-mode: forwards;
     animation-iteration-count: 4;
     animation-direction: alternate;
 }
 
-/* MODIFIED: The text animation is removed */
 .is-animating .after-image {
     animation-name: clip-reveal-alt;
     animation-duration: 8s;
-    animation-timing-function: linear;
+    animation-timing-function: ease-in-out;
     animation-fill-mode: forwards;
     animation-iteration-count: 4;
     animation-direction: alternate;
