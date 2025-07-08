@@ -136,7 +136,7 @@ def run_ai_transformation_task(job_id: str, image_string_from_request: str, prom
         
         model_name = "black-forest-labs/flux-kontext-pro"
         input_data = {"prompt": prompt, "input_image": image_data_url, "output_format": "png"}
-        
+      
         print(f"[{job_id}] Starting Replicate prediction...")
         prediction = replicate_client.predictions.create(model=model_name, input=input_data)
         prediction.wait()
@@ -376,3 +376,28 @@ def get_gamification_stats(db: Session = Depends(get_db)):
         "target_score": GAMIFICATION_TARGET_SCORE,
         "deadline_iso": GAMIFICATION_DEADLINE.isoformat()
     }
+
+@app.get("/api/random-generation", response_model=models.GenerationInfo)
+def get_random_generation(dataset: str = Query('almere', enum=['weimar', 'almere']), db: Session = Depends(get_db)):
+    """
+    Gets a single, random, completed, and visible generation from the database
+    for the specified dataset, ensuring it has a generated image.
+    This is used for the projection slideshow.
+    """
+    random_generation = db.query(db_models.Generation)\
+        .filter(
+            db_models.Generation.is_visible == True,
+            db_models.Generation.status == db_models.JobStatus.COMPLETED,
+            db_models.Generation.generated_image_url.isnot(None),
+            db_models.Generation.dataset == dataset
+        )\
+        .order_by(func.random())\
+        .first()
+
+    if not random_generation:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No completed and visible generations with an image found for dataset '{dataset}'."
+        )
+
+    return random_generation

@@ -1,0 +1,143 @@
+.slideshow-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    color: white;
+    font-family: var(--font-family);
+    overflow: hidden;
+}
+
+.slideshow-loading {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--color-text-secondary);
+}
+
+.slideshow-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.slideshow-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.slideshow-image.visible {
+    opacity: 1;
+}
+
+.slideshow-image.after {
+    clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%);
+}
+
+.slideshow-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--color-accent-white);
+    box-shadow: 0 0 20px 2px var(--color-accent-glow);
+}
+
+/* Text Overlay */
+.slideshow-text-overlay {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    width: 100%;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.slideshow-text {
+    position: absolute;
+}
+
+.slideshow-text.after {
+    clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%);
+}
+
+/* Tags Overlay */
+.slideshow-tags-overlay {
+    position: absolute;
+    bottom: 30px;
+    bottom: calc(30px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 10px;
+    background: var(--liquid-bg);
+    border: 1px solid var(--liquid-border);
+    border-radius: 16px;
+    backdrop-filter: blur(var(--liquid-blur));
+    -webkit-backdrop-filter: blur(var(--liquid-blur));
+}
+
+.slideshow-tag-chip {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+    font-size: 14px; /* Same as community gallery button */
+    font-weight: 500;
+    padding: 8px 16px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+/* --- NEW: Simplified Animation Logic --- */
+
+@keyframes slide-across {
+    from { left: 0%; }
+    to { left: 100%; }
+}
+
+@keyframes clip-reveal-alt {
+    from { clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%); }
+    to { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+
+/* A single class to run the entire 4-pass animation cycle */
+.is-animating .slideshow-slider {
+    animation-name: slide-across;
+    animation-duration: 8s;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    animation-iteration-count: 4;
+    animation-direction: alternate;
+}
+
+.is-animating .slideshow-image.after,
+.is-animating .slideshow-text.after {
+    animation-name: clip-reveal-alt;
+    animation-duration: 8s;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+    animation-iteration-count: 4;
+    animation-direction: alternate;
+}
