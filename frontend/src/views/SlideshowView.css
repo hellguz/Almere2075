@@ -1,3 +1,4 @@
+/* MODIFIED: The main view is now a flex container to accommodate tickers. */
 .slideshow-view {
     position: fixed;
     top: 0;
@@ -9,6 +10,8 @@
     font-family: var(--font-family);
     overflow: hidden;
     --slideshow-image-container-size: 80%;
+    display: flex;
+    flex-direction: column;
 }
 
 .slideshow-loading {
@@ -21,8 +24,18 @@
     color: var(--color-text-secondary);
 }
 
-.slideshow-content {
+/* MODIFIED: The content container now grows to fill available space between tickers. */
+.slideshow-content-wrapper {
     position: relative;
+    width: 100%;
+    flex-grow: 1;
+    min-height: 0; /* Important for flex-grow to work correctly */
+}
+
+.slideshow-content {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
 }

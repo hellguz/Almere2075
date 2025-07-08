@@ -1,0 +1,43 @@
+/* ADDED: Styles for the News Ticker component */
+.news-ticker-container {
+    height: var(--ticker-height, 40px);
+    background-color: #000;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+    z-index: 200;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.news-ticker-container.top {
+    border-bottom: 1px solid var(--liquid-border);
+}
+
+.news-ticker-container.bottom {
+    border-top: 1px solid var(--liquid-border);
+}
+
+.news-ticker-content {
+    display: flex;
+    white-space: nowrap;
+    will-change: transform;
+    animation: scroll-left linear infinite;
+}
+
+.news-item {
+    margin: 0 40px; /* Spacing between news items */
+    display: inline-block;
+}
+
+@keyframes scroll-left {
+    from {
+        transform: translateX(0%);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}

@@ -1,8 +1,10 @@
+/* MODIFIED: The app-container is now a flex child that grows to fill space. */
 .app-container {
-  width: 100%; height: 100%;
+  flex-grow: 1;
   position: relative;
   display: flex; flex-direction: column;
   cursor: var(--custom-cursor);
+  min-height: 0; /* Prevents flexbox overflow issues */
 }
 main {
   flex-grow: 1;
@@ -76,4 +78,3 @@ main {
     font-weight: 500;
   }
 }
-

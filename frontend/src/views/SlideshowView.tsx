@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { API_BASE_URL } from '../config';
 import type { GenerationDetails } from '../types';
+import NewsTicker from '../components/ui/NewsTicker'; // ADDED: Import NewsTicker
+import { tickerConfig } from '../tickerConfig'; // ADDED: Import ticker config
 import './SlideshowView.css';
 
 /**
@@ -196,29 +198,33 @@ const SlideshowView: React.FC = () => {
     
     return (
         <div className="slideshow-view">
-            <div key={animationKey} className={`slideshow-content ${isAnimating ? 'is-animating' : ''}`}>
-                <div className="slideshow-image-base" style={{ opacity: isFinalPass ? 0 : 1 }}>
-                    <div className="image-sizer" style={{ backgroundImage: `url("${currentOriginalUrl}")` }}></div>
+            {tickerConfig.showTopTicker && <NewsTicker position="top" />}
+            <div className="slideshow-content-wrapper">
+                <div key={animationKey} className={`slideshow-content ${isAnimating ? 'is-animating' : ''}`}>
+                    <div className="slideshow-image-base" style={{ opacity: isFinalPass ? 0 : 1 }}>
+                        <div className="image-sizer" style={{ backgroundImage: `url("${currentOriginalUrl}")` }}></div>
+                    </div>
+                    <div className="slideshow-image-base" style={{ opacity: isFinalPass ? 1 : 0 }}>
+                        <div className="image-sizer" style={{ backgroundImage: `url("${nextOriginalUrl}")` }}></div>
+                    </div>
+                    <div className="after-image">
+                        <div className="image-sizer" style={{ backgroundImage: `url("${currentGeneratedUrl}")` }}></div>
+                    </div>
+                    
+                    <div ref={sliderRef} className="slideshow-slider" />
                 </div>
-                <div className="slideshow-image-base" style={{ opacity: isFinalPass ? 1 : 0 }}>
-                    <div className="image-sizer" style={{ backgroundImage: `url("${nextOriginalUrl}")` }}></div>
-                </div>
-                <div className="after-image">
-                    <div className="image-sizer" style={{ backgroundImage: `url("${currentGeneratedUrl}")` }}></div>
-                </div>
-                
-                <div ref={sliderRef} className="slideshow-slider" />
-            </div>
 
-            <div className="slideshow-text-overlay">
-                {capitalizedDataset} {visibleYear}
-            </div>
+                <div className="slideshow-text-overlay">
+                    {capitalizedDataset} {visibleYear}
+                </div>
 
-            <div className="slideshow-tags-overlay">
-                {currentGen?.tags_used?.map(tag => (
-                    <div key={tag} className="slideshow-tag-chip">{tag}</div>
-                ))}
+                <div className="slideshow-tags-overlay">
+                    {currentGen?.tags_used?.map(tag => (
+                        <div key={tag} className="slideshow-tag-chip">{tag}</div>
+                    ))}
+                </div>
             </div>
+            {tickerConfig.showBottomTicker && <NewsTicker position="bottom" />}
         </div>
     );
 };

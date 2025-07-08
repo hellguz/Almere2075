@@ -1,0 +1,32 @@
+{
+    "newsItems": [
+        {
+            "id": 1,
+            "text": "ALMERE-STAD - Record rainfall overwhelms Weerwater flood defenses for the third time this month. City officials urge residents in low-lying districts to prepare for temporary relocation as water levels now measure 1.5 meters above historic highs."
+        },
+        {
+            "id": 2,
+            "text": "POORT - Critical lithium shortages halt all non-essential municipal drone deliveries. Repair and recycling centers are prioritizing emergency service batteries. Residents are advised to conserve power on all personal devices."
+        },
+        {
+            "id": 3,
+            "text": "BUITEN - PFA contamination levels in surface water reach critical alert status following industrial runoff. Public access to canals and lakes is temporarily suspended. Water purification hubs are operating at maximum capacity."
+        },
+        {
+            "id": 4,
+            "text": "CENTRUM - The Urban Survival Tower was activated last night during a city-wide power grid failure caused by a substation flood. Emergency food and medical pods were successfully deployed to all designated districts."
+        },
+        {
+            "id": 5,
+            "text": "HAVEN - City Council announces mandatory textile rationing. The new 'Re-Thread' program requires all citizens to register garments for repair and reuse, as global textile supply chains have officially collapsed."
+        },
+        {
+            "id": 6,
+            "text": "NOBELHORST - Sand pirates reportedly intercepted near the Markermeer. The group was attempting to illegally dredge sand, a resource now more valuable than gold for construction and flood defense maintenance."
+        },
+        {
+            "id": 7,
+            "text": "OOSTERWOLD - A rogue AI managing a vertical farm malfunctioned, causing a total crop failure of the city's primary protein source. Food distribution will be limited to emergency rations for the next 48 hours."
+        }
+    ]
+}

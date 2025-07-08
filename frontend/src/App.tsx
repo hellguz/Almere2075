@@ -11,6 +11,8 @@ import GamificationWidget from './components/ui/GamificationWidget';
 import ComparisonView from './components/ui/ComparisonView';
 import TutorialModal from './components/ui/TutorialModal';
 import DatasetToggle from './components/ui/DatasetToggle';
+import NewsTicker from './components/ui/NewsTicker'; // ADDED: Import NewsTicker
+import { tickerConfig } from './tickerConfig'; // ADDED: Import ticker config
 
 // Views
 import GalleryView from './views/GalleryView';
@@ -52,72 +54,77 @@ function App() {
   const showGalleryBackground = (view === 'transform' || view === 'comparison') && !state.isCommunityItem;
   const showBackButton = view !== 'gallery' && !state.modalItem;
   return (
-    <div className="app-container">
-      <header className="app-header">
-          <div className="header-left">
-             {showBackButton && (
-                <button onClick={actions.handleBackToStart} className="back-button">
-                  {isMobile ? '← BACK' : '← BACK TO START'}
-                </button>
-             )}
-             {/* MODIFIED: Toggle is now here and only shows on the main gallery screen */}
-             {view === 'gallery' && <DatasetToggle />}
-          </div>
-          <div className="header-center">
-            <GamificationWidget />
-           </div>
-          <div className="header-right">
-            {(view === 'gallery') && (
-                <button className="community-gallery-button" onClick={() => actions.setState('view', 'community_gallery')}>COMMUNITY GALLERY</button>
-            )}
-          </div>
-      </header>
+    // MODIFIED: Wrapped the entire app in a flex container to hold the tickers and the main app
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', background: '#000' }}>
+      {tickerConfig.showTopTicker && <NewsTicker position="top" />}
+      <div className="app-container">
+        <header className="app-header" style={{ top: tickerConfig.showTopTicker ? tickerConfig.tickerHeight : '0' }}>
+            <div className="header-left">
+               {showBackButton && (
+                  <button onClick={actions.handleBackToStart} className="back-button">
+                    {isMobile ? '← BACK' : '← BACK TO START'}
+                  </button>
+               )}
+               {/* MODIFIED: Toggle is now here and only shows on the main gallery screen */}
+               {view === 'gallery' && <DatasetToggle />}
+            </div>
+            <div className="header-center">
+              <GamificationWidget />
+             </div>
+            <div className="header-right">
+              {(view === 'gallery') && (
+                  <button className="community-gallery-button" onClick={() => actions.setState('view', 'community_gallery')}>COMMUNITY GALLERY</button>
+              )}
+            </div>
+        </header>
 
-      <main>
-        <GalleryView 
-             images={state.galleryImages} 
-            isVisible={view === 'gallery' || showGalleryBackground}
-            isInBackground={showGalleryBackground}
-            onImageClick={actions.handleSelectGalleryImage}
-            onNewImage={actions.startTransform}
-            onShowTutorial={actions.handleShowTutorial}
+        <main>
+          <GalleryView 
+               images={state.galleryImages} 
+              isVisible={view === 'gallery' || showGalleryBackground}
+              isInBackground={showGalleryBackground}
+              onImageClick={actions.handleSelectGalleryImage}
+              onNewImage={actions.startTransform}
+              onShowTutorial={actions.handleShowTutorial}
+          />
+           <TransformView 
+              sourceImage={state.sourceImageForTransform} 
+              isVisible={view === 'transform'} 
+              isProcessing={state.isProcessing}
+              onTransform={actions.handleTransform}
+              tags={state.availableTags}
+              selectedTags={state.selectedTags}
+              onTagToggle={actions.toggleTag}
+           />
+          <ComparisonView
+              generationDetails={state.generationDetails}
+              sourceImage={state.sourceImageForTransform}
+               isVisible={view === 'comparison'}
+              mode={state.comparisonMode}
+              onModeChange={(mode) => actions.setState('comparisonMode', mode)}
+              onSetName={actions.handleSetName}
+              onHide={actions.handleHide}
+           />
+          <CommunityGalleryView
+              isVisible={view === 'community_gallery'}
+              items={state.communityGalleryItems}
+              onVote={actions.handleVote}
+              modalItem={state.modalItem}
+              onItemSelect={actions.openModal}
+              onModalClose={actions.closeModal}
+              fetchGallery={actions.fetchCommunityGallery}
+              dataset={dataset}
+          />
+        </main>
+        
+         <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
+        
+        <TutorialModal 
+            isVisible={state.showTutorial} 
+            onClose={actions.closeTutorial}
         />
-         <TransformView 
-            sourceImage={state.sourceImageForTransform} 
-            isVisible={view === 'transform'} 
-            isProcessing={state.isProcessing}
-            onTransform={actions.handleTransform}
-            tags={state.availableTags}
-            selectedTags={state.selectedTags}
-            onTagToggle={actions.toggleTag}
-         />
-        <ComparisonView
-            generationDetails={state.generationDetails}
-            sourceImage={state.sourceImageForTransform}
-             isVisible={view === 'comparison'}
-            mode={state.comparisonMode}
-            onModeChange={(mode) => actions.setState('comparisonMode', mode)}
-            onSetName={actions.handleSetName}
-            onHide={actions.handleHide}
-         />
-        <CommunityGalleryView
-            isVisible={view === 'community_gallery'}
-            items={state.communityGalleryItems}
-            onVote={actions.handleVote}
-            modalItem={state.modalItem}
-            onItemSelect={actions.openModal}
-            onModalClose={actions.closeModal}
-            fetchGallery={actions.fetchCommunityGallery}
-            dataset={dataset}
-        />
-      </main>
-      
-       <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
-      
-      <TutorialModal 
-          isVisible={state.showTutorial} 
-          onClose={actions.closeTutorial}
-      />
+      </div>
+      {tickerConfig.showBottomTicker && <NewsTicker position="bottom" />}
     </div>
   );
 }
