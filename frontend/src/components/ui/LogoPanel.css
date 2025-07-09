@@ -1,0 +1,52 @@
+/* Logo Panel Container */
+.logo-panel-container {
+    /* -- CSS Variables for easy control -- */
+    --logo-panel-scale: 1; /* e.g., 0.8, 1, 1.2 */
+    --logo-panel-bottom: 60px;
+    --logo-panel-left: 25px;
+    --logo-height: 40px;
+    --logo-gap: 20px;
+    
+    position: fixed;
+    bottom: var(--logo-panel-bottom);
+    left: var(--logo-panel-left);
+    
+    /* Use safe area inset for mobile devices like iPhone */
+    bottom: calc(var(--logo-panel-bottom) + env(safe-area-inset-bottom));
+    left: calc(var(--logo-panel-left) + env(safe-area-inset-left));
+    
+    z-index: 500;
+    display: flex;
+    align-items: center;
+    gap: var(--logo-gap);
+    
+    transform: scale(var(--logo-panel-scale));
+    transform-origin: bottom left;
+    
+    pointer-events: none; /* Make the container non-interactive */
+
+    padding: 10px;
+    
+    /* background: var(--liquid-bg); */
+    border: 1px solid var(--liquid-border);
+    border-radius: 8px;
+    backdrop-filter: blur(var(--liquid-blur));
+    -webkit-backdrop-filter: blur(var(--liquid-blur));
+}
+
+/* Individual Logos */
+.logo-panel-container img {
+    height: var(--logo-height);
+    width: auto; /* Maintain aspect ratio */
+    pointer-events: auto; /* Make logos interactive if needed */
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .logo-panel-container {
+        --logo-height: 30px;
+        --logo-panel-left: 15px;
+        --logo-panel-bottom: 15px;
+        --logo-gap: 15px;
+    }
+}

@@ -12,6 +12,7 @@ import ComparisonView from './components/ui/ComparisonView';
 import TutorialModal from './components/ui/TutorialModal';
 import DatasetToggle from './components/ui/DatasetToggle';
 import NewsTicker from './components/ui/NewsTicker';
+import LogoPanel from './components/ui/LogoPanel'; // ADDED: Logo panel component
 import { tickerConfig } from './tickerConfig';
 
 // Views
@@ -49,7 +50,6 @@ function App() {
     return <SlideshowView />;
   }
 
-  // MODIFIED: This style now sets CSS variables for both top and bottom offsets.
   const appWrapperStyle = {
     '--bottom-offset': tickerConfig.showBottomTicker ? tickerConfig.tickerHeight : '0px',
     '--top-offset': tickerConfig.showTopTicker ? tickerConfig.tickerHeight : '0px',
@@ -126,12 +126,15 @@ function App() {
           />
         </main>
         
-         <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
+        <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
         
         <TutorialModal 
              isVisible={state.showTutorial}
             onClose={actions.closeTutorial}
         />
+        
+        {/* ADDED: Logo panel is rendered at the root level to be always visible */}
+        <LogoPanel />
       </div>
       {tickerConfig.showBottomTicker && <NewsTicker position="bottom" />}
     </div>
