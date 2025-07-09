@@ -1,12 +1,24 @@
 .comparison-container { 
-    display: flex; flex-direction: column; 
-    box-sizing: border-box; position: relative; width: 100%; height: 100%; 
+    /* MODIFIED: This is now the main flex container for the view */
+    display: flex; 
+    flex-direction: column; 
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%; 
     pointer-events: none;
+    /* The 'position: relative' is no longer needed here */
 }
 .floating-controls-top,
-.comparison-main-area,
 .comparison-footer {
     pointer-events: auto;
+}
+
+/* ADDED: New wrapper for the main content to separate it from the footer in the flex flow */
+.comparison-content-area {
+    flex: 1; /* Allows this area to grow and fill available space */
+    position: relative; /* Needed for positioning controls inside it */
+    min-height: 0; /* Crucial for flex layouts */
+    display: flex; /* Make it a flex container for its children */
 }
 
 .comparison-view-wrapper {
@@ -20,10 +32,10 @@
 }
 
 .floating-controls-top { 
-    /* MODIFIED: Using CSS variable to account for the ticker's height */
     position: absolute;
     top: calc(var(--top-offset, 0px) + 20px);
-    right: 25px; z-index: 20; }
+    right: 25px; z-index: 20; 
+}
 .view-mode-toggle { 
     display: flex; background: var(--liquid-bg);
     border-radius: 20px; 
@@ -51,7 +63,6 @@
     display: flex; position: relative;
 }
 .comparison-view.side-by-side { 
-    /* MODIFIED: New layout for 3 images */
     flex-direction: column;
     gap: 10px;
     align-items: center;
@@ -169,12 +180,15 @@
     transform: translate(-50%, -50%); 
 }
 
+/* MODIFIED: Footer is no longer absolute and is now a flex item */
 .comparison-footer {
-    position: absolute;
-    bottom: calc(var(--bottom-offset, 0px) + 20px);
-    bottom: calc(var(--bottom-offset, 0px) + 20px + env(safe-area-inset-bottom));
-    left: 50%;
-    width: 90%; max-width: 900px;
+    position: relative; 
+    flex-shrink: 0; /* Prevent the footer from shrinking */
+    width: 90%; 
+    max-width: 900px;
+    margin: 10px auto; /* Give it some vertical space and center it */
+    margin-bottom: calc(var(--bottom-offset, 0px) + 15px + env(safe-area-inset-bottom));
+
     display: flex;
     justify-content: space-between; align-items: center;
     gap: 15px; background: var(--liquid-bg); padding: 12px 20px;
@@ -183,7 +197,6 @@
     -webkit-backdrop-filter: blur(var(--liquid-blur));
     border: 1px solid var(--liquid-border); z-index: 30;
     box-sizing: border-box;
-    transform: translateX(-50%);
     transition: all 0.2s ease;
 }
 .footer-left { flex: 2; display: flex;
@@ -362,8 +375,7 @@
     padding: 8px 12px;
     gap: 10px;
     border-radius: 12px;
-    bottom: calc(var(--bottom-offset, 0px) + 15px);
-    bottom: calc(var(--bottom-offset, 0px) + 15px + env(safe-area-inset-bottom));
+    margin-bottom: calc(var(--bottom-offset, 0px) + 15px + env(safe-area-inset-bottom));
   }
   
   .comparison-footer:not(.is-modal) {

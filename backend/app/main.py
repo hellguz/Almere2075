@@ -405,11 +405,8 @@ async def create_solution_image(
 ):
     """
     Endpoint to generate the solution image for an existing generation process.
-    1. Finds the existing record.
-    2. Generates the solution prompt based on the threat image.
-    3. Starts the background task to create the solution image.
+    This is now idempotent to handle rapid duplicate requests from the frontend.
     """
-    # ADDED: Logging
     print(f"Received request to generate solution for job ID: {job_id}")
     print(f"Solution tags received: {request.solution_tags}")
 
@@ -420,19 +417,24 @@ async def create_solution_image(
     
     print(f"Found generation record with status: {generation.status}")
 
+    # FIXED: Make this endpoint idempotent. If the job is already processing the solution
+    # (due to a double-click), don't throw an error. Just acknowledge the request.
+    if generation.status == db_models.JobStatus.PROCESSING:
+        print(f"Job {job_id} is already processing a solution. Acknowledging duplicate request.")
+        return {"job_id": job_id}
+    
     if generation.status != db_models.JobStatus.THREAT_COMPLETED:
         print(f"ERROR: Job {job_id} is in wrong state: {generation.status}. Required: {db_models.JobStatus.THREAT_COMPLETED.value}")
         raise HTTPException(status_code=400, detail=f"Generation job is not in the correct state ('{db_models.JobStatus.THREAT_COMPLETED.value}') to generate a solution.")
+    
     if not generation.threat_image_url:
         print(f"ERROR: Job {job_id} has no threat_image_url.")
         raise HTTPException(status_code=400, detail="Threat image URL is missing for this generation.")
     
     print(f"Proceeding to generate solution prompt for job {job_id}.")
-    # Generate Solution Prompt
-    solution_system_prompt = create_system_prompt(request.solution_tags)
-    threat_image_url_path = generation.threat_image_url # This is 'images/generated/...'
     
-    # We pass the relative path to resolve_image_to_data_url
+    solution_system_prompt = create_system_prompt(request.solution_tags)
+    threat_image_url_path = generation.threat_image_url
     image_data_url = resolve_image_to_data_url(threat_image_url_path)
 
     response = openai.chat.completions.create(
@@ -451,7 +453,6 @@ async def create_solution_image(
     db.commit()
 
     db_for_task = database.SessionLocal()
-    # Pass the relative path of the threat image to the task
     background_tasks.add_task(run_solution_generation_task, job_id, threat_image_url_path, solution_prompt, db_for_task)
     
     print(f"Successfully launched solution generation task for job {job_id}.")
