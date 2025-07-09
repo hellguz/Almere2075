@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../../config';
 import type { GenerationDetails } from '../../types';
 import './TutorialModal.css';
@@ -18,9 +18,6 @@ interface TutorialModalProps {
  * @returns {JSX.Element | null} The rendered TutorialModal component or null.
  */
 const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => {
-    const sliderContainerRef = useRef<HTMLDivElement>(null);
-    const [clipPosition, setClipPosition] = useState(50);
-    
     const [originalImageUrl, setOriginalImageUrl] = useState<string>(FALLBACK_ORIGINAL_URL);
     const [generatedImageUrl, setGeneratedImageUrl] = useState<string>(FALLBACK_GENERATED_URL);
 
@@ -30,7 +27,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => 
                 try {
                     const response = await fetch(`${API_BASE_URL}/random-generation?dataset=weimar`);
                     if (!response.ok) {
-                         throw new Error(`Failed to fetch random generation: ${response.status}`);
+                        throw new Error(`Failed to fetch random generation: ${response.status}`);
                     }
                     const item: GenerationDetails = await response.json();
                     
@@ -49,36 +46,22 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => 
         }
     }, [isVisible]);
 
-    const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
-        if (!sliderContainerRef.current) return;
-        const rect = sliderContainerRef.current.getBoundingClientRect();
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        if (clientX === undefined) return;
-        setClipPosition(Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)));
-    };
-
     if (!isVisible) return null;
 
     return (
         <div className={`tutorial-modal-overlay ${isVisible ? 'visible' : ''}`} onClick={onClose}>
             <div className="tutorial-modal-content" onClick={(e) => e.stopPropagation()}>
 
-                <div 
-                    className="tutorial-slider-container" 
-                    ref={sliderContainerRef} 
-                    onMouseMove={handleSliderMove} 
-                    onTouchMove={handleSliderMove}
-                >
+                <div className={`tutorial-slider-container ${isVisible ? 'is-animating' : ''}`}>
                     <div className="image-panel" style={{ backgroundImage: `url("${originalImageUrl}")` }}></div>
                     <div 
                         className="image-panel after-image" 
                         style={{ 
-                            backgroundImage: `url("${generatedImageUrl}")`, 
-                            clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` 
+                            backgroundImage: `url("${generatedImageUrl}")`,
                         }}
                     ></div>
-                    <div className="slider-line" style={{ left: `${clipPosition}%` }}>
-                      <div className="slider-handle"></div>
+                    <div className="slider-line">
+                       <div className="slider-handle"></div>
                     </div>
                 </div>
 
@@ -89,7 +72,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => 
                     <p>
                         <b>The process is a two-step transformation:</b>
                         <br />
-                        <b><span style={{color: 'var(--color-error)'}}>1. VISUALIZE THE CRISIS:</span></b> First, select a "Crisis" tag (like Extreme Flooding) to see how a potential threat could impact a city if no action is taken.
+                        <b><span style={{color: 'var(--color-error)'}}>1. VISUALIZE THE CRISIS:</span></b> First, select one or more "Crisis" tags (like Extreme Flooding) to see how potential threats could impact a city if no action is taken.
                         <br />
                         <b><span style={{color: 'var(--color-system)'}}>2. ARCHITECT THE SOLUTION:</span></b> Next, from that crisis image, choose one or more "Solution" concepts (like Sponge Parks or Modular Housing) to generate a vision of a resilient, adapted future.
                     </p>

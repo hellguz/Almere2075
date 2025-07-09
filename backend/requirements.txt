@@ -12,6 +12,6 @@ SQLAlchemy
 requests
 # ADDED: Process manager to run multiple workers in development
 gunicorn
-
-
+# ADDED: For HEIC/HEIF image format support
+pillow-heif
 

@@ -18,6 +18,7 @@ import replicate
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from typing import List
 
 from . import db_models, models, database
 from .ai_prompts import AVAILABLE_TAGS, AVAILABLE_THREAT_TAGS, create_system_prompt, create_threat_system_prompt
@@ -132,7 +133,7 @@ def create_thumbnail(image_path: Path, thumbnail_dir: Path):
     except Exception as e:
         print(f"Error creating thumbnail for {image_path.name}: {e}")
 
-def run_full_threat_generation_pipeline(job_id: str, image_string_from_request: str, threat_tag: str, db: Session):
+def run_full_threat_generation_pipeline(job_id: str, image_string_from_request: str, threat_tags: List[str], db: Session):
     """
     A long-running background task that orchestrates the entire threat generation.
     1. Generates a creative prompt using OpenAI.
@@ -150,8 +151,8 @@ def run_full_threat_generation_pipeline(job_id: str, image_string_from_request: 
 
     try:
         # --- 1. Generate Threat Prompt (formerly in the main endpoint) ---
-        print(f"[{job_id}] Generating threat prompt for tag: {threat_tag}...")
-        threat_system_prompt = create_threat_system_prompt([threat_tag])
+        print(f"[{job_id}] Generating threat prompt for tags: {threat_tags}...")
+        threat_system_prompt = create_threat_system_prompt(threat_tags)
         image_data_url = resolve_image_to_data_url(image_string_from_request)
         
         response = openai.chat.completions.create(
@@ -396,7 +397,7 @@ async def create_generation_and_threat(
         dataset=request.dataset,
         original_image_filename=final_image_filename_for_db,
         original_image_thumb_url=original_thumb_url_for_db,
-        threat_tags_used=[tag['name'] for tag in AVAILABLE_THREAT_TAGS if tag['id'] == request.threat_tag],
+        threat_tags_used=[tag['name'] for tag in AVAILABLE_THREAT_TAGS if tag['id'] in request.threat_tags],
         status=db_models.JobStatus.PENDING
     )
     db.add(new_generation)
@@ -411,7 +412,7 @@ async def create_generation_and_threat(
         run_full_threat_generation_pipeline, 
         job_id, 
         request.imageBase64, 
-        request.threat_tag,
+        request.threat_tags,
         db_for_task
     )
     

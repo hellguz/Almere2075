@@ -110,16 +110,28 @@
     height: 100%;
     min-width: 0;
     background-color: transparent;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column; /* Allow content below image */
+    align-items: center;
+    justify-content: center;
+    gap: 10px; /* Space between image and description */
+}
+
+.image-panel .image-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
+
 
 .image-panel img {
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain;
+    object-fit: contain; /* Ensures full image is visible */
     border-radius: 8px;
 }
 
@@ -129,48 +141,6 @@
     aspect-ratio: 16 / 9;
     max-width: 33%;
 }
-
-.arrow-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 5;
-    overflow: hidden;
-}
-
-.arrow {
-    position: absolute;
-    width: 2px;
-    height: 100px;
-    background: white;
-    transform-origin: top center;
-}
-
-.arrow.threat {
-    top: 50%;
-    left: 50%;
-}
-
-.arrow.solution {
-    top: 50%;
-    left: 50%;
-}
-
-.arrow::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: -4px;
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 10px solid white;
-}
-
 
 .image-header {
     font-size: 12px;
@@ -187,29 +157,38 @@
     z-index: 5;
 }
 
-.image-tag-overlay {
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+/* MODIFIED: New styles for the description area below images */
+.image-description {
+    flex-shrink: 0;
     display: flex;
-    gap: 15px;
-    padding: 10px 20px;
-    background: var(--liquid-bg);
-    border: 1px solid var(--liquid-border);
-    border-radius: 16px;
-    backdrop-filter: blur(var(--liquid-blur));
-    -webkit-backdrop-filter: blur(var(--liquid-blur));
-    z-index: 5;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap; /* Allow tags to wrap */
+    justify-content: center;
+    padding: 5px 0;
+}
+
+.image-description .tag-chip {
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid transparent;
     white-space: nowrap;
 }
 
-.image-tag-overlay .tag-chip {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--color-text-primary);
+.image-description.threat-tags .tag-chip {
+    background-color: rgba(255, 69, 58, 0.15);
+    border-color: rgba(255, 69, 58, 0.4);
+    color: #FF453A;
 }
 
+.image-description.solution-tags .tag-chip {
+    background-color: rgba(10, 132, 255, 0.15);
+    border-color: rgba(10, 132, 255, 0.4);
+    color: #0A84FF;
+}
 
 .comparison-view.slider-mode {
     position: relative;
@@ -221,6 +200,7 @@
     position: absolute;
     top: 0;
     left: 0;
+    gap: 0; /* No gap in slider mode */
 }
 
 .slider-mode .image-panel.after-image {

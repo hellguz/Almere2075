@@ -38,12 +38,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
     const [clipPosition, setClipPosition] = useState(50);
     const [creatorName, setCreatorName] = useState('');
     const [nameSaved, setNameSaved] = useState(false);
-    // Refs for arrow calculations
-    const sbsWrapperRef = useRef<HTMLDivElement>(null);
-    const threatPanelRef = useRef<HTMLDivElement>(null);
-    const solutionPanelRef = useRef<HTMLDivElement>(null);
-    const originalPanelRef = useRef<HTMLDivElement>(null);
-    const [arrowStyles, setArrowStyles] = useState({ threat: {}, solution: {} });
 
     useEffect(() => {
         if (isVisible && !isModal && viewRef.current) {
@@ -64,49 +58,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
             setNameSaved(!!generationDetails.creator_name);
         }
     }, [generationDetails]);
-
-    // Effect to calculate arrow positions for side-by-side view
-    useEffect(() => {
-        if (mode === 'side-by-side' && isVisible && sbsWrapperRef.current && threatPanelRef.current && solutionPanelRef.current && originalPanelRef.current) {
-            const calculateArrows = () => {
-                const containerRect = sbsWrapperRef.current!.getBoundingClientRect();
-                if (!containerRect.width) return; // Don't calculate if not rendered
-
-                const threatRect = threatPanelRef.current!.getBoundingClientRect();
-                const solutionRect = solutionPanelRef.current!.getBoundingClientRect();
-                const originalRect = originalPanelRef.current!.getBoundingClientRect();
-
-                const getArrowStyle = (targetRect: DOMRect, originSide: 'left' | 'right') => {
-                    const startX = (originSide === 'left' ? originalRect.left : originalRect.right) - containerRect.left;
-                    const startY = originalRect.top + originalRect.height/2 - containerRect.top;
-                    const endX = targetRect.left + targetRect.width / 2 - containerRect.left;
-                    const endY = targetRect.top + targetRect.height - containerRect.top;
-                    const dx = endX - startX;
-                    const dy = endY - startY;
-                    const length = Math.sqrt(dx * dx + dy * dy);
-                    const angle = Math.atan2(dy, dx) * 180 / Math.PI - 90;
-                    return {
-                        left: `${startX}px`,
-                        top: `${startY}px`,
-                        height: `${length}px`,
-                        transform: `rotate(${angle}deg)`,
-                    };
-                };
-                
-                setArrowStyles({
-                    threat: getArrowStyle(threatRect, 'left'),
-                    solution: getArrowStyle(solutionRect, 'right'),
-                });
-            };
-            
-            const timer = setTimeout(calculateArrows, 50);
-            window.addEventListener('resize', calculateArrows);
-            return () => {
-                clearTimeout(timer);
-                window.removeEventListener('resize', calculateArrows);
-            }
-        }
-    }, [mode, generationDetails, isVisible]);
 
     const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
         if (!sliderContainerRef.current) return;
@@ -146,32 +97,34 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                 <div className="comparison-main-area">
                     <div className="comparison-view-wrapper">
                         {mode === 'side-by-side' ? (
-                            <div className="comparison-view side-by-side" ref={sbsWrapperRef}>
+                            <div className="comparison-view side-by-side">
                                 <div className="sbs-top-row">
-                                    <div ref={threatPanelRef} className="image-panel">
-                                        <img src={threatImageUrl} alt="Crisis" />
-                                        <div className="image-header">CRISIS</div>
-                                        <div className="image-tag-overlay">
+                                    <div className="image-panel">
+                                        <div className="image-container">
+                                            <img src={threatImageUrl} alt="Crisis" />
+                                            <div className="image-header">CRISIS</div>
+                                        </div>
+                                        <div className="image-description threat-tags">
                                             {generationDetails.threat_tags_used?.map(tag => <span key={tag} className="tag-chip">{tag}</span>)}
                                         </div>
                                     </div>
-                                    <div ref={solutionPanelRef} className="image-panel">
-                                        <img src={solutionImageUrl} alt="Solution" />
-                                        <div className="image-header">SOLUTION</div>
-                                        <div className="image-tag-overlay">
+                                    <div className="image-panel">
+                                        <div className="image-container">
+                                            <img src={solutionImageUrl} alt="Solution" />
+                                            <div className="image-header">SOLUTION</div>
+                                        </div>
+                                        <div className="image-description solution-tags">
                                             {generationDetails.tags_used?.map(tag => <span key={tag} className="tag-chip">{tag}</span>)}
                                         </div>
                                     </div>
                                 </div>
                                 <div className="sbs-bottom-row">
-                                    <div ref={originalPanelRef} className="image-panel">
-                                        <img src={originalImageUrl} alt="Original" />
-                                        <div className="image-header">ORIGINAL</div>
+                                    <div className="image-panel">
+                                        <div className="image-container">
+                                            <img src={originalImageUrl} alt="Original" />
+                                            <div className="image-header">ORIGINAL</div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="arrow-container">
-                                    <div className="arrow threat" style={arrowStyles.threat}></div>
-                                    <div className="arrow solution" style={arrowStyles.solution}></div>
                                 </div>
                             </div>
                         ) : (

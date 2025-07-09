@@ -38,19 +38,12 @@ services:
       # Expose port 8000 for the FastAPI server
       - "8000"
     restart: unless-stopped
-    # MODIFIED: Switched from uvicorn to gunicorn to handle multiple concurrent
-    # requests in development, preventing the server from getting "stuck"
-    # during long AI tasks. This mimics the production setup while keeping hot-reloading.
-    #
-    # FIXED: The command now executes startup.py before launching the Gunicorn
-    # server, ensuring thumbnails are generated in the dev environment.
+    # MODIFIED: The command now uses a gunicorn config file (-c) which is cleaner
+    # and allows us to specify directories to exclude from hot-reloading. This
+    # prevents the image compression script from triggering a server restart loop.
     command: >
       sh -c "python startup.py &&
-      gunicorn app.main:app
-      --workers 8
-      --worker-class uvicorn.workers.UvicornWorker
-      --bind 0.0.0.0:8000
-      --reload"
+      gunicorn -c gunicorn_conf.py app.main:app"
 
   frontend:
     build:
@@ -76,3 +69,4 @@ services:
 networks:
   almere-net:
     driver: bridge
+

@@ -50,7 +50,6 @@
     align-self: center;
     border-radius: 8px;
     overflow: hidden;
-    cursor: ew-resize;
     border: 1px solid var(--liquid-border);
 }
 
@@ -64,6 +63,34 @@
     background-size: contain;
     background-position: center;
     background-repeat: no-repeat;
+}
+
+/* MODIFIED: Auto-animation for slider */
+@keyframes auto-slide {
+    from { left: 0%; }
+    to { left: 100%; }
+}
+
+@keyframes auto-clip-reveal {
+    from { clip-path: polygon(0 0, 0% 0, 0% 100%, 0 100%); }
+    to { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+}
+
+.tutorial-slider-container .slider-line,
+.tutorial-slider-container .after-image {
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: ease-in-out;
+}
+
+.tutorial-slider-container.is-animating .slider-line {
+    animation-name: auto-slide;
+    animation-duration: 8s;
+}
+
+.tutorial-slider-container.is-animating .after-image {
+    animation-name: auto-clip-reveal;
+    animation-duration: 8s;
 }
 
 .tutorial-slider-container .slider-line {

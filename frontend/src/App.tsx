@@ -80,7 +80,7 @@ function App() {
                   <button className="community-gallery-button" onClick={() => actions.setState('view', 'community_gallery')}>COMMUNITY GALLERY</button>
               )}
             </div>
-         </header>
+        </header>
 
         <main>
           <GalleryView 
@@ -100,8 +100,8 @@ function App() {
               onGenerateThreat={actions.handleGenerateThreat}
               onGenerateSolution={actions.handleGenerateSolution}
               availableThreatTags={state.availableThreatTags}
-              selectedThreatTag={state.selectedThreatTag}
-              onThreatTagSelect={actions.selectThreatTag}
+              selectedThreatTags={state.selectedThreatTags}
+              onThreatTagToggle={actions.toggleThreatTag}
               availableSolutionTags={state.availableSolutionTags}
               selectedSolutionTags={state.selectedSolutionTags}
               onSolutionTagToggle={actions.toggleSolutionTag}

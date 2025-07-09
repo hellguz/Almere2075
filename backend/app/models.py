@@ -13,7 +13,7 @@ class GeneratePromptRequest(BaseModel):
 
 class CreateGenerationRequest(BaseModel):
     imageBase64: str
-    threat_tag: str
+    threat_tags: List[str]
     original_filename: str
     dataset: str
 

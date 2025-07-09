@@ -22,10 +22,13 @@ export interface StoreState {
     communityGalleryItems: GenerationDetails[];
     availableThreatTags: Tag[];
     availableSolutionTags: Tag[];
-    selectedThreatTag: string | null;
+    selectedThreatTags: string[]; // MODIFIED: now an array for multiple selections
     selectedSolutionTags: string[];
     modalItem: GenerationDetails | null;
     pollingRef: React.MutableRefObject<number | null>;
+    // ADDED: state to track if prompts have been logged to prevent duplicates
+    threatPromptLogged: boolean;
+    solutionPromptLogged: boolean;
 }
 
 // Define the shape of the actions
@@ -35,7 +38,7 @@ export interface StoreActions {
     addLogMessage: (text: string, type?: LogMessage['type']) => void;
     resetForNewTransform: () => void;
     startTransform: (sourceImage: SourceImage) => void;
-    selectThreatTag: (tagId: string) => void;
+    toggleThreatTag: (tagId: string) => void; // MODIFIED: New action for toggling
     toggleSolutionTag: (tagId: string) => void;
     openModal: (item: GenerationDetails) => void;
     closeModal: () => void;
@@ -58,6 +61,7 @@ export interface StoreActions {
 
 const formatTime = (): string => new Date().toLocaleTimeString('en-GB');
 const isMobile = window.innerWidth <= 768;
+
 type FullStore = StoreState & { actions: StoreActions };
 type StoreCreator = (set: StoreApi<FullStore>['setState'], get: StoreApi<FullStore>['getState']) => FullStore;
 
@@ -76,8 +80,9 @@ const storeCreator: StoreCreator = (set, get) => {
             if (pollingRef.current) clearInterval(pollingRef.current);
             set({
                 sourceImageForTransform: null, threatImageForTransform: null, isProcessing: false, logMessages: [],
-                jobId: null, generationDetails: null, isCommunityItem: false, selectedThreatTag: null, selectedSolutionTags: [],
-                transformStep: 'threat', view: 'gallery'
+                jobId: null, generationDetails: null, isCommunityItem: false, selectedThreatTags: [], selectedSolutionTags: [],
+                transformStep: 'threat', view: 'gallery',
+                threatPromptLogged: false, solutionPromptLogged: false // Reset logging flags
             })
         },
         startTransform: (sourceImage) => {
@@ -85,7 +90,11 @@ const storeCreator: StoreCreator = (set, get) => {
             set({ sourceImageForTransform: sourceImage, view: 'transform', transformStep: 'threat' });
             actions.addLogMessage(`Source selected: ${sourceImage.name}`);
         },
-        selectThreatTag: (tagId) => set({ selectedThreatTag: tagId }),
+        toggleThreatTag: (tagId) => set(state => ({
+            selectedThreatTags: state.selectedThreatTags.includes(tagId)
+                ? state.selectedThreatTags.filter(t => t !== tagId)
+                : [...state.selectedThreatTags, tagId]
+        })),
         toggleSolutionTag: (tagId) => set(state => ({
             selectedSolutionTags: state.selectedSolutionTags.includes(tagId)
                 ? state.selectedSolutionTags.filter(t => t !== tagId)
@@ -162,6 +171,18 @@ const storeCreator: StoreCreator = (set, get) => {
                     return;
                 }
 
+                // Log threat prompt when it becomes available
+                if (data.generation_data?.threat_prompt_text && !currentState.threatPromptLogged) {
+                    actions.addLogMessage('CRISIS PROMPT:\n' + data.generation_data.threat_prompt_text, 'data');
+                    set({ threatPromptLogged: true });
+                }
+
+                // Log solution prompt when it becomes available
+                if (data.generation_data?.prompt_text && !currentState.solutionPromptLogged) {
+                    actions.addLogMessage('SOLUTION PROMPT:\n' + data.generation_data.prompt_text, 'data');
+                    set({ solutionPromptLogged: true });
+                }
+
                 if (data.status === 'pending' || data.status === 'processing') {
                     if (!currentState.isProcessing) set({ isProcessing: true });
                 }
@@ -196,8 +217,8 @@ const storeCreator: StoreCreator = (set, get) => {
             }, POLLING_INTERVAL);
         },
         handleGenerateThreat: async () => {
-            const { sourceImageForTransform, selectedThreatTag, dataset } = get();
-            if (!sourceImageForTransform || !selectedThreatTag) return;
+            const { sourceImageForTransform, selectedThreatTags, dataset } = get();
+            if (!sourceImageForTransform || selectedThreatTags.length === 0) return;
             
             set({ isProcessing: true, logMessages: [{time: formatTime(), text: '--- Initiating Transformation Protocol ---', type: 'system'}]});
             try {
@@ -206,7 +227,7 @@ const storeCreator: StoreCreator = (set, get) => {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         imageBase64: sourceImageForTransform.url, 
-                        threat_tag: selectedThreatTag,
+                        threat_tags: selectedThreatTags, // MODIFIED: send array
                         original_filename: sourceImageForTransform.name,
                         dataset: dataset
                     }) 
@@ -214,8 +235,7 @@ const storeCreator: StoreCreator = (set, get) => {
                 if (!threatResponse.ok) throw new Error(`Threat generation submission failed: ${threatResponse.statusText}`);
                 const { job_id } = await threatResponse.json();
                 set({ jobId: job_id });
-                actions.addLogMessage('Job submitted with ID: ${job_id}.');
-                // FIXED: Corrected the unterminated string literal.
+                actions.addLogMessage(`Job submitted with ID: ${job_id}.`);
                 actions.addLogMessage('Step 2/4: Awaiting threat image...');
                 actions.pollJobStatus(job_id);
             } catch (err) {
@@ -225,7 +245,6 @@ const storeCreator: StoreCreator = (set, get) => {
         },
         handleGenerateSolution: async () => {
             const { jobId, selectedSolutionTags, transformStep } = get();
-            
             if (transformStep !== 'solution' || !jobId) {
                 console.warn("handleGenerateSolution called in wrong state:", { transformStep, jobId });
                 return;
@@ -238,7 +257,6 @@ const storeCreator: StoreCreator = (set, get) => {
                     method: 'PUT', headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ solution_tags: selectedSolutionTags }) 
                 });
-                
                 if (!solutionResponse.ok) {
                     const errorData = await solutionResponse.json();
                     throw new Error(errorData.detail || `Solution generation submission failed: ${solutionResponse.statusText}`);
@@ -334,10 +352,12 @@ const storeCreator: StoreCreator = (set, get) => {
         communityGalleryItems: [],
         availableThreatTags: [],
         availableSolutionTags: [],
-        selectedThreatTag: null,
+        selectedThreatTags: [],
         selectedSolutionTags: [],
         modalItem: null,
         pollingRef: React.createRef(),
+        threatPromptLogged: false,
+        solutionPromptLogged: false,
         actions,
     };
 };

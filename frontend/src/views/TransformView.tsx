@@ -13,8 +13,8 @@ interface TransformViewProps {
     onGenerateThreat: () => void;
     onGenerateSolution: () => void;
     availableThreatTags: Tag[];
-    selectedThreatTag: string | null;
-    onThreatTagSelect: (tagId: string) => void;
+    selectedThreatTags: string[]; // MODIFIED: Changed from single string
+    onThreatTagToggle: (tagId: string) => void; // MODIFIED: Changed from onThreatTagSelect
     availableSolutionTags: Tag[];
     selectedSolutionTags: string[];
     onSolutionTagToggle: (tagId: string) => void;
@@ -35,8 +35,8 @@ const TransformView: React.FC<TransformViewProps> = ({
     onGenerateThreat,
     onGenerateSolution,
     availableThreatTags,
-    selectedThreatTag,
-    onThreatTagSelect,
+    selectedThreatTags,
+    onThreatTagToggle,
     availableSolutionTags,
     selectedSolutionTags,
     onSolutionTagToggle,
@@ -78,18 +78,18 @@ const TransformView: React.FC<TransformViewProps> = ({
                                 <span className="step-number">1</span>
                                 VISUALIZE THE CRISIS
                             </div>
-                            <p className="transform-step-description">Select a single crisis to see its potential impact on the city.</p>
+                            <p className="transform-step-description">Select one or more crisis scenarios to see their potential impact on the city.</p>
                             <TagSelector 
                                 title=""
                                 tags={availableThreatTags} 
-                                selectedTags={selectedThreatTag ? [selectedThreatTag] : []} 
-                                onTagToggle={onThreatTagSelect}
-                                singleSelection={true}
+                                selectedTags={selectedThreatTags} 
+                                onTagToggle={onThreatTagToggle}
+                                singleSelection={false}
                             />
                             <button 
                                 className="transform-action-button" 
                                 onClick={onGenerateThreat} 
-                                disabled={isProcessing || !selectedThreatTag}
+                                disabled={isProcessing || selectedThreatTags.length === 0}
                             >
                                 {isProcessing ? 'GENERATING CRISIS...' : 'GENERATE CRISIS IMAGE'}
                             </button>

@@ -77,8 +77,9 @@ AVAILABLE_THREAT_TAGS = [
 ]
 
 # REVISED: Descriptions modified to remove depictions of human suffering.
+# MODIFIED: Flash flood prompt made more intense.
 THREAT_KNOWLEDGE_BASE = {
-    "extreme-flooding": "Visibly rushing, murky brown water at 1-2 meters deep, powerful enough to dislodge street furniture. Geysers of water erupt from overwhelmed manhole covers. A permanent, dirty 'waterline' stain with algae is visible on all building facades up to the second floor. Ground floor windows are shattered or hastily boarded with plywood.",
+    "extreme-flooding": "A violent, catastrophic flash flood. The streets are transformed into a raging torrent of churning, muddy brown water, at least 2 meters deep. The powerful current smashes against buildings, with visible debris like trash cans and dislodged signage caught in the flow. Cars are almost completely submerged, with only their roofs visible. A grimy, permanent 'waterline' with algae is visible on all building facades up to the second floor, indicating repeated, severe flooding. All ground floor windows and doors are shattered or boarded up with anything available, showing signs of structural damage.",
     "resource-scarcity": "Storefronts are crudely boarded up or replaced with makeshift stalls for bartering goods. Cars are stripped for parts, sitting on cinder blocks with missing wheels and doors. Patches of mismatched materials (salvaged corrugated metal, rough wood, plastic sheeting) cover holes in building facades. Long, orderly queues of people wait outside a fortified resource distribution point.",
     "housing-crisis": "Dense, sprawling encampments made of tarps, scrap wood, and old tents fill any available public space like parks or plazas. People are visibly living in abandoned vehicles. Balconies and windows of existing buildings are cluttered with makeshift corrugated metal extensions, tarps for rain protection, and laundry lines, showing severe overcrowding.",
     "urban-heat-island": "A hazy, yellow-white sky with oppressive, overexposed sunlight. A visible shimmering heat-haze rises from asphalt roads, which have buckled or show soft, tar-like patches. All plant life is withered, yellow, and dry. Public spaces are eerily deserted as people have taken shelter indoors. Add makeshift sun-shades made of fabric scraps strung between buildings.",
@@ -88,10 +89,8 @@ THREAT_KNOWLEDGE_BASE = {
 def create_threat_system_prompt(tags: list[str]) -> str:
     """
     Generates the system prompt for the threat visualization AI.
-
     Args:
         tags: A list of threat tag IDs selected by the user.
-
     Returns:
         A string containing the complete system prompt for threat visualization.
     """
@@ -179,10 +178,8 @@ def create_system_prompt(tags: list[str]) -> str:
     This function generates the final, definitive system prompt for the GPT model.
     It combines a strict "Preservation First" structure with rich concept details
     and a carefully balanced level of creative freedom for the AI.
-
     Args:
         tags: A list of tag IDs selected by the user.
-
     Returns:
         A string containing the complete system prompt for the AI.
     """
@@ -246,7 +243,6 @@ Your primary objective is to generate a recognizable *edit* of the original phot
 * **Mandatory Vehicle Removal:** All contemporary cars, vans, etc. MUST be removed.
 * **Be Spatially Specific:** Use clear directional language (e.g., 'the building on the far left', 'the foreground cobblestones').
 * **Existing People:** Do not remove or change any original people in the photo.
-
 **Core Philosophy: Your Guiding Principles**
 
 * **Identify and Protect Anchors:** First, identify the most unique or recognizable elements. This could be a historic landmark, a highly decorated facade, a unique modern building, or a structural element (like a stone archway). These are 'anchors'. Your prompt **MUST** explicitly state that these anchors are to be preserved untouched.
