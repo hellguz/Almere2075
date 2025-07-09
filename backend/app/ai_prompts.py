@@ -14,7 +14,7 @@ AVAILABLE_TAGS = [
     {
         "id": "modular-housing",
         "name": "Modular & Adaptive Housing",
-        "description": "Attaches new, lightweight modular housing units to the facades or roofs of existing buildings, or creates new, easily reconfigurable settlements."
+        "description": "Attaches new, lightweight modular housing units to the facades of existing buildings, creating a layered, revitalized look."
     },
     {
         "id": "amphibious-architecture",
@@ -22,9 +22,9 @@ AVAILABLE_TAGS = [
         "description": "Redesigns buildings and infrastructure in high-risk zones to be amphibious or float, allowing them to rise and fall with water levels."
     },
     {
-        "id": "rescue-towers-pods",
-        "name": "Rescue Towers & Aid Pods",
-        "description": "Introduces a central, self-sufficient tower for crisis management that deploys autonomous floating pods for aid delivery during emergencies."
+        "id": "urban-survival-tower",
+        "name": "Urban Survival Tower",
+        "description": "A central, self-sufficient lattice tower that deploys autonomous, solar-powered pods for emergency aid (food, healthcare) and daily city functions."
     },
     {
         "id": "circular-economy-hubs",
@@ -35,17 +35,23 @@ AVAILABLE_TAGS = [
         "id": "elevated-infrastructure",
         "name": "Elevated Walkways & Bridges",
         "description": "Constructs a new network of elevated pedestrian paths and bridges to ensure connectivity between buildings during major flood events."
+    },
+    {
+        "id": "vertical-densification",
+        "name": "Vertical Densification",
+        "description": "Adds new, lightweight modular floors on top of existing buildings or constructs new, slender residential towers on underused land."
     }
 ]
 
 CONCEPT_KNOWLEDGE_BASE = {
     "sponge-parks-canals": "Replace entire asphalt streets or concrete plazas with sunken, terraced wetland parks. These feature lush native grasses, reeds, and water-loving plants. A central channel of clear, flowing water meanders through the park, crossed by elegant wooden or lightweight metal arch bridges that connect directly to building entrances. The edges of the park are defined by terraced stone or concrete seating areas integrated into the landscape.",
     "urban-farming": "Replace a generic building with a striking vertical farm tower with a glass facade revealing tiers of glowing pink and blue LED-lit hydroponics. Alternatively, transform entire building facades into 'green walls' for agriculture, with visible steel-and-glass irrigation systems and modular planting pockets growing vibrant vegetables and fruits.",
-    "modular-housing": "Attach sleek, prefabricated modules made of cross-laminated timber, recycled aluminum, and smart glass to existing facades or rooftops. These modules have large bay windows and small, verdant balconies. They are connected by a network of lightweight, external staircases and walkways, creating a visually complex, layered architectural look that contrasts with the original structure beneath.",
+    "modular-housing": "Attach sleek, prefabricated modules made of cross-laminated timber, recycled aluminum, and smart glass to existing building facades. These modules have large bay windows and small, verdant balconies. They are connected by a network of lightweight, external staircases and walkways, creating a visually complex, layered architectural look that contrasts with the original structure beneath.",
     "amphibious-architecture": "Retrofit existing ground floors into open, floodable plinths with the main building visibly elevated on robust hydraulic stilts or a wide floating pontoon base. The ground level becomes a water plaza or a wet-park with reeds and boardwalks. Access to buildings is via elegant, articulated ramps and bridges that connect to a higher-level pedestrian network.",
-    "rescue-towers-pods": "Introduce a single, slender, multi-functional tower that rises high above the existing skyline. Its facade features a metallic exoskeleton, visible drone landing pads, and large rainwater funnels. At its base, autonomous aid pods—sleek, white, semi-submersible vehicles—are docked in glowing alcoves, ready for deployment.",
+    "urban-survival-tower": "Introduce a single, tall, and slender 'Urban Survival Tower' with a complex structural lattice frame made of wood or weathered steel. The tower is covered in spherical, pod-like, truncated octahedron modules with integrated solar panels. These pods dock at various points along the tower's height. Some pods are shown autonomously flying or floating away from the tower, suggesting deployment for emergency aid (healthcare, nutrition, waste collection). The tower itself integrates air cleaning systems, rainwater collectors, and vertical greenery within its structure.",
     "circular-economy-hubs": "Convert a building's entire ground floor into a 'Maker & Repair Hub' with a fully transparent glass facade. Inside, community members use 3D printers, laser cutters, and repair benches. Shelves are neatly stacked with sorted recycled materials (plastics, metals, textiles) and finished upcycled products. The space is brightly lit and active with people.",
-    "elevated-infrastructure": "Construct a network of sleek, covered walkways at the second or third-story level, connecting directly into buildings. These walkways are made of semi-translucent materials and have integrated glowing light strips. Below, the original street level is transformed into a green corridor, a canal, or a service route for autonomous delivery bots, creating a multi-layered city."
+    "elevated-infrastructure": "Construct a network of sleek, covered walkways at the second or third-story level, connecting directly into buildings. These walkways are made of semi-translucent materials and have integrated glowing light strips. Below, the original street level is transformed into a green corridor, a canal, or a service route for autonomous delivery bots, creating a multi-layered city.",
+    "vertical-densification": "Surgically add several new floors on top of existing buildings using lightweight, modular construction systems like cross-laminated timber or recycled aluminum. These new levels can have different, modern facades from the host building below. Alternatively, construct new, slender residential towers on vacant lots or former parking areas, featuring green balconies and advanced materials."
 }
 
 AVAILABLE_THREAT_TAGS = [
@@ -76,8 +82,6 @@ AVAILABLE_THREAT_TAGS = [
     }
 ]
 
-# REVISED: Descriptions modified to remove depictions of human suffering.
-# MODIFIED: Flash flood prompt made more intense.
 THREAT_KNOWLEDGE_BASE = {
     "extreme-flooding": "A violent, catastrophic flash flood. The streets are transformed into a raging torrent of churning, muddy brown water, at least 2 meters deep. The powerful current smashes against buildings, with visible debris like trash cans and dislodged signage caught in the flow. Cars are almost completely submerged, with only their roofs visible. A grimy, permanent 'waterline' with algae is visible on all building facades up to the second floor, indicating repeated, severe flooding. All ground floor windows and doors are shattered or boarded up with anything available, showing signs of structural damage.",
     "resource-scarcity": "Storefronts are crudely boarded up or replaced with makeshift stalls for bartering goods. Cars are stripped for parts, sitting on cinder blocks with missing wheels and doors. Patches of mismatched materials (salvaged corrugated metal, rough wood, plastic sheeting) cover holes in building facades. Long, orderly queues of people wait outside a fortified resource distribution point.",
@@ -213,12 +217,14 @@ def create_system_prompt(tags: list[str]) -> str:
         palette_section.append("  * Modular & Adaptive Housing: " + CONCEPT_KNOWLEDGE_BASE["modular-housing"])
     if "amphibious-architecture" in tags:
         palette_section.append("  * Amphibious & Floating Buildings: " + CONCEPT_KNOWLEDGE_BASE["amphibious-architecture"])
-    if "rescue-towers-pods" in tags:
-        palette_section.append("  * Rescue Towers & Aid Pods: " + CONCEPT_KNOWLEDGE_BASE["rescue-towers-pods"])
+    if "urban-survival-tower" in tags:
+        palette_section.append("  * Urban Survival Tower: " + CONCEPT_KNOWLEDGE_BASE["urban-survival-tower"])
     if "circular-economy-hubs" in tags:
         palette_section.append("  * Circular Economy Hubs: " + CONCEPT_KNOWLEDGE_BASE["circular-economy-hubs"])
     if "elevated-infrastructure" in tags:
         palette_section.append("  * Elevated Walkways & Bridges: " + CONCEPT_KNOWLEDGE_BASE["elevated-infrastructure"])
+    if "vertical-densification" in tags:
+        palette_section.append("  * Vertical Densification: " + CONCEPT_KNOWLEDGE_BASE["vertical-densification"])
 
     if not tags:
         palette_section.append("  * General lush greenery, sustainable modern architecture, and water features.")
