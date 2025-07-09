@@ -86,9 +86,6 @@ def resolve_image_to_data_url(image_string: str) -> str:
         # Input is already a Data URL, return it as is.
         return image_string
     
-    # FIXED: Refactored the path resolution to be more robust.
-    # It now correctly handles various path formats (e.g., /api/images/..., images/...)
-    # without risk of duplicating path segments.
     path_part = image_string
     if path_part.startswith('/api/images/'):
         path_part = path_part.replace('/api/images/', '', 1)
@@ -98,7 +95,6 @@ def resolve_image_to_data_url(image_string: str) -> str:
     file_path = IMAGES_DIR / Path(path_part)
 
     if not file_path.is_file():
-        # ADDED: Enhanced error logging to show the problematic input string.
         raise FileNotFoundError(f"Image file not found: {file_path}. Original string was: '{image_string}'")
 
     with open(file_path, "rb") as image_file:
@@ -123,7 +119,6 @@ def create_thumbnail(image_path: Path, thumbnail_dir: Path):
         thumbnail_path = thumbnail_dir / f"{image_path.stem}.jpeg"
         if thumbnail_path.exists(): return
         with Image.open(image_path) as img:
-            # FIXED: Apply EXIF orientation data to fix rotation issues on portrait images.
             img = ImageOps.exif_transpose(img)
             
             img.thumbnail(THUMBNAIL_SIZE)
@@ -166,7 +161,6 @@ def run_full_threat_generation_pipeline(job_id: str, image_string_from_request: 
         prompt = response.choices[0].message.content.strip()
         print(f"[{job_id}] Threat prompt generated successfully.")
         
-        # Update the generation with the prompt text
         generation.threat_prompt_text = prompt
         db.commit()
 
@@ -217,7 +211,6 @@ def run_solution_generation_task(job_id: str, image_string_from_request: str, pr
     A long-running task to generate the final 'solution' image.
     It downloads the generated image, saves it, creates a thumbnail, and updates the DB.
     """
-    # ADDED: Logging
     print(f"[{job_id}] Starting SOLUTION generation task.")
     generation = db.query(db_models.Generation).filter(db_models.Generation.id == job_id).first()
     if not generation:
@@ -228,7 +221,7 @@ def run_solution_generation_task(job_id: str, image_string_from_request: str, pr
     db.commit()
 
     try:
-        # The input image is now the THREAT image
+        # REVERTED: The input image is now the THREAT image again, passed from the endpoint.
         image_data_url = resolve_image_to_data_url(image_string_from_request)
         print(f"[{job_id}] Resolved threat image to data URL for Replicate.")
         model_name = "black-forest-labs/flux-kontext-pro"
@@ -274,8 +267,6 @@ def run_solution_generation_task(job_id: str, image_string_from_request: str, pr
         db.close()
 
 # --- FastAPI App & Endpoints ---
-# MODIFIED: The lifespan manager is now empty as all startup logic has been moved
-# to the dedicated startup.py script.
 app = FastAPI()
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -318,12 +309,10 @@ async def generate_prompt(request: models.GeneratePromptRequest):
     selected_tags_ids = request.tags
     
     if request.type == 'threat':
-        # For threats, we can pick one randomly if none is provided.
         if not selected_tags_ids:
             selected_tags_ids = [random.choice(AVAILABLE_THREAT_TAGS)['id']]
         system_prompt = create_threat_system_prompt(selected_tags_ids)
     else: # solution
-        # For solutions, we can pick multiple.
         if not selected_tags_ids:
             num_tags = random.randint(1, 3)
             selected_tags_ids = [tag['id'] for tag in random.sample(AVAILABLE_TAGS, k=num_tags)]
@@ -436,8 +425,6 @@ async def create_solution_image(
     
     print(f"Found generation record with status: {generation.status}")
 
-    # FIXED: Make this endpoint idempotent. If the job is already processing the solution
-    # (due to a double-click), don't throw an error. Just acknowledge the request.
     if generation.status == db_models.JobStatus.PROCESSING:
         print(f"Job {job_id} is already processing a solution. Acknowledging duplicate request.")
         return {"job_id": job_id}
@@ -446,6 +433,7 @@ async def create_solution_image(
         print(f"ERROR: Job {job_id} is in wrong state: {generation.status}. Required: {db_models.JobStatus.THREAT_COMPLETED.value}")
         raise HTTPException(status_code=400, detail=f"Generation job is not in the correct state ('{db_models.JobStatus.THREAT_COMPLETED.value}') to generate a solution.")
     
+    # REVERTED: Use THREAT image for solution generation.
     if not generation.threat_image_url:
         print(f"ERROR: Job {job_id} has no threat_image_url.")
         raise HTTPException(status_code=400, detail="Threat image URL is missing for this generation.")
@@ -453,8 +441,8 @@ async def create_solution_image(
     print(f"Proceeding to generate solution prompt for job {job_id}.")
     
     solution_system_prompt = create_system_prompt(request.solution_tags)
-    threat_image_url_path = generation.threat_image_url
-    image_data_url = resolve_image_to_data_url(threat_image_url_path)
+    threat_image_path = generation.threat_image_url
+    image_data_url = resolve_image_to_data_url(threat_image_path)
 
     response = openai.chat.completions.create(
         model="gpt-4.1-mini-2025-04-14",
@@ -472,7 +460,8 @@ async def create_solution_image(
     db.commit()
 
     db_for_task = database.SessionLocal()
-    background_tasks.add_task(run_solution_generation_task, job_id, threat_image_url_path, solution_prompt, db_for_task)
+    # REVERTED: Pass the THREAT image path to the background task.
+    background_tasks.add_task(run_solution_generation_task, job_id, threat_image_path, solution_prompt, db_for_task)
     
     print(f"Successfully launched solution generation task for job {job_id}.")
     return {"job_id": job_id}
