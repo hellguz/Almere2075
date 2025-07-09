@@ -5,6 +5,17 @@ import './ComparisonView.css';
 
 type ComparisonMode = 'slider' | 'side-by-side';
 
+/**
+ * @typedef {object} ComparisonViewProps
+ * @property {GenerationDetails | null} generationDetails - The details of the generated images.
+ * @property {boolean} isVisible - Whether the view is currently visible.
+ * @property {ComparisonMode} mode - The current comparison mode ('slider' or 'side-by-side').
+ * @property {(mode: ComparisonMode) => void} onModeChange - Callback to change the comparison mode.
+ * @property {boolean} [isModal=false] - If true, renders in a modal-specific layout.
+ * @property {(name: string) => void} [onSetName] - Callback to set the creator's name.
+ * @property {() => void} [onHide] - Callback to hide the generation from the gallery.
+ * @property {() => void} [onVote] - Callback to vote for the generation.
+ */
 interface ComparisonViewProps {
     generationDetails: GenerationDetails | null;
     isVisible: boolean;
@@ -57,7 +68,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
 
     // Effect to calculate arrow positions for side-by-side view
     useEffect(() => {
-        if (mode === 'side-by-side' && sbsWrapperRef.current && threatPanelRef.current && solutionPanelRef.current && originalPanelRef.current) {
+        if (mode === 'side-by-side' && isVisible && sbsWrapperRef.current && threatPanelRef.current && solutionPanelRef.current && originalPanelRef.current) {
             const calculateArrows = () => {
                 const containerRect = sbsWrapperRef.current!.getBoundingClientRect();
                 if (!containerRect.width) return; // Don't calculate if not rendered
@@ -66,16 +77,16 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                 const solutionRect = solutionPanelRef.current!.getBoundingClientRect();
                 const originalRect = originalPanelRef.current!.getBoundingClientRect();
 
-                const getArrowStyle = (targetRect: DOMRect) => {
-                    const startX = originalRect.left + originalRect.width / 2 - containerRect.left;
-                    const startY = originalRect.top - containerRect.top; // Start from the top edge of the original panel
+                const getArrowStyle = (targetRect: DOMRect, originSide: 'left' | 'right') => {
+                    const startX = (originSide === 'left' ? originalRect.left : originalRect.right) - containerRect.left;
+                    const startY = originalRect.top + originalRect.height/2 - containerRect.top;
                     const endX = targetRect.left + targetRect.width / 2 - containerRect.left;
-                    const endY = targetRect.top + targetRect.height - containerRect.top; // End at the bottom edge of the target panel
+                    const endY = targetRect.top + targetRect.height - containerRect.top;
                     
                     const dx = endX - startX;
                     const dy = endY - startY;
                     const length = Math.sqrt(dx * dx + dy * dy);
-                    const angle = Math.atan2(dy, dx) * 180 / Math.PI - 90; // Adjust angle for top-to-bottom
+                    const angle = Math.atan2(dy, dx) * 180 / Math.PI - 90;
                     
                     return {
                         left: `${startX}px`,
@@ -86,13 +97,12 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                 };
                 
                 setArrowStyles({
-                    threat: getArrowStyle(threatRect),
-                    solution: getArrowStyle(solutionRect),
+                    threat: getArrowStyle(threatRect, 'left'),
+                    solution: getArrowStyle(solutionRect, 'right'),
                 });
             };
             
-            // Use a timeout to ensure layout is stable before measuring
-            const timer = setTimeout(calculateArrows, 100);
+            const timer = setTimeout(calculateArrows, 50);
             window.addEventListener('resize', calculateArrows);
             return () => {
                 clearTimeout(timer);
@@ -141,8 +151,18 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                         {mode === 'side-by-side' ? (
                             <div className="comparison-view side-by-side" ref={sbsWrapperRef}>
                                 <div className="sbs-top-row">
-                                    <div ref={threatPanelRef} className="image-panel" style={{backgroundImage: `url("${threatImageUrl}")`}}><div className="image-header">CRISIS</div></div>
-                                    <div ref={solutionPanelRef} className="image-panel" style={{backgroundImage: `url("${solutionImageUrl}")`}}><div className="image-header">SOLUTION</div></div>
+                                    <div ref={threatPanelRef} className="image-panel" style={{backgroundImage: `url("${threatImageUrl}")`}}>
+                                        <div className="image-header">CRISIS</div>
+                                        <div className="image-tag-overlay">
+                                            {generationDetails.threat_tags_used?.map(tag => <span key={tag} className="tag-chip">{tag}</span>)}
+                                        </div>
+                                    </div>
+                                    <div ref={solutionPanelRef} className="image-panel" style={{backgroundImage: `url("${solutionImageUrl}")`}}>
+                                        <div className="image-header">SOLUTION</div>
+                                        <div className="image-tag-overlay">
+                                            {generationDetails.tags_used?.map(tag => <span key={tag} className="tag-chip">{tag}</span>)}
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="sbs-bottom-row">
                                     <div ref={originalPanelRef} className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}><div className="image-header">ORIGINAL</div></div>
@@ -157,7 +177,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                                 <div className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}>
                                     <div className="image-header">ORIGINAL</div>
                                 </div>
-                                <div className="image-panel after-image" style={{backgroundImage: `url("${solutionImageUrl}")`, clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
+                                <div className="image-panel" style={{backgroundImage: `url("${solutionImageUrl}")`, clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
                                     <div className="image-header">SOLUTION</div>
                                 </div>
                                 <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
@@ -177,10 +197,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
            
             <div className={`comparison-footer ${isModal ? 'is-modal' : ''}`}>
                 <div className="footer-left">
-                     <div className="info-tags-chips">
-                        <b>Solutions:</b> 
-                        {generationDetails.tags_used?.map(tag => <span key={tag} className="tag-chip">{tag}</span>) || <span className="tag-chip">N/A</span>}
-                    </div>
                     <div className="info-creator">
                         <b>By:</b> {generationDetails.creator_name || 'Anonymous'}
                     </div>

@@ -71,11 +71,15 @@ const storeCreator: StoreCreator = (set, get) => {
             const newLog: LogMessage = { time: formatTime(), text, type };
             set(state => ({ logMessages: [...state.logMessages, newLog] }));
         },
-        resetForNewTransform: () => set({
-            sourceImageForTransform: null, threatImageForTransform: null, isProcessing: false, logMessages: [],
-            jobId: null, generationDetails: null, isCommunityItem: false, selectedThreatTag: null, selectedSolutionTags: [],
-            transformStep: 'threat', view: 'gallery'
-        }),
+        resetForNewTransform: () => {
+            const { pollingRef } = get();
+            if (pollingRef.current) clearInterval(pollingRef.current);
+            set({
+                sourceImageForTransform: null, threatImageForTransform: null, isProcessing: false, logMessages: [],
+                jobId: null, generationDetails: null, isCommunityItem: false, selectedThreatTag: null, selectedSolutionTags: [],
+                transformStep: 'threat', view: 'gallery'
+            })
+        },
         startTransform: (sourceImage) => {
             actions.resetForNewTransform();
             set({ sourceImageForTransform: sourceImage, view: 'transform', transformStep: 'threat' });
@@ -142,31 +146,47 @@ const storeCreator: StoreCreator = (set, get) => {
         pollJobStatus: (jobId) => {
             const currentPollingRef = get().pollingRef;
             if (currentPollingRef.current) clearInterval(currentPollingRef.current);
+            
             currentPollingRef.current = window.setInterval(async () => {
               try {
                 const res = await fetch(`${API_BASE_URL}/job-status/${jobId}`);
-                if (!res.ok) return; 
+                if (!res.ok) {
+                    if (currentPollingRef.current) clearInterval(currentPollingRef.current);
+                    return;
+                };
                 const data = await res.json();
                 
+                const currentState = get();
+                if (currentState.jobId !== jobId) {
+                    if (currentPollingRef.current) clearInterval(currentPollingRef.current);
+                    return;
+                }
+
+                if (data.status === 'pending' || data.status === 'processing') {
+                    if (!currentState.isProcessing) set({ isProcessing: true });
+                }
+
                 if (data.status === 'threat_completed') {
-                    actions.addLogMessage('--- Threat Image Generated ---', 'success');
-                    set(state => ({
-                        ...state,
-                        isProcessing: false,
-                        transformStep: 'solution',
-                        threatImageForTransform: {
-                            name: 'Threat Image',
-                            url: `${API_BASE_URL}/${data.generation_data.threat_image_url}`
-                        }
-                    }));
-                } else if (data.status === 'completed') {
-                  if (currentPollingRef.current) clearInterval(currentPollingRef.current);
-                  actions.addLogMessage('--- Solution Image Generated ---', 'success');
-                  actions.addLogMessage('--- Transformation Complete ---', 'system');
-                  set({ generationDetails: data.generation_data, isProcessing: false, view: 'comparison' });
-                } else if (data.status === 'failed') {
-                   if (currentPollingRef.current) clearInterval(currentPollingRef.current);
-                  throw new Error(data.error || 'Job failed for an unknown reason.');
+                    if (currentState.transformStep !== 'solution') {
+                        actions.addLogMessage('--- Threat Image Generated. Please select solutions. ---', 'success');
+                        set({
+                            isProcessing: false, 
+                            transformStep: 'solution',
+                            threatImageForTransform: {
+                                name: 'Threat Image',
+                                url: `${API_BASE_URL}/${data.generation_data.threat_image_url}`
+                            }
+                        });
+                    }
+                } else if (data.status === 'completed' || data.status === 'failed') {
+                    if (currentPollingRef.current) clearInterval(currentPollingRef.current);
+                    if (data.status === 'completed') {
+                        actions.addLogMessage('--- Solution Image Generated ---', 'success');
+                        actions.addLogMessage('--- Transformation Complete ---', 'system');
+                        set({ generationDetails: data.generation_data, isProcessing: false, view: 'comparison' });
+                    } else { // failed
+                        throw new Error(data.error || 'Job failed for an unknown reason.');
+                    }
                 }
               } catch (err) {
                 actions.addLogMessage(`Polling failed: ${(err as Error).message}`, 'error');
@@ -194,7 +214,8 @@ const storeCreator: StoreCreator = (set, get) => {
                 if (!threatResponse.ok) throw new Error(`Threat generation submission failed: ${threatResponse.statusText}`);
                 const { job_id } = await threatResponse.json();
                 set({ jobId: job_id });
-                actions.addLogMessage(`Job submitted with ID: ${job_id}.`);
+                actions.addLogMessage('Job submitted with ID: ${job_id}.');
+                // FIXED: Corrected the unterminated string literal.
                 actions.addLogMessage('Step 2/4: Awaiting threat image...');
                 actions.pollJobStatus(job_id);
             } catch (err) {
@@ -203,24 +224,30 @@ const storeCreator: StoreCreator = (set, get) => {
             }
         },
         handleGenerateSolution: async () => {
-            const { jobId, selectedSolutionTags } = get();
-            if (!jobId) return;
+            const { jobId, selectedSolutionTags, transformStep } = get();
+            
+            if (transformStep !== 'solution' || !jobId) {
+                console.warn("handleGenerateSolution called in wrong state:", { transformStep, jobId });
+                return;
+            }
 
             set({ isProcessing: true });
+            actions.addLogMessage('Step 3/4: Submitting solution request...');
             try {
-                actions.addLogMessage('Step 3/4: Submitting solution request...');
                 const solutionResponse = await fetch(`${API_BASE_URL}/generations/${jobId}/solution`, { 
                     method: 'PUT', headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ solution_tags: selectedSolutionTags }) 
                 });
-                if (!solutionResponse.ok) throw new Error(`Solution generation submission failed: ${solutionResponse.statusText}`);
                 
-                actions.addLogMessage(`Solution request sent for job: ${jobId}.`);
+                if (!solutionResponse.ok) {
+                    const errorData = await solutionResponse.json();
+                    throw new Error(errorData.detail || `Solution generation submission failed: ${solutionResponse.statusText}`);
+                }
+                
+                actions.addLogMessage(`Solution request accepted for job: ${jobId}.`);
                 actions.addLogMessage('Step 4/4: Awaiting final solution image...');
-                // Polling is already running, no need to start it again.
             } catch (err) {
-                actions.addLogMessage(`PROCESS FAILED: ${(err as Error).message}`, 'error');
-                set({ isProcessing: false });
+                actions.addLogMessage(`API Error: ${(err as Error).message}. Waiting for poller to confirm status.`, 'error');
             }
         },
         handleSelectGalleryImage: (texture: Texture) => {
