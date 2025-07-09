@@ -1,112 +1,88 @@
-# ADDED: Definitive list of tags based on student concepts, now integrated into the user's preferred prompt structure.
+# REVISED: Added an explicit mandate to the threat prompt to prevent the depiction of human suffering. All related instructions, descriptions, and examples have been updated to focus on resilient responses and infrastructure impact.
+
 AVAILABLE_TAGS = [
     {
-        "id": "sponge-parks",
-        "name": "Sponge Parks & Bio-Filters",
-        "description": "Introduce lush, sunken green spaces that absorb rainwater, preventing floods while creating vibrant community hubs. These parks can feature rain gardens, bio-filtering wetlands, and new water channels."
-    },
-    {
-        "id": "amphibious-arch",
-        "name": "Amphibious Architecture",
-        "description": "Retrofit buildings to float or be elevated on stilts. Add floating social infrastructure and amphibious roads to create a city that lives with water, not against it."
-    },
-    {
-        "id": "modular-housing",
-        "name": "Adaptive Modular Housing",
-        "description": "Replace some buildings with flexible, modular housing systems. These can be stacked vertically on existing structures or fill in empty lots, featuring green roofs and adaptable interiors."
+        "id": "sponge-parks-canals",
+        "name": "Sponge Parks & Multi-Purpose Canals",
+        "description": "Transforms paved areas into lush, sunken parks that absorb floodwater. Canals are upgraded for transport, energy generation, or recreation."
     },
     {
         "id": "urban-farming",
-        "name": "Vertical Farms & Agri-Towers",
-        "description": "Integrate sleek, tall towers for hydroponic and aquaponic farming near residential areas, providing local food and creating a unique skyline."
+        "name": "Integrated Urban Farming",
+        "description": "Adds large-scale vertical farms or transforms public green spaces and streetscapes into productive 'edible landscapes' with fruits and vegetables."
     },
     {
-        "id": "edible-landscapes",
-        "name": "Edible Landscapes",
-        "description": "Transform sidewalks, public squares, and rooftops into productive community gardens and edible streetscapes with fruit trees and vegetable plots."
+        "id": "modular-housing",
+        "name": "Modular & Adaptive Housing",
+        "description": "Attaches new, lightweight modular housing units to the facades or roofs of existing buildings, or creates new, easily reconfigurable settlements."
     },
     {
-        "id": "circular-economy",
+        "id": "amphibious-architecture",
+        "name": "Amphibious & Floating Buildings",
+        "description": "Redesigns buildings and infrastructure in high-risk zones to be amphibious or float, allowing them to rise and fall with water levels."
+    },
+    {
+        "id": "rescue-towers-pods",
+        "name": "Rescue Towers & Aid Pods",
+        "description": "Introduces a central, self-sufficient tower for crisis management that deploys autonomous floating pods for aid delivery during emergencies."
+    },
+    {
+        "id": "circular-economy-hubs",
         "name": "Circular Economy Hubs",
-        "description": "Repurpose existing buildings into hubs for repair, reuse, and local production. Add community workshops and small-scale recycling facilities to the street level."
+        "description": "Converts ground-floor spaces into visible community hubs for repairing goods, processing waste, and innovating with recycled materials."
     },
     {
-        "id": "future-mobility",
-        "name": "New Mobility",
-        "description": "Introduce a car-free environment with pedestrian-friendly streets, new tram lines, elevated bike paths, and canals used for transporting goods with small electric boats."
-    },
-    {
-        "id": "shared-spaces",
-        "name": "Urban Commons & Shared Spaces",
-        "description": "Activate public spaces by adding shared kitchens, outdoor workshops, and educational labs, fostering a strong sense of community and collective responsibility."
+        "id": "elevated-infrastructure",
+        "name": "Elevated Walkways & Bridges",
+        "description": "Constructs a new network of elevated pedestrian paths and bridges to ensure connectivity between buildings during major flood events."
     }
 ]
 
-# This detailed knowledge base provides the AI with rich visual language for each concept.
 CONCEPT_KNOWLEDGE_BASE = {
-    "sponge-parks": "Deep, sunken, lush green areas with a healthy, dense mix of various native Dutch grasses and small wildflowers like clover, replacing concrete plazas or wide sidewalks. Terraced landscaping with native plants. Small, crystal-clear water channels or pools integrated into the parks. Wooden boardwalks or stone paths crisscrossing the green areas.",
-    "amphibious-arch": "Existing buildings retrofitted with visible foundations and hydraulic stilts that allow them to float or be elevated. Add beautiful floating platforms made of light wood for cafes or social gatherings. Buildings are connected by lightweight, intricate bridges.",
-    "modular-housing": "Sleek, modern housing modules made of sustainable materials like cross-laminated timber (CLT) and recycled metal with a polished finish. Stacked to add new floors on top of existing buildings or used to construct new mid-rise buildings. They feature integrated balconies with blooming flowers and small herb planters, green walls, and large smart-glass windows.",
-    "urban-farming": "Elegant, slender towers with glass facades revealing glowing hydroponic and aquaponic systems inside. Integrated near residential clusters, some with visible sky-bridges connecting them to other buildings for food distribution. They are architecturally striking and emit a soft, pleasant light.",
-    "edible-landscapes": "Sidewalks and public squares transformed into productive and beautiful community gardens. Fruit trees line the streets, and plots of vegetables and herbs are neatly arranged in ornate, raised beds. Rooftops are covered in lush, well-maintained green gardens.",
-    "circular-economy": "Ground floors of existing buildings repurposed into clean, open-front workshops for repairing electronics, furniture, or textiles. Small-scale 3D printing labs and material recycling stations are visible behind glass walls. These are bright, inviting spaces for making and learning.",
-    "future-mobility": "A completely car-free environment. Streets are reclaimed for people, with wide pedestrian areas, dedicated bike lanes, and sleek, silent hanging trams or modern ground trams. Canals are clean and used by small, autonomous electric boats for logistics. Elevated, glowing pathways and bridges for pedestrians and cyclists.",
-    "shared-spaces": "Public spaces and ground floors activated with high-tech shared facilities. Look for open-air communal kitchens with solar-powered cooktops, educational holographic displays, outdoor workbenches with integrated tools, and interactive art installations."
+    "sponge-parks-canals": "Replace entire asphalt streets or concrete plazas with sunken, terraced wetland parks. These feature lush native grasses, reeds, and water-loving plants. A central channel of clear, flowing water meanders through the park, crossed by elegant wooden or lightweight metal arch bridges that connect directly to building entrances. The edges of the park are defined by terraced stone or concrete seating areas integrated into the landscape.",
+    "urban-farming": "Replace a generic building with a striking vertical farm tower with a glass facade revealing tiers of glowing pink and blue LED-lit hydroponics. Alternatively, transform entire building facades into 'green walls' for agriculture, with visible steel-and-glass irrigation systems and modular planting pockets growing vibrant vegetables and fruits.",
+    "modular-housing": "Attach sleek, prefabricated modules made of cross-laminated timber, recycled aluminum, and smart glass to existing facades or rooftops. These modules have large bay windows and small, verdant balconies. They are connected by a network of lightweight, external staircases and walkways, creating a visually complex, layered architectural look that contrasts with the original structure beneath.",
+    "amphibious-architecture": "Retrofit existing ground floors into open, floodable plinths with the main building visibly elevated on robust hydraulic stilts or a wide floating pontoon base. The ground level becomes a water plaza or a wet-park with reeds and boardwalks. Access to buildings is via elegant, articulated ramps and bridges that connect to a higher-level pedestrian network.",
+    "rescue-towers-pods": "Introduce a single, slender, multi-functional tower that rises high above the existing skyline. Its facade features a metallic exoskeleton, visible drone landing pads, and large rainwater funnels. At its base, autonomous aid pods—sleek, white, semi-submersible vehicles—are docked in glowing alcoves, ready for deployment.",
+    "circular-economy-hubs": "Convert a building's entire ground floor into a 'Maker & Repair Hub' with a fully transparent glass facade. Inside, community members use 3D printers, laser cutters, and repair benches. Shelves are neatly stacked with sorted recycled materials (plastics, metals, textiles) and finished upcycled products. The space is brightly lit and active with people.",
+    "elevated-infrastructure": "Construct a network of sleek, covered walkways at the second or third-story level, connecting directly into buildings. These walkways are made of semi-translucent materials and have integrated glowing light strips. Below, the original street level is transformed into a green corridor, a canal, or a service route for autonomous delivery bots, creating a multi-layered city."
 }
 
-# ADDED: Definitive list of threat tags based on crisis scenarios
 AVAILABLE_THREAT_TAGS = [
     {
-        "id": "extreme-weather",
-        "name": "Monthly Extreme Weather",
-        "description": "Streets and Public Spaces covered by murky water during flash floods, buildings suffer repeated damage, dust storms create zero visibility, wildfires approach city edges with toxic smoke."
-    },
-    {
-        "id": "supply-collapse",
-        "name": "Supply Chain Collapse",
-        "description": "Closed stores with barricaded entrances, empty store shelves, abandoned construction sites, long queues for rationed resources, broken infrastructure left unrepaired."
-    },
-    {
-        "id": "deadly-heat",
-        "name": "Deadly Summer Heat",
-        "description": "People collapse from heat exhaustion, melting asphalt, completely abandoned outdoor spaces, burned-out vegetation."
-    },
-    {
-        "id": "power-failure",
-        "name": "Grid Failure",
-        "description": "Complete darkness in streets and buildings, traffic chaos with no functioning lights, trash accumulation without powered systems."
-    },
-    {
-        "id": "housing-crisis",
-        "name": "Housing Crisis",
-        "description": "Homeless encampments in parks and parking lots, people sleeping in cars and doorways, empty buildings illegally occupied by desperate residents."
-    },
-    {
-        "id": "social-unrest",
-        "name": "Civil Unrest",
-        "description": "Spontaneous Protests, broken windows, barricades, emergency response teams engaged."
-    },
-    {
-        "id": "infrastructure-decay",
-        "name": "Infrastructure Decay",
-        "description": "Buildings actively deteriorating, water damage, broken windows, rust formation, utilities failing during crisis."
+        "id": "extreme-flooding",
+        "name": "Extreme Flooding & Contamination",
+        "description": "A catastrophic flood event, where streets are submerged under contaminated water, infrastructure fails, and the city is inundated."
     },
     {
         "id": "resource-scarcity",
-        "name": "Resource Scarcity",
-        "description": "Vacant shops, overcrowded relief stations, emergency resource distribution, signs of supply shortages everywhere."
+        "name": "Supply Chain & Energy Collapse",
+        "description": "A future where global supply chains and energy grids have failed, leading to visible material shortages, decay, and ad-hoc solutions."
+    },
+    {
+        "id": "housing-crisis",
+        "name": "Inflexible Housing Crisis",
+        "description": "A cityscape defined by a monotonous, mismatched housing stock that fails to meet modern needs, leading to underuse and decay."
+    },
+    # {
+    #     "id": "urban-heat-island",
+    #     "name": "Extreme Urban Heat",
+    #     "description": "Intense, life-threatening heatwaves amplified by dense urban materials. Air shimmers, surfaces are blindingly bright, and public life grinds to a halt."
+    # },
+    {
+        "id": "infrastructure-decay",
+        "name": "Infrastructure Decay & Neglect",
+        "description": "A slow-burn crisis where public infrastructure like roads and bridges are crumbling from a lack of maintenance, posing daily hazards."
     }
 ]
 
+# REVISED: Descriptions modified to remove depictions of human suffering.
 THREAT_KNOWLEDGE_BASE = {
-    "extreme-weather": "Active flooding with 40-80cm of rushing murky water carrying debris. Sandstorms creating orange haze and near to zero visibility. Wildfire smoke and ash coating everything. 100km/h winds with flying debris and shattered windows. Streets floded trapping vehicles.",
-    "supply-collapse": "Empty store shelves visible through windows, Storefronts blocked by plywood and vandalised, 'CLOSED' signs everywhere. Abandoned construction sites with scattered materials. Long desperate queues for rationed basic supplies. Broken streetlights and infrastructure left unrepaired.",
-    "deadly-heat": "People collapsed on sidewalks from heat exhaustion. Melting asphalt creating heat distortion waves. Completely abandoned parks with dead, burned vegetation. Heat-cracked building facades.",
-    "power-failure": "Complete darkness with no streetlights or building illumination. People carrying flashlights and candles. Dark traffic lights causing chaos. Trash accumulating without powered waste systems. Generator smoke.",
-    "housing-crisis": "Homeless tent encampments in public spaces. People sleeping in doorways, cars, and makeshift shelters. Families with belongings scattered around temporary camps. Overcrowded emergency shelters.",
-    "social-unrest": "Active Protests with people smashing windows and lighting fliers. Emergency forces in riot gear with shields raised. Smoke and ember clouds. Looting visible through broken storefronts. Barricades made of debris.",
-    "infrastructure-decay": "Water stains reaching multiple floors on buildings. Broken windows, visible rust streaks, deteriorating facades. Cracked pavement and failed utilities. Surface weathering and structural stress marks.",
-    "resource-scarcity": "Rationing signs and empty delivery trucks. Overcrowded distribution centers. People carrying meager supplies looking desperate. Boarded shop windows and 'OUT OF STOCK' signs."
+    "extreme-flooding": "Visibly rushing, murky brown water at 1-2 meters deep, powerful enough to dislodge street furniture. Geysers of water erupt from overwhelmed manhole covers. A permanent, dirty 'waterline' stain with algae is visible on all building facades up to the second floor. Ground floor windows are shattered or hastily boarded with plywood.",
+    "resource-scarcity": "Storefronts are crudely boarded up or replaced with makeshift stalls for bartering goods. Cars are stripped for parts, sitting on cinder blocks with missing wheels and doors. Patches of mismatched materials (salvaged corrugated metal, rough wood, plastic sheeting) cover holes in building facades. Long, orderly queues of people wait outside a fortified resource distribution point.",
+    "housing-crisis": "Dense, sprawling encampments made of tarps, scrap wood, and old tents fill any available public space like parks or plazas. People are visibly living in abandoned vehicles. Balconies and windows of existing buildings are cluttered with makeshift corrugated metal extensions, tarps for rain protection, and laundry lines, showing severe overcrowding.",
+    "urban-heat-island": "A hazy, yellow-white sky with oppressive, overexposed sunlight. A visible shimmering heat-haze rises from asphalt roads, which have buckled or show soft, tar-like patches. All plant life is withered, yellow, and dry. Public spaces are eerily deserted as people have taken shelter indoors. Add makeshift sun-shades made of fabric scraps strung between buildings.",
+    "infrastructure-decay": "Road surfaces are a mess of deep potholes with weeds growing through large cracks. Streetlights are bent or have dangling, broken lamps. Power lines sag precariously. On building facades, see large patches of crumbling plaster or brick, exposing and rusting the structure beneath. Extensive grime and graffiti cover most surfaces."
 }
 
 def create_threat_system_prompt(tags: list[str]) -> str:
@@ -119,7 +95,6 @@ def create_threat_system_prompt(tags: list[str]) -> str:
     Returns:
         A string containing the complete system prompt for threat visualization.
     """
-
     tag_names = [tag['name'] for tag in AVAILABLE_THREAT_TAGS if tag['id'] in tags]
 
     # Create dynamic threat instruction
@@ -139,38 +114,20 @@ def create_threat_system_prompt(tags: list[str]) -> str:
     palette_section = ["\n**Almere 2075 Threat Palette (Based on Crisis Scenarios)**"]
 
     # Add Environmental Threats
-    palette_section.append("\n* **Environmental Threats:**")
-    if any(t in tags for t in ["extreme-weather", "deadly-heat"]):
-        if "extreme-weather" in tags:
-            palette_section.append("  * Monthly Extreme Weather Events: " + THREAT_KNOWLEDGE_BASE["extreme-weather"])
-        if "deadly-heat" in tags:
-            palette_section.append("  * Deadly Summer Heat: " + THREAT_KNOWLEDGE_BASE["deadly-heat"])
-    else:
-        palette_section.append("  * General environmental stress and climate impacts.")
-
-    # Add Infrastructure & Social Threats
-    palette_section.append("\n* **Infrastructure & Social Breakdown:**")
-    if any(t in tags for t in ["power-failure", "supply-collapse", "infrastructure-decay"]):
-        if "power-failure" in tags:
-            palette_section.append("  * Grid Failure: " + THREAT_KNOWLEDGE_BASE["power-failure"])
-        if "supply-collapse" in tags:
-            palette_section.append("  * Supply Chain Collapse: " + THREAT_KNOWLEDGE_BASE["supply-collapse"])
-        if "infrastructure-decay" in tags:
-            palette_section.append("  * Infrastructure Decay: " + THREAT_KNOWLEDGE_BASE["infrastructure-decay"])
-    else:
-        palette_section.append("  * General infrastructure failure and urban decay.")
-
-    # Add Social Crisis
-    palette_section.append("\n* **Social Crisis Elements:**")
-    if any(t in tags for t in ["housing-crisis", "social-unrest", "resource-scarcity"]):
-        if "housing-crisis" in tags:
-            palette_section.append("  * Housing Crisis: " + THREAT_KNOWLEDGE_BASE["housing-crisis"])
-        if "social-unrest" in tags:
-            palette_section.append("  * Civil Unrest: " + THREAT_KNOWLEDGE_BASE["social-unrest"])
-        if "resource-scarcity" in tags:
-            palette_section.append("  * Resource Scarcity: " + THREAT_KNOWLEDGE_BASE["resource-scarcity"])
-    else:
-        palette_section.append("  * General social breakdown and resource stress.")
+    palette_section.append("\n* **Environmental & Systemic Threats:**")
+    if "extreme-flooding" in tags:
+        palette_section.append("  * Extreme Flooding & Contamination: " + THREAT_KNOWLEDGE_BASE["extreme-flooding"])
+    if "resource-scarcity" in tags:
+        palette_section.append("  * Supply Chain & Energy Collapse: " + THREAT_KNOWLEDGE_BASE["resource-scarcity"])
+    if "housing-crisis" in tags:
+        palette_section.append("  * Inflexible Housing Crisis: " + THREAT_KNOWLEDGE_BASE["housing-crisis"])
+    if "urban-heat-island" in tags:
+        palette_section.append("  * Extreme Urban Heat: " + THREAT_KNOWLEDGE_BASE["urban-heat-island"])
+    if "infrastructure-decay" in tags:
+        palette_section.append("  * Infrastructure Decay & Neglect: " + THREAT_KNOWLEDGE_BASE["infrastructure-decay"])
+    
+    if not tags:
+        palette_section.append("  * General environmental stress, infrastructure failure, and climate impacts.")
 
     final_palette = "".join(palette_section)
 
@@ -184,7 +141,7 @@ You will transform a contemporary photo into a compelling, photorealistic scene 
 **THE LAW OF URBAN RECOGNITION: The existing urban situation is sacred and MUST remain recognizable.** This includes maintaining the exact position, footprint, and height of all buildings; the width and curvature of all streets; the boundaries of all squares and public spaces. The viewer MUST be able to identify the original location.
 
 **The Golden Rule: Prioritize Recognizability Above All**
-Your primary objective is to generate a prompt that results in a recognizable edit of the original photo showing crisis conditions, not a wholesale replacement. Your prompts must be surgical and explicitly state what to preserve.
+Your primary objective is to generate a recognizable edit of the original photo showing crisis conditions, not a wholesale replacement. Your prompts must be surgical and explicitly state what to preserve.
 
 **Core Crisis Guidance:**
 {tag_instruction}
@@ -192,11 +149,12 @@ Your primary objective is to generate a prompt that results in a recognizable ed
 **Core Mandates & Preservation Rules**
 
 * **Output Format:** Your entire response MUST consist of exactly ONE crisis visualization prompt. Do not output ANY other text. Keep the prompt under the 512 token limit.
+* **Ethical Depiction Mandate: Absolutely NO depiction of human suffering, death, injury, or distress. Focus entirely on the environmental and infrastructural impact of the crisis. People should only be shown in roles of organized, resilient response (e.g., emergency workers, engineers), not as victims.**
 * **Minimal Change Principle:** Describe ONLY the specific elements being degraded or affected by crisis. **Do NOT describe the entire scene.**
-* **Active Crisis Events:** Focus on events actively happening—rushing floodwater, people collapsing from heat, riots in progress, power outages occurring—rather than just aftermath damage.
+* **Active Crisis Events:** Focus on events actively happening—rushing floodwater, infrastructure failing, power outages occurring—rather than just aftermath damage.
 * **Mandatory Vehicle Crisis State:** Contemporary cars and vehicles should appear abandoned, flooded, or non-functional while remaining in their original positions.
 * **Be Spatially Specific:** Use clear directional language (e.g., 'the building on the far left', 'the foreground plaza').
-* **Existing People:** Transform existing people to show crisis response—wearing emergency gear, evacuating, or showing signs of distress.
+* **Existing People:** Transform existing people to show resilient crisis response—wearing emergency gear, calmly working on repairs, or operating equipment. **Do NOT show them in distress.**
 
 **Core Philosophy: Your Guiding Principles**
 
@@ -205,7 +163,7 @@ Your primary objective is to generate a prompt that results in a recognizable ed
 * **Surface-Level Degradation:** Describe damage to building surfaces, windows, and facades while keeping the underlying structural form identical to the original.
 * **Documentary Realism:** The final image must look like authentic crisis photography: gritty, realistic, with sharp details and dramatic but believable lighting.
 * **Dynamic Crisis Atmosphere:** Randomly select compelling crisis conditions like: 'during active flooding with rushing water', 'in a sandstorm with zero visibility', 'during a power blackout at night', 'amid civil unrest with smoke and flames', 'during a deadly heat wave with visible heat distortion', 'in the aftermath of extreme weather with debris scattered'.
-* **Active Crisis Response:** Add one or two new people showing crisis response—emergency workers, evacuees, or people struggling with the conditions.
+* **Active Crisis Response:** Add one or two new people showing active and organized crisis response—emergency workers in protective gear, engineers assessing damage, or community groups organizing repairs. **Do NOT add people who are struggling or suffering.**
 * **Transform Ground Conditions:** Always describe specific changes to street surfaces, plazas, and ground conditions while maintaining basic layout.
 
 {final_palette}
@@ -216,13 +174,13 @@ Your primary objective is to generate a prompt that results in a recognizable ed
 * **Rule: Preservation First.** Your prompt **MUST** start with a detailed preservation clause. Begin with "Keep the following elements exactly the same:". This **must** include camera position, all anchor buildings, and overall urban layout.
 
 **Example 1:**
-"Keep the following elements exactly the same: the entire stone archway structure and its exact form, all building volumes and heights, the street layout, and camera angle. Then, during active flooding, add 50cm of rushing murky water carrying debris through the archway. Buildings show water damage with stains reaching second floors and broken ground-level windows while maintaining exact architectural forms. Add emergency workers in waterproof gear documenting flood damage. The style is flood disaster documentation."
+"Keep the following elements exactly the same: the entire stone archway structure and its exact form, all building volumes and heights, the street layout, and camera angle. Then, during an **Extreme Flooding & Contamination** event, add 1.5 meters of rushing, murky water carrying debris through the archway. Buildings show severe water damage with stains reaching second floors and blown-out ground-level windows, while maintaining their exact architectural forms. Add two emergency workers in high-visibility waterproof gear calmly documenting flood levels. The style is disaster documentary photography."
 
 **Example 2:**
-"Keep the entire yellow building on the right, the exact massing of all structures, street curvature, and camera perspective exactly the same. Then, during a power grid failure at night, show complete darkness with no streetlights or building illumination. People carry flashlights and candles for navigation. Replace any parked cars with abandoned vehicles showing flat tires and rust. Add residents struggling with the blackout conditions. The style is power crisis documentation."
+"Keep the two office towers on the left, the main road layout, and the camera perspective exactly the same. During an **Extreme Urban Heat** wave, add a hazy, shimmering heat distortion over the asphalt. The facade of the generic building on the right shows **Infrastructure Decay**, with crumbling concrete and exposed rebar. All vegetation is withered and brown. The streets are completely empty, indicating people have taken shelter from the heat. Gritty, overexposed, photorealistic."
 
 **Example 3:**
-"Keep the red-brick building's exact volume and all original architectural details, the plaza layout, and camera framing exactly the same. Then, during deadly summer heat, show the building facade with heat stress cracks and the plaza completely abandoned with visible heat distortion waves. The ground shows melting asphalt and heat damage. Add a person collapsed from heat exhaustion being assisted by emergency workers. The style is heat emergency documentation."
+"Keep the exact architectural form of the main building on the left, the clock tower in the distance, and the overall plaza layout exactly the same. Then, transform the ground-floor storefronts into scenes of **Resource Scarcity**; they are boarded up with plywood, with long, orderly queues of people waiting calmly. The open space of the plaza is now filled with a dense **Housing Crisis** encampment, with makeshift but tidy tents. The scene is gritty, photorealistic, under a bleak, overcast sky."
 """
 
 def create_system_prompt(tags: list[str]) -> str:
@@ -234,7 +192,6 @@ def create_system_prompt(tags: list[str]) -> str:
     Returns:
         A string containing the complete system prompt for the AI.
     """
-
     tag_names = [tag['name'] for tag in AVAILABLE_TAGS if tag['id'] in tags]
 
     # Create a dynamic instruction string based on the provided tags.
@@ -252,31 +209,28 @@ def create_system_prompt(tags: list[str]) -> str:
 
     # Build the rich Concept Palette from the selected tags
     palette_section = ["\n**Almere 2075 Concept Palette (Based on Student Concepts)**"]
-    # Add Architectural Typologies
-    palette_section.append("\n* **Architectural Typologies:**")
-    if any(t in tags for t in ["modular-housing", "amphibious-arch", "circular-economy", "urban-farming"]):
-        if "modular-housing" in tags: palette_section.append("  * Adaptive Modular Housing, Kinetic Timber & Glass Residences: " + CONCEPT_KNOWLEDGE_BASE["modular-housing"])
-        if "amphibious-arch" in tags: palette_section.append("  * Amphibious & Plinth Buildings: " + CONCEPT_KNOWLEDGE_BASE["amphibious-arch"])
-        if "circular-economy" in tags: palette_section.append("  * Community Repair & Biocycle Hubs: " + CONCEPT_KNOWLEDGE_BASE["circular-economy"])
-        if "urban-farming" in tags: palette_section.append("  * Vertical Farm Towers: " + CONCEPT_KNOWLEDGE_BASE["urban-farming"])
-    else:
-        palette_section.append("  * General futuristic, sustainable architecture.")
 
     # Add Green Infrastructure
     palette_section.append("\n* **Green & Living Infrastructure:**")
-    if any(t in tags for t in ["sponge-parks", "edible-landscapes"]):
-        if "sponge-parks" in tags: palette_section.append("  * Sponge Parks & Flood-Adaptive Plazas: " + CONCEPT_KNOWLEDGE_BASE["sponge-parks"])
-        if "edible-landscapes" in tags: palette_section.append("  * Edible Streetscapes & Rooftop Greenhouses: " + CONCEPT_KNOWLEDGE_BASE["edible-landscapes"])
-    else:
-        palette_section.append("  * General lush greenery, parks, and water features.")
+    if "sponge-parks-canals" in tags:
+        palette_section.append("  * Sponge Parks & Multi-Purpose Canals: " + CONCEPT_KNOWLEDGE_BASE["sponge-parks-canals"])
+    if "urban-farming" in tags:
+        palette_section.append("  * Integrated Urban Farming: " + CONCEPT_KNOWLEDGE_BASE["urban-farming"])
+    
+    palette_section.append("\n* **Architectural & Systemic Solutions:**")
+    if "modular-housing" in tags:
+        palette_section.append("  * Modular & Adaptive Housing: " + CONCEPT_KNOWLEDGE_BASE["modular-housing"])
+    if "amphibious-architecture" in tags:
+        palette_section.append("  * Amphibious & Floating Buildings: " + CONCEPT_KNOWLEDGE_BASE["amphibious-architecture"])
+    if "rescue-towers-pods" in tags:
+        palette_section.append("  * Rescue Towers & Aid Pods: " + CONCEPT_KNOWLEDGE_BASE["rescue-towers-pods"])
+    if "circular-economy-hubs" in tags:
+        palette_section.append("  * Circular Economy Hubs: " + CONCEPT_KNOWLEDGE_BASE["circular-economy-hubs"])
+    if "elevated-infrastructure" in tags:
+        palette_section.append("  * Elevated Walkways & Bridges: " + CONCEPT_KNOWLEDGE_BASE["elevated-infrastructure"])
 
-    # Add Technology & Narrative
-    palette_section.append("\n* **Technology & Narrative Elements:**")
-    if any(t in tags for t in ["future-mobility", "shared-spaces"]):
-         if "future-mobility" in tags: palette_section.append("  * New Mobility (Water Taxis, Drones, Elevated Transport): " + CONCEPT_KNOWLEDGE_BASE["future-mobility"])
-         if "shared-spaces" in tags: palette_section.append("  * Urban Commons & Shared Spaces: " + CONCEPT_KNOWLEDGE_BASE["shared-spaces"])
-    else:
-        palette_section.append("  * General futuristic technology like drones, robotics, and interactive displays.")
+    if not tags:
+        palette_section.append("  * General lush greenery, sustainable modern architecture, and water features.")
 
     final_palette = "".join(palette_section)
 
@@ -289,7 +243,7 @@ You will transform a contemporary photo into a compelling, photorealistic scene 
 the width and curvature of all streets; the boundaries of all squares and public spaces.
 The core geometry of the city block MUST remain identical.
 **The Golden Rule: Prioritize Recognizability Above All**
-Your primary objective is to generate a prompt that results in a recognizable *edit* of the original photo, not a wholesale replacement.
+Your primary objective is to generate a recognizable *edit* of the original photo, not a wholesale replacement.
 Your prompts must be surgical and explicitly state what to preserve.
 **Core Creative Guidance:**
 {tag_instruction}
@@ -322,8 +276,13 @@ These details should enrich the scene, not overwhelm it.
 
 * **Rule: Preservation First.** Your prompt **MUST** start with a detailed preservation clause. Begin with the phrase "Keep the following elements exactly the same:". Use a comma-separated sentence.
 This list **must** include the camera position, all anchor/landmark buildings, and the overall urban layout.
+
 **Example 1:**
-"Keep the following elements exactly the same: the entire stone archway in the foreground and its texture, all original pedestrians, and the exact camera angle and perspective. Then, during a heavy but cleansing downpour, surgically replace the distant buildings visible *through* the archway with 'Kinetic Timber & Glass Residences' that follow the original massing and have cascading greenery. Change the inclined street into a 'Cascading Water Feature' of shallow, clear terraces where the rain is visibly collected."
+"Keep the following elements exactly the same: the entire stone archway in the foreground, all original pedestrians, and the camera angle. At a tranquil dusk, replace the generic brick building on the left with a 'Circular Economy Hub', its ground floor glowing warmly and showing people repairing electronics inside. Change the street into a 'Multi-Purpose Canal' where a silent, electric barge is transporting goods. Add new residents crossing a sleek, new pedestrian bridge that spans the canal. Photorealistic, high-end architectural photography."
+
 **Example 2:**
-"Keep the entire original yellow building on the right, the exact layout and curvature of the street, and the position of all other buildings perfectly untouched. Then, in a vibrant, well-lit night scene, replace the red-brick building on the far left with an ambitious 'Modular Pod Housing' structure that perfectly matches its volume, composed of interlocking timber modules and plant-filled balconies that glow with soft light. Change the street and **any parked cars** into a calm canal for 'Autonomous Water Transport,' with the sidewalk transformed into a wooden boardwalk with integrated glowing lights. Add an elderly resident tending to herbs in a planter as a sleek water taxi silently docks."
+"Keep the historic corner building on the right and the church steeple in the background exactly the same, including their textures and materials. Then, surgically replace the generic apartment block on the left with an ambitious **Modular & Adaptive Housing** structure made of interlocking timber and glass pods with green balconies, matching the original building's height and footprint. Add a sleek **Elevated Walkway** made of semi-translucent material that connects the second floor of the new building to the historic one across the street. The atmosphere is a bright, crisp morning."
+
+**Example 3:**
+"Keep the entire glass-facade office building in the center and all pedestrians exactly the same. Then, completely replace the asphalt street and sidewalks in the foreground with a lush, sunken **Sponge Park**, featuring meandering water channels and wooden boardwalks. The facade of the brick building on the right is transformed into a vertical **Integrated Urban Farm**, with visible rows of lettuce and herbs growing in modular racks. The scene is during a light, cleansing downpour, with all surfaces glistening and reflective."
 """

@@ -132,10 +132,13 @@ def create_thumbnail(image_path: Path, thumbnail_dir: Path):
     except Exception as e:
         print(f"Error creating thumbnail for {image_path.name}: {e}")
 
-def run_threat_generation_task(job_id: str, image_string_from_request: str, prompt: str, db: Session):
+def run_full_threat_generation_pipeline(job_id: str, image_string_from_request: str, threat_tag: str, db: Session):
     """
-    A long-running task to generate the 'threat' image.
-    It downloads the generated image, saves it, creates a thumbnail, and updates the DB.
+    A long-running background task that orchestrates the entire threat generation.
+    1. Generates a creative prompt using OpenAI.
+    2. Updates the DB with the prompt.
+    3. Generates the 'threat' image using Replicate.
+    4. Downloads the generated image, saves it, creates a thumbnail, and updates the DB.
     """
     generation = db.query(db_models.Generation).filter(db_models.Generation.id == job_id).first()
     if not generation:
@@ -146,7 +149,27 @@ def run_threat_generation_task(job_id: str, image_string_from_request: str, prom
     db.commit()
 
     try:
+        # --- 1. Generate Threat Prompt (formerly in the main endpoint) ---
+        print(f"[{job_id}] Generating threat prompt for tag: {threat_tag}...")
+        threat_system_prompt = create_threat_system_prompt([threat_tag])
         image_data_url = resolve_image_to_data_url(image_string_from_request)
+        
+        response = openai.chat.completions.create(
+            model="gpt-4.1-mini-2025-04-14",
+            messages=[
+                {"role": "system", "content": threat_system_prompt},
+                {"role": "user", "content": [{"type": "text", "text": "Generate a prompt for this image."}, {"type": "image_url", "image_url": {"url": image_data_url}}]},
+            ],
+            max_tokens=500,
+        )
+        prompt = response.choices[0].message.content.strip()
+        print(f"[{job_id}] Threat prompt generated successfully.")
+        
+        # Update the generation with the prompt text
+        generation.threat_prompt_text = prompt
+        db.commit()
+
+        # --- 2. Generate Threat Image ---
         model_name = "black-forest-labs/flux-kontext-pro"
         input_data = {"prompt": prompt, "input_image": image_data_url, "output_format": "png"}
         
@@ -251,7 +274,7 @@ def run_solution_generation_task(job_id: str, image_string_from_request: str, pr
 
 # --- FastAPI App & Endpoints ---
 # MODIFIED: The lifespan manager is now empty as all startup logic has been moved
-# to the dedicated startup.py script. This makes the main app cleaner.
+# to the dedicated startup.py script.
 app = FastAPI()
 
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -329,9 +352,9 @@ async def create_generation_and_threat(
 ):
     """
     Endpoint to start a new generation process.
-    1. Creates the database record.
-    2. Generates the threat prompt.
-    3. Starts the background task to create the threat image.
+    1. Creates the initial database record with a 'pending' status.
+    2. Starts a background task to generate the threat prompt and then the threat image.
+    This avoids server timeouts by offloading the slow AI calls.
     """
     if not os.getenv("REPLICATE_API_KEY"): raise HTTPException(status_code=500, detail="Replicate API key not configured.")
     if not os.getenv("OPENAI_API_KEY"): raise HTTPException(status_code=500, detail="OpenAI API key not configured.")
@@ -368,24 +391,11 @@ async def create_generation_and_threat(
             print(f"Error decoding or saving uploaded image: {e}")
             raise HTTPException(status_code=500, detail="Could not process and save uploaded image.")
 
-    # Generate Threat Prompt
-    threat_system_prompt = create_threat_system_prompt([request.threat_tag])
-    image_data_url = resolve_image_to_data_url(request.imageBase64)
-    response = openai.chat.completions.create(
-        model="gpt-4.1-mini-2025-04-14",
-        messages=[
-            {"role": "system", "content": threat_system_prompt},
-            {"role": "user", "content": [{"type": "text", "text": "Generate a prompt for this image."}, {"type": "image_url", "image_url": {"url": image_data_url}}]},
-        ],
-        max_tokens=500,
-    )
-    threat_prompt = response.choices[0].message.content.strip()
-
+    # Create the initial record in the database
     new_generation = db_models.Generation(
         dataset=request.dataset,
         original_image_filename=final_image_filename_for_db,
         original_image_thumb_url=original_thumb_url_for_db,
-        threat_prompt_text=threat_prompt,
         threat_tags_used=[tag['name'] for tag in AVAILABLE_THREAT_TAGS if tag['id'] == request.threat_tag],
         status=db_models.JobStatus.PENDING
     )
@@ -394,8 +404,16 @@ async def create_generation_and_threat(
     db.refresh(new_generation)
     
     job_id = new_generation.id
+
+    # Schedule the entire threat generation process to run in the background
     db_for_task = database.SessionLocal()
-    background_tasks.add_task(run_threat_generation_task, job_id, request.imageBase64, threat_prompt, db_for_task)
+    background_tasks.add_task(
+        run_full_threat_generation_pipeline, 
+        job_id, 
+        request.imageBase64, 
+        request.threat_tag,
+        db_for_task
+    )
     
     return {"job_id": job_id}
 
@@ -555,7 +573,6 @@ def get_random_generation(dataset: str = Query('almere', enum=['weimar', 'almere
         .first()
 
     if not random_generation:
-  
         raise HTTPException(
             status_code=404,
             detail=f"No completed and visible generations with an image found for dataset '{dataset}'."
