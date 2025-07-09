@@ -30,7 +30,7 @@ vote_timestamps = {}
 load_dotenv()
 
 # --- Configuration ---
-THUMBNAIL_SIZE = (1000, 1000)
+THUMBNAIL_SIZE = (600, 600)
 IMAGES_DIR = Path("/app/images")
 WEIMAR_IMAGES_DIR = IMAGES_DIR / "weimar"
 ALMERE_IMAGES_DIR = IMAGES_DIR / "almere"
@@ -42,7 +42,7 @@ GENERATED_THUMBNAILS_DIR = THUMBNAILS_DIR / "generated"
 DATABASE_DIR = Path("/app/database")
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
 VOTE_RATE_LIMIT_SECONDS = 60 # 1 minute
-GAMIFICATION_TARGET_SCORE = 1000
+GAMIFICATION_TARGET_SCORE = 100
 # Set deadline to July 13, 2025, 23:59:59 UTC
 GAMIFICATION_DEADLINE = datetime(2025, 7, 13, 23, 59, 59, tzinfo=timezone.utc)
 

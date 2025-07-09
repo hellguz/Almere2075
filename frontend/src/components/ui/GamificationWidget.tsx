@@ -8,7 +8,7 @@ import './GamificationWidget.css';
  * @returns {JSX.Element} The rendered GamificationWidget component.
  */
 const GamificationWidget: React.FC = () => {
-    const [stats, setStats] = useState<GamificationStats>({ happiness_score: 0, target_score: 1000, deadline_iso: '' });
+    const [stats, setStats] = useState<GamificationStats>({ happiness_score: 0, target_score: 100, deadline_iso: '' });
     const [timeLeft, setTimeLeft] = useState('');
 
     const fetchStats = useCallback(async () => {
