@@ -9,6 +9,8 @@ from .database import Base
 class JobStatus(str, enum.Enum):
     PENDING = "pending"
     PROCESSING = "processing"
+    # MODIFIED: New status for when the threat image is done, but solution is not.
+    THREAT_COMPLETED = "threat_completed"
     COMPLETED = "completed"
     FAILED = "failed"
 
@@ -24,15 +26,21 @@ class Generation(Base):
     original_image_filename = Column(String, nullable=False)
     # MODIFIED: Added thumbnail URL for the original image for faster gallery loading.
     original_image_thumb_url = Column(String, nullable=True)
+
+    # ADDED: Fields for the intermediate "threat" image.
+    threat_image_url = Column(String, nullable=True)
+    threat_image_thumb_url = Column(String, nullable=True)
+    threat_prompt_text = Column(String, nullable=True)
+    threat_tags_used = Column(JSON, nullable=True)
+
+    # Fields for the final "solution" image
     generated_image_url = Column(String, nullable=True)
     # MODIFIED: Added thumbnail URL for the generated image.
     generated_image_thumb_url = Column(String, nullable=True)
     prompt_text = Column(String, nullable=True)
-    tags_used = Column(JSON, nullable=True)
+    tags_used = Column(JSON, nullable=True) # These are the "solution" tags
+    
     creator_name = Column(String, nullable=True)
     votes = Column(Integer, default=0, nullable=False)
     is_visible = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-
-
-

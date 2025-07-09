@@ -2,28 +2,34 @@ import React from 'react';
 import type { Tag } from '../../types';
 
 interface TagSelectorProps {
+    title: string;
     tags: Tag[];
     selectedTags: string[];
     onTagToggle: (tagId: string) => void;
+    singleSelection?: boolean;
 }
 
-const TagSelector: React.FC<TagSelectorProps> = ({ tags, selectedTags, onTagToggle }) => {
+const TagSelector: React.FC<TagSelectorProps> = ({ title, tags, selectedTags, onTagToggle, singleSelection = false }) => {
     if (!tags.length) return null;
+
+    const handleToggle = (tagId: string) => {
+        onTagToggle(tagId);
+    };
 
     return (
         <div className="tag-selector-container">
-            <p className="tag-selector-title">2. Choose concepts (or leave blank for random)</p>
+            <p className="transform-step-title">{title}</p>
             <div className="tag-list-wrapper">
                 <div className="tag-list">
                     {tags.map(tag => (
-                        <button
+                         <button
                             key={tag.id}
-                            className={`tag-button ${selectedTags.includes(tag.id) ? 'active' : ''}`}
-                            onClick={() => onTagToggle(tag.id)}
+                            className={`tag-button ${selectedTags.includes(tag.id) ? 'active' : ''} ${singleSelection && !selectedTags.includes(tag.id) ? 'single-select' : ''}`}
+                            onClick={() => handleToggle(tag.id)}
                             title={tag.description}
                         >
                             {tag.name}
-                        </button>
+                         </button>
                     ))}
                 </div>
             </div>
@@ -32,4 +38,3 @@ const TagSelector: React.FC<TagSelectorProps> = ({ tags, selectedTags, onTagTogg
 };
 
 export default TagSelector;
-

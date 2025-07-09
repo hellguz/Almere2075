@@ -8,14 +8,17 @@ from .db_models import JobStatus
 class GeneratePromptRequest(BaseModel):
     imageBase64: str
     tags: Optional[List[str]] = None
+    # ADDED: To distinguish between threat and solution prompt generation
+    type: str = 'solution'
 
-class TransformImageRequest(BaseModel):
+class CreateGenerationRequest(BaseModel):
     imageBase64: str
-    prompt: str
-    tags: List[str]
+    threat_tag: str
     original_filename: str
-    # ADDED: To know which image set this transformation belongs to.
     dataset: str
+
+class GenerateSolutionRequest(BaseModel):
+    solution_tags: List[str]
 
 class SetCreatorNameRequest(BaseModel):
     name: str
@@ -35,11 +38,20 @@ class GenerationInfo(BaseModel):
     original_image_filename: str
     # ADDED: URL for the original image's thumbnail.
     original_image_thumb_url: Optional[str] = None
+    
+    # ADDED: Fields for the intermediate threat image
+    threat_image_url: Optional[str] = None
+    threat_image_thumb_url: Optional[str] = None
+    threat_prompt_text: Optional[str] = None
+    threat_tags_used: Optional[List[str]] = None
+    
+    # Fields for the final solution image
     generated_image_url: Optional[str] = None
     # ADDED: URL for the generated image's thumbnail.
     generated_image_thumb_url: Optional[str] = None
     prompt_text: Optional[str] = None
     tags_used: Optional[List[str]] = None
+    
     creator_name: Optional[str] = None
     votes: int
     is_visible: bool
@@ -51,7 +63,6 @@ class GenerationInfo(BaseModel):
 
 class JobStatusResponse(BaseModel):
     status: JobStatus
-    result: Optional[str] = None # The generated image URL
     error: Optional[str] = None
     generation_data: Optional[GenerationInfo] = None
 
@@ -66,6 +77,3 @@ class GamificationStatsResponse(BaseModel):
     happiness_score: int
     target_score: int
     deadline_iso: str
-
-
-

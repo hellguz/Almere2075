@@ -1,6 +1,8 @@
 export enum JobStatus {
     PENDING = "pending",
     PROCESSING = "processing",
+    // ADDED: New intermediate status
+    THREAT_COMPLETED = "threat_completed",
     COMPLETED = "completed",
     FAILED = "failed",
 }
@@ -16,11 +18,17 @@ export interface GenerationDetails {
     status: JobStatus;
     dataset: string; // ADDED: To know if it's 'weimar' or 'almere'
     original_image_filename: string;
-    // ADDED: The path to the thumbnail of the original image.
-    original_image_thumb_url?: string;
+    original_image_thumb_url?: string; // ADDED: The path to the thumbnail of the original image.
+
+    // ADDED: Fields for the threat image
+    threat_image_url: string | null;
+    threat_image_thumb_url: string | null;
+    threat_prompt_text: string | null;
+    threat_tags_used: string[] | null;
+
+    // Fields for the solution image
     generated_image_url: string | null;
-    // ADDED: The path to the thumbnail of the generated image.
-    generated_image_thumb_url?: string;
+    generated_image_thumb_url?: string; // ADDED: The path to the thumbnail of the generated image.
     prompt_text: string | null;
     tags_used: string[] | null;
     creator_name: string | null;
@@ -63,6 +71,3 @@ export interface AppState {
     isCommunityItem: boolean;
     showTutorial: boolean;
 }
-
-
-

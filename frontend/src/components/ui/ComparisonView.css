@@ -1,7 +1,6 @@
 .comparison-container { 
     display: flex; flex-direction: column; 
-    box-sizing: border-box; position: relative; width: 100%;
-    height: 100%; 
+    box-sizing: border-box; position: relative; width: 100%; height: 100%; 
     pointer-events: none;
 }
 .floating-controls-top,
@@ -22,33 +21,60 @@
 
 .floating-controls-top { 
     /* MODIFIED: Using CSS variable to account for the ticker's height */
-    position: absolute; top: calc(var(--top-offset, 0px) + 20px);
+    position: absolute;
+    top: calc(var(--top-offset, 0px) + 20px);
     right: 25px; z-index: 20; }
 .view-mode-toggle { 
-    display: flex; background: var(--liquid-bg); border-radius: 20px; 
+    display: flex; background: var(--liquid-bg);
+    border-radius: 20px; 
     border: 1px solid var(--liquid-border);
     padding: 4px; 
     backdrop-filter: blur(var(--liquid-blur)); }
 .view-mode-toggle button { 
-    border: none; background: transparent; color: var(--color-text-secondary); 
+    border: none;
+    background: transparent; color: var(--color-text-secondary); 
     padding: 6px 14px;
     border-radius: 16px; font-weight: 600; font-size: 13px; 
-    transition: all 0.2s ease; 
+    transition: all 0.2s ease;
 }
 .view-mode-toggle button:hover { color: var(--color-text-primary);
 }
 .view-mode-toggle button.active { 
-    background: var(--color-text-primary); color: var(--color-background); 
+    background: var(--color-text-primary); color: var(--color-background);
 }
 .comparison-main-area { 
     width: 100%;
     height: 100%; 
 }
 .comparison-view { 
-    width: 100%; height: 100%; display: flex; position: relative;
+    width: 100%; height: 100%;
+    display: flex; position: relative;
 }
 .comparison-view.side-by-side { 
-    gap: 10px; box-sizing: border-box; }
+    /* MODIFIED: New layout for 3 images */
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+}
+
+.sbs-top-row {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    flex: 3; /* Takes more space */
+    min-height: 0;
+}
+
+.sbs-bottom-row {
+    width: 100%;
+    flex: 1; /* Takes less space */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 0;
+}
 
 .image-panel {
   flex: 1;
@@ -61,29 +87,83 @@
   background-position: center; border-radius: 8px;
   background-color: #000;
 }
+
+/* Specific size for the bottom original image */
+.sbs-bottom-row .image-panel {
+    height: 100%;
+    width: auto;
+    aspect-ratio: 16 / 9; /* Or whatever aspect ratio is desired */
+    max-width: 33%;
+}
+
+/* Arrows for side-by-side view */
+.arrow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+    overflow: hidden;
+}
+
+.arrow {
+    position: absolute;
+    width: 2px;
+    height: 100px; /* This will be set by JS */
+    background: white;
+    transform-origin: top center;
+}
+
+.arrow.threat {
+    top: 50%;
+    left: 50%;
+}
+
+.arrow.solution {
+    top: 50%;
+    left: 50%;
+}
+
+.arrow::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: -4px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 10px solid white;
+}
+
+
 .image-header { 
   font-size: 12px;
   font-weight: 500; text-transform: uppercase; position: absolute; top: 0; left: 50%; transform: translateX(-50%); 
-  background: rgba(0,0,0,0.5); padding: 4px 12px;
+  background: rgba(0,0,0,0.5);
+  padding: 4px 12px;
   border-radius: 0 0 8px 8px; color: var(--color-text-secondary); z-index: 5;
 }
 
 .comparison-view.slider-mode { 
-    position: relative; overflow: hidden;
+    position: relative;
+    overflow: hidden;
     cursor: ew-resize; }
 .slider-mode .image-panel { position: absolute; top: 0; left: 0; }
-.slider-mode .image-panel.after-image { z-index: 2;
-}
+.slider-mode .image-panel.after-image { z-index: 2; }
 .slider-line { 
     position: absolute; top: 0; height: 100%; width: 2px; 
     background: var(--color-accent-white);
     box-shadow: 0 0 7px rgba(255, 255, 255, 0.9), 0 0 20px 2px var(--color-accent-glow); 
-    transform: translateX(-1px); pointer-events: none; z-index: 4; 
+    transform: translateX(-1px); pointer-events: none; z-index: 4;
 }
 .slider-handle { 
     position: absolute;
     top: 50%; left: 50%; width: 44px; height: 44px; 
-    border: 2px solid var(--color-accent-white); border-radius: 50%; 
+    border: 2px solid var(--color-accent-white);
+    border-radius: 50%; 
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(10px); 
     transform: translate(-50%, -50%); 
@@ -95,7 +175,8 @@
     bottom: calc(var(--bottom-offset, 0px) + 20px + env(safe-area-inset-bottom));
     left: 50%;
     width: 90%; max-width: 900px;
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex;
+    justify-content: space-between; align-items: center;
     gap: 15px; background: var(--liquid-bg); padding: 12px 20px;
     border-radius: 16px;
     backdrop-filter: blur(var(--liquid-blur)); 
@@ -105,11 +186,13 @@
     transform: translateX(-50%);
     transition: all 0.2s ease;
 }
-.footer-left { flex: 2; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0;
+.footer-left { flex: 2; display: flex;
+    flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0;
 }
 .info-creator { 
     color: var(--color-text-secondary); font-size: 0.8rem; 
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
 }
 .info-creator b { color: var(--color-text-primary); }
 
@@ -131,10 +214,8 @@
     margin-right: 4px;
 }
 
-.footer-center { flex: 1.5; display: flex; justify-content: center;
-    align-items: center; gap: 15px;}
-.footer-right { flex: 1; display: flex; justify-content: flex-end; align-items: center;
-    gap: 10px;}
+.footer-center { flex: 1.5; display: flex; justify-content: center; align-items: center; gap: 15px;}
+.footer-right { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 10px;}
 
 .name-input-container {
     display: flex;

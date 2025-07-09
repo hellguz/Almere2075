@@ -32,14 +32,12 @@ function App() {
 
   // NEW: Add routing logic for the slideshow
   const [isSlideshow] = useState(window.location.pathname === '/slides');
-
   // Effect for fetching initial data on mount
   useEffect(() => {
     // Don't fetch interactive-app data if we are in slideshow mode
     if (isSlideshow) return;
     actions.fetchInitialData();
   }, [actions, isSlideshow]);
-
   // Effect for fetching dataset-specific data when the dataset changes
   useEffect(() => {
     // Don't fetch interactive-app data if we are in slideshow mode
@@ -58,9 +56,9 @@ function App() {
     display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', background: '#000'
   } as React.CSSProperties;
 
-
   const showGalleryBackground = (view === 'transform' || view === 'comparison') && !state.isCommunityItem;
   const showBackButton = view !== 'gallery' && !state.modalItem;
+
   return (
     <div style={appWrapperStyle}>
       {tickerConfig.showTopTicker && <NewsTicker position="top" />}
@@ -82,7 +80,7 @@ function App() {
                   <button className="community-gallery-button" onClick={() => actions.setState('view', 'community_gallery')}>COMMUNITY GALLERY</button>
               )}
             </div>
-        </header>
+         </header>
 
         <main>
           <GalleryView 
@@ -95,17 +93,22 @@ function App() {
           />
            <TransformView 
               sourceImage={state.sourceImageForTransform} 
+              threatImage={state.threatImageForTransform}
               isVisible={view === 'transform'} 
               isProcessing={state.isProcessing}
-              onTransform={actions.handleTransform}
-              tags={state.availableTags}
-              selectedTags={state.selectedTags}
-              onTagToggle={actions.toggleTag}
+              transformStep={state.transformStep}
+              onGenerateThreat={actions.handleGenerateThreat}
+              onGenerateSolution={actions.handleGenerateSolution}
+              availableThreatTags={state.availableThreatTags}
+              selectedThreatTag={state.selectedThreatTag}
+              onThreatTagSelect={actions.selectThreatTag}
+              availableSolutionTags={state.availableSolutionTags}
+              selectedSolutionTags={state.selectedSolutionTags}
+              onSolutionTagToggle={actions.toggleSolutionTag}
            />
-          <ComparisonView
+           <ComparisonView
               generationDetails={state.generationDetails}
-              sourceImage={state.sourceImageForTransform}
-               isVisible={view === 'comparison'}
+              isVisible={view === 'comparison'}
               mode={state.comparisonMode}
               onModeChange={(mode) => actions.setState('comparisonMode', mode)}
               onSetName={actions.handleSetName}
@@ -126,7 +129,7 @@ function App() {
          <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
         
         <TutorialModal 
-            isVisible={state.showTutorial} 
+             isVisible={state.showTutorial}
             onClose={actions.closeTutorial}
         />
       </div>

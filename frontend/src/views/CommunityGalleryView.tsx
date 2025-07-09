@@ -3,7 +3,6 @@ import ComparisonView from '../components/ui/ComparisonView';
 import type { GenerationDetails } from '../types';
 import { API_BASE_URL } from '../config';
 import './CommunityGalleryView.css';
-
 /**
  * @typedef {object} CommunityGalleryViewProps
  * @property {boolean} isVisible - Whether the view is currently visible.
@@ -27,7 +26,6 @@ interface CommunityGalleryViewProps {
 }
 
 type ComparisonMode = 'slider' | 'side-by-side';
-
 /**
  * Renders the community gallery grid and the modal for viewing individual items.
  * @param {CommunityGalleryViewProps} props The component props.
@@ -56,13 +54,12 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                     viewRef.current.style.height = `${window.innerHeight}px`;
                 }
             };
-            
+ 
             setViewHeight();
             window.addEventListener('resize', setViewHeight);
             return () => window.removeEventListener('resize', setViewHeight);
         }
     }, [isVisible]);
-
     // MODIFIED: Re-fetch gallery when view becomes visible OR when dataset changes.
     useEffect(() => {
         if (isVisible && !modalItem) {
@@ -77,7 +74,7 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                     modalRef.current.style.height = `${window.innerHeight}px`;
                 }
             };
-            
+ 
             setModalHeight();
             window.addEventListener('resize', setModalHeight);
             return () => window.removeEventListener('resize', setModalHeight);
@@ -100,59 +97,58 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                 <p>Explore visions of Almere 2075 from the <b>{dataset.toUpperCase()}</b> dataset. <b>Give a "👍" to your favorites</b> to help the city reach its happiness goal!</p>
             </div>
             <div className="gallery-grid-container">
+        
                  {items.map(item => {
-                    // MODIFIED: Use new thumbnail URLs for the grid, with fallbacks to full images.
-                    const generatedThumbUrl = item.generated_image_thumb_url
+                    const solutionThumbUrl = item.generated_image_thumb_url
                         ? `${API_BASE_URL}/thumbnails/${item.generated_image_thumb_url}`
                         : (item.generated_image_url ? `${API_BASE_URL}/${item.generated_image_url}` : '');
 
-                    const originalThumbUrl = item.original_image_thumb_url
-                        ? `${API_BASE_URL}/thumbnails/${item.original_image_thumb_url}`
-                        : `${API_BASE_URL}/images/${item.dataset}/${item.original_image_filename}`;
+                    const threatThumbUrl = item.threat_image_thumb_url
+                        ? `${API_BASE_URL}/thumbnails/${item.threat_image_thumb_url}`
+                        : (item.threat_image_url ? `${API_BASE_URL}/${item.threat_image_url}` : '');
 
                     return (
                         <div key={item.id} className="gallery-item" onClick={() => onItemSelect(item)}>
                             <div className="gallery-item-images">
-                                {generatedThumbUrl && <img src={generatedThumbUrl} alt="Generated" className="gallery-item-thumb generated"/>}
-                                <img src={originalThumbUrl} alt="Original" className="gallery-item-thumb original"/>
+                                {solutionThumbUrl && <img src={solutionThumbUrl} alt="Solution" className="gallery-item-thumb generated"/>}
+                                <img src={threatThumbUrl || solutionThumbUrl} alt="Threat" className="gallery-item-thumb original"/>
                             </div>
                             <div className="gallery-item-info">
-                                <div className="gallery-item-details">
+                                 <div className="gallery-item-details">
                                     <div className="gallery-item-tags">
                                         {item.tags_used?.slice(0, 3).join(', ') || 'General Concept'}
                                     </div>
                                     <div className="gallery-item-creator">
-                                        by {item.creator_name || 'Anonymous'}
+                                         by {item.creator_name || 'Anonymous'}
                                     </div>
                                 </div>
-                                <button className="like-button" onClick={(e) => handleVoteClick(e, item.id)}>
+                                 <button className="like-button" onClick={(e) => handleVoteClick(e, item.id)}>
                                   👍 {item.votes}
                                 </button>
-                            </div>
+                             </div>
                         </div>
                     );
-                })}
+                 })}
             </div>
 
             {modalItem && (
                  <div className="modal-overlay" onClick={onModalClose} ref={modalRef}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-header">
-                            <button className="modal-close-button" onClick={onModalClose}>← CLOSE</button>
+                             <button className="modal-close-button" onClick={onModalClose}>← CLOSE</button>
                             <div className="view-mode-toggle">
-                                <button className={modalComparisonMode === 'side-by-side' ? 'active' : ''} onClick={() => setModalComparisonMode('side-by-side')}>Side-by-Side</button>
-                                <button className={modalComparisonMode === 'slider' ? 'active' : ''} onClick={() => setModalComparisonMode('slider')}>Slider</button>
+                                <button className={modalComparisonMode === 'side-by-side' ? 'active' : ''} onClick={() => setModalComparisonMode('side-by-side')}>3-Way</button>
+                                 <button className={modalComparisonMode === 'slider' ? 'active' : ''} onClick={() => setModalComparisonMode('slider')}>Slider</button>
                             </div>
                         </div>
-                        <ComparisonView
+                         <ComparisonView
                             generationDetails={modalItem}
                             isVisible={true}
                             isModal={true}
-                            mode={modalComparisonMode}
+                             mode={modalComparisonMode}
                             onModeChange={setModalComparisonMode}
                             onVote={handleModalVote}
-                            sourceImage={null}
-                        />
+                         />
                     </div>
                 </div>
              )}
