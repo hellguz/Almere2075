@@ -5,165 +5,120 @@ import NewsTicker from '../components/ui/NewsTicker';
 import { tickerConfig } from '../tickerConfig';
 import './SlideshowView.css';
 
-/**
- * Fetches a random generation from the backend.
- * @param {string} dataset The dataset to fetch from ('weimar' or 'almere').
- * @returns {Promise<GenerationDetails>} A promise that resolves to the generation details.
- */
-const fetchRandomGeneration = async (dataset: string): Promise<GenerationDetails> => {
-    console.log(`Fetching new image for '${dataset}' dataset...`);
-    const response = await fetch(`${API_BASE_URL}/random-generation?dataset=${dataset}`);
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Failed to fetch. Status:", response.status, "Error:", errorText);
-        throw new Error(`Failed to fetch random generation for ${dataset}`);
+const ANIMATION_DURATION = 8; // 8 seconds for one slider pass
+const PRELOAD_AHEAD = 3;      // How many full generations to preload in advance
+
+// --- Helper Functions ---
+
+const fetchRandomGeneration = async (dataset: string): Promise<GenerationDetails | null> => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/random-generation?dataset=${dataset}`);
+        if (!response.ok) throw new Error(`Failed to fetch random generation for ${dataset}`);
+        return response.json();
+    } catch (error) {
+        console.error("Fetch failed:", error);
+        return null; // Return null on failure
     }
-    const data = await response.json();
-    console.log("Successfully fetched new image ID:", data.id);
-    return data;
 };
 
-/**
- * Preloads an image to cache it in the browser.
- * @param {string} src The source URL of the image to preload.
- * @returns {Promise<void>} A promise that resolves when the image is loaded.
- */
+const getImageUrl = (gen: GenerationDetails | null, type: 'original' | 'threat' | 'generated', dataset: string): string => {
+    if (!gen) return '';
+    if (type === 'original') return `${API_BASE_URL}/images/${gen.dataset || dataset}/${gen.original_image_filename}`;
+    if (type === 'threat') return gen.threat_image_url ? `${API_BASE_URL}/${gen.threat_image_url}` : '';
+    return gen.generated_image_url ? `${API_BASE_URL}/${gen.generated_image_url}` : '';
+};
+
 const preloadImage = (src: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
+        if (!src) return resolve();
         const img = new Image();
         img.src = src;
         img.onload = () => resolve();
-        img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+        img.onerror = () => { console.error(`Failed to preload image: ${src}`); resolve(); };
     });
 };
 
-/**
- * A non-interactive slideshow view for projecting generated images.
- * @returns {JSX.Element} The rendered SlideshowView component.
- */
-const SlideshowView: React.FC = () => {
-    const [currentGen, setCurrentGen] = useState<GenerationDetails | null>(null);
-    const [nextGen, setNextGen] = useState<GenerationDetails | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const [animationKey, setAnimationKey] = useState(0);
-    const [iterationCount, setIterationCount] = useState(0);
-    const [isAnimating, setIsAnimating] = useState(false);
-    const [visibleYear, setVisibleYear] = useState('2025');
+// --- Main Slideshow View Component ---
 
-    const sliderRef = useRef<HTMLDivElement>(null);
-    const dataset = useMemo(() => {
-        const params = new URLSearchParams(window.location.search);
-        return params.get('set') || 'almere';
-    }, []);
+const SlideshowView: React.FC = () => {
+    const [generations, setGenerations] = useState<GenerationDetails[]>([]);
+    const [step, setStep] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
+    const [baseImageUrl, setBaseImageUrl] = useState('');
+    const [revealImageUrl, setRevealImageUrl] = useState('');
+
+    const dataset = useMemo(() => new URLSearchParams(window.location.search).get('set') || 'almere', []);
     const capitalizedDataset = useMemo(() => dataset.charAt(0).toUpperCase() + dataset.slice(1), [dataset]);
 
-    const getImageUrl = useCallback((gen: GenerationDetails | null, type: 'original' | 'generated'): string => {
-        if (!gen) return '';
-        if (type === 'original') {
-            return `${API_BASE_URL}/images/${gen.dataset}/${gen.original_image_filename}`;
-        }
-        return gen.generated_image_url ? `${API_BASE_URL}/${gen.generated_image_url}` : '';
-    }, []);
+    const handleAnimationIteration = useCallback(() => {
+        const newStep = step + 1;
 
-    // Effect to handle the end of the full 4-pass cycle.
-    useEffect(() => {
-        const slider = sliderRef.current;
-        if (!slider) return;
-
-        const handleAnimationEnd = () => {
-            if (nextGen) {
-                setCurrentGen(nextGen);
-                fetchRandomGeneration(dataset)
-                    .then(setNextGen)
-                    .catch(err => {
-                        console.error("COULD NOT FETCH NEXT IMAGE. Slideshow will pause after next cycle.", err);
-                        setTimeout(() => {
-                            fetchRandomGeneration(dataset).then(setNextGen).catch(() => {});
-                        }, 5000);
-                    });
-            }
-            setIterationCount(0);
-            setIsAnimating(false); // Pause animation briefly for state to update
-            setAnimationKey(k => k + 1);
-        };
-
-        slider.addEventListener('animationend', handleAnimationEnd);
-        return () => slider.removeEventListener('animationend', handleAnimationEnd);
-    }, [animationKey, dataset, nextGen, currentGen]);
-
-    // Effect to handle each individual pass to control the image layers.
-    useEffect(() => {
-        const slider = sliderRef.current;
-        if (!slider) return;
-
-        const handleAnimationIteration = () => {
-            setIterationCount(c => c + 1);
-        };
+        const currentGenIndex = Math.floor(newStep / 3);
+        const nextGenIndex = currentGenIndex + 1;
         
-        slider.addEventListener('animationiteration', handleAnimationIteration);
-        return () => slider.removeEventListener('animationiteration', handleAnimationIteration);
-    }, [animationKey]);
+        const currentGen = generations[currentGenIndex];
+        const nextGen = generations[nextGenIndex];
 
-    // Effect to handle the year text change based on slider position.
-    useEffect(() => {
-        let animFrameId: number;
-    
-        const updateYearBasedOnSlider = () => {
-            if (sliderRef.current) {
-                // Get the computed 'left' value as a percentage.
-                const leftPercent = parseFloat(getComputedStyle(sliderRef.current).left) / window.innerWidth * 100;
-    
-                const isLTR = iterationCount % 2 === 0; // Animation direction
-                let year = '2025';
-    
-                if (isLTR) { // Moving left to right (0 -> 100), reveal 2075
-                    year = leftPercent > 50 ? '2075' : '2025';
-                } else { // Moving right to left (100 -> 0), reveal 2025
-                    year = leftPercent < 50 ? '2075' : '2025';
-                }
-                setVisibleYear(year);
+        if (!currentGen || !nextGen) {
+            console.error("Slideshow out of generations, pausing to refetch.");
+            // Attempt to recover by refetching
+            fetchRandomGeneration(dataset).then(gen => {
+                if(gen) setGenerations(g => [...g, gen]);
+            });
+            return;
+        }
+
+        const isSliderOnRight = newStep % 2 === 1;
+
+        if (isSliderOnRight) {
+            // A L-to-R animation just finished. The BASE layer is hidden. Update it for the next pass.
+            const nextStageIndex = (newStep + 1) % 3;
+            if (nextStageIndex === 2) { // Upcoming R->L pass is Threat -> Solution
+                setBaseImageUrl(getImageUrl(currentGen, 'generated', dataset));
+            } else { // Upcoming R->L pass is New Original -> New Threat
+                setBaseImageUrl(getImageUrl(nextGen, 'threat', dataset));
             }
-            animFrameId = requestAnimationFrame(updateYearBasedOnSlider);
-        };
-    
-        if (isAnimating) {
-            animFrameId = requestAnimationFrame(updateYearBasedOnSlider);
         } else {
-            // Reset year for the next cycle's start
-            setVisibleYear('2025');
+            // A R-to-L animation just finished. The REVEAL layer is hidden. Update it for the next pass.
+            const nextStageIndex = (newStep + 1) % 3;
+            if (nextStageIndex === 0) { // Upcoming L->R pass is Original -> Threat
+                setRevealImageUrl(getImageUrl(currentGen, 'threat', dataset));
+            } else { // Upcoming L->R pass is Solution -> New Original
+                setRevealImageUrl(getImageUrl(nextGen, 'original', dataset));
+            }
         }
+        
+        // Fetch more generations if the queue is running low
+        if (generations.length - nextGenIndex < PRELOAD_AHEAD) {
+            fetchRandomGeneration(dataset).then(gen => {
+                 if(gen) setGenerations(g => [...g, gen]);
+            });
+        }
+        setStep(newStep);
+    }, [step, generations, dataset]);
     
-        return () => {
-            cancelAnimationFrame(animFrameId);
-        };
-    }, [isAnimating, iterationCount]);
-
-    // Preloading effect
-    useEffect(() => {
-        if (nextGen) {
-            preloadImage(getImageUrl(nextGen, 'original')).catch(console.error);
-            preloadImage(getImageUrl(nextGen, 'generated')).catch(console.error);
-        }
-    }, [nextGen, getImageUrl]);
-
     // Initial data load effect
     useEffect(() => {
         const init = async () => {
             try {
-                const [initialGen, secondGen] = await Promise.all([
-                    fetchRandomGeneration(dataset),
-                    fetchRandomGeneration(dataset),
-                ]);
-                
-                await Promise.all([
-                    preloadImage(getImageUrl(initialGen, 'original')),
-                    preloadImage(getImageUrl(initialGen, 'generated')),
-                    preloadImage(getImageUrl(secondGen, 'original')),
-                    preloadImage(getImageUrl(secondGen, 'generated')),
-                ]);
+                const initialGens = await Promise.all(
+                    [...Array(PRELOAD_AHEAD)].map(() => fetchRandomGeneration(dataset))
+                );
+                const validGens = initialGens.filter((g): g is GenerationDetails => g !== null);
 
-                setCurrentGen(initialGen);
-                setNextGen(secondGen);
+                if (validGens.length < 2) {
+                    throw new Error("Could not fetch enough initial generations.");
+                }
+
+                await Promise.all(validGens.map(g => Promise.all([
+                    preloadImage(getImageUrl(g, 'original', dataset)),
+                    preloadImage(getImageUrl(g, 'threat', dataset)),
+                    preloadImage(getImageUrl(g, 'generated', dataset)),
+                ])));
+                
+                setGenerations(validGens);
+                setBaseImageUrl(getImageUrl(validGens[0], 'original', dataset));
+                setRevealImageUrl(getImageUrl(validGens[0], 'threat', dataset));
                 setIsLoading(false);
             } catch (error) {
                 console.error("FATAL: Could not initialize slideshow.", error);
@@ -171,67 +126,53 @@ const SlideshowView: React.FC = () => {
             }
         };
         init();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dataset]);
 
-    // Effect to start animation once loading is complete
-    useEffect(() => {
-        if (!isLoading) {
-            // Use a timeout to ensure all state is settled before starting the animation
-            const timer = setTimeout(() => setIsAnimating(true), 100);
-            return () => clearTimeout(timer);
-        }
-    }, [isLoading, animationKey]);
-    
-    // MODIFIED: Set CSS variables for ticker offsets, always including the top one
+    const { textOverlay, tags } = useMemo(() => {
+        const genIndex = Math.floor(step / 3);
+        const stageIndex = step % 3;
+        const currentGen = generations[genIndex];
+        if (!currentGen) return { textOverlay: 'Loading...', tags: [] };
+
+        if (stageIndex === 0) return {
+            textOverlay: `${capitalizedDataset}: Original → Crisis`,
+            tags: currentGen.threat_tags_used?.map(tag => ({ key: tag, type: 'threat', text: tag })) || []
+        };
+        if (stageIndex === 1) return {
+            textOverlay: `${capitalizedDataset}: Crisis → Solution`,
+            tags: currentGen.tags_used?.map(tag => ({ key: tag, type: 'solution', text: tag })) || []
+        };
+        return { textOverlay: `Next Vision: ${capitalizedDataset}`, tags: [] };
+    }, [step, generations, capitalizedDataset]);
+
     const viewStyle = {
         '--bottom-offset': tickerConfig.showBottomTicker ? tickerConfig.tickerHeight : '0px',
         '--top-offset': tickerConfig.tickerHeight,
+        '--animation-duration': `${ANIMATION_DURATION}s`,
     } as React.CSSProperties;
 
     if (isLoading) {
         return <div className="slideshow-view" style={viewStyle}><div className="slideshow-loading">Loading Slideshow...</div></div>;
     }
 
-    if (!currentGen) {
-        return <div className="slideshow-view" style={viewStyle}><div className="slideshow-loading">Error: Could not load any images. Please check the connection and refresh.</div></div>;
-    }
-
-    const isFinalPass = iterationCount === 3;
-    const currentOriginalUrl = getImageUrl(currentGen, 'original');
-    const currentGeneratedUrl = getImageUrl(currentGen, 'generated');
-    const nextOriginalUrl = getImageUrl(nextGen, 'original');
-    
     return (
         <div className="slideshow-view" style={viewStyle}>
-            {/* MODIFIED: Always show a top, rotated ticker in this view */}
             <NewsTicker position="top" isRotated={true} />
             <div className="slideshow-content-wrapper">
-                <div key={animationKey} className={`slideshow-content ${isAnimating ? 'is-animating' : ''}`}>
-                    <div className="slideshow-image-base" style={{ opacity: isFinalPass ? 0 : 1 }}>
-                        <div className="image-sizer" style={{ backgroundImage: `url("${currentOriginalUrl}")` }}></div>
+                <div className={`slideshow-content is-animating`}>
+                    <div className="slideshow-image-base">
+                        <div className="image-sizer" style={{ backgroundImage: `url("${baseImageUrl}")` }} />
                     </div>
-                    <div className="slideshow-image-base" style={{ opacity: isFinalPass ? 1 : 0 }}>
-                        <div className="image-sizer" style={{ backgroundImage: `url("${nextOriginalUrl}")` }}></div>
+                    <div className="after-image" onAnimationIteration={handleAnimationIteration}>
+                        <div className="image-sizer" style={{ backgroundImage: `url("${revealImageUrl}")` }} />
                     </div>
-                    <div className="after-image">
-                        <div className="image-sizer" style={{ backgroundImage: `url("${currentGeneratedUrl}")` }}></div>
-                    </div>
-                    
-                    <div ref={sliderRef} className="slideshow-slider" />
+                    <div className="slideshow-slider" />
                 </div>
-
-                <div className="slideshow-text-overlay">
-                    {capitalizedDataset} {visibleYear}
-                </div>
-
+                <div className="slideshow-text-overlay">{textOverlay}</div>
                 <div className="slideshow-tags-overlay">
-                    {currentGen?.tags_used?.map(tag => (
-                        <div key={tag} className="slideshow-tag-chip">{tag}</div>
-                    ))}
+                    {tags.map(tag => <div key={tag.key} className={`slideshow-tag-chip ${tag.type}`}>{tag.text}</div>)}
                 </div>
             </div>
-            {/* MODIFIED: Keep bottom ticker conditional, but it will also be uppercase */}
             {tickerConfig.showBottomTicker && <NewsTicker position="bottom" />}
         </div>
     );
