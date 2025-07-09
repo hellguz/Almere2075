@@ -16,8 +16,8 @@ const isMobile = (): boolean => {
 const DESKTOP_GALLERY_CONFIG = {
   FALLOFF_RADIUS: 8.0,
   SCALE_CURVE: 7,
-  MAX_SCALE: 2.5,
-  MIN_SCALE: 0.85,
+  MAX_SCALE: 2.8,
+  MIN_SCALE: 0.9,
   GRID_DENSITY: 0.9,
   Z_LIFT: 2.0,
   DISTORTION_POWER: 0.8,

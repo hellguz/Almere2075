@@ -62,7 +62,7 @@ const DynamicGallery: React.FC<DynamicGalleryProps> = ({
       .multiplyScalar(1 / imageCount);
 
     // MODIFIED: Adjusted the compression factor to a less aggressive value for a better screen fit.
-    const GRID_COMPRESSION_FACTOR = 0.67;
+    const GRID_COMPRESSION_FACTOR = 0.75;
 
     for (let i = 0; i < imageCount; i++) {
       const point = tempPoints[i];

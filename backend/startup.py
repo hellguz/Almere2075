@@ -42,7 +42,7 @@ def compress_and_resize_image(image_path: Path):
         with Image.open(image_path) as img:
             original_size = img.size
             original_suffix = image_path.suffix.lower()
-            is_original_jpeg = original_suffix in ['.jpg', '.jpeg']
+            is_original_jpeg = original_suffix in ['.jpg']
             needs_resize = img.width > MAX_DIMENSION or img.height > MAX_DIMENSION
 
             # If it's already a JPEG and doesn't need resizing, we can skip it.
