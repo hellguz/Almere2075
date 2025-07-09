@@ -255,7 +255,7 @@
 }
 
 .footer-left {
-    flex: 2;
+    flex: 0.8;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
