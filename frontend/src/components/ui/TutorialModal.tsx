@@ -3,14 +3,20 @@ import { API_BASE_URL } from '../../config';
 import type { GenerationDetails } from '../../types';
 import './TutorialModal.css';
 
-const FALLBACK_ORIGINAL_URL = '/api/images/weimar/IMG_20250628_213414260.jpg';
-const FALLBACK_GENERATED_URL = '/api/images/generated/a433b906-ee2a-45fc-9d61-7702dd8ee903.png';
+const FALLBACK_ORIGINAL_URL = '/api/images/weimar/IMG_20250609_205051679.jpg';
+const FALLBACK_GENERATED_URL = '/api/images/generated/e5524607-f8bd-4548-8d98-992dc128f304.png';
 
 interface TutorialModalProps {
     isVisible: boolean;
     onClose: () => void;
 }
 
+/**
+ * A modal component that provides a tutorial for the application.
+ * It explains the two-step generation process and the overall goal of the exhibition.
+ * @param {TutorialModalProps} props The component props.
+ * @returns {JSX.Element | null} The rendered TutorialModal component or null.
+ */
 const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => {
     const sliderContainerRef = useRef<HTMLDivElement>(null);
     const [clipPosition, setClipPosition] = useState(50);
@@ -22,21 +28,18 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => 
         if (isVisible) {
             const fetchImagePair = async () => {
                 try {
-                    // Fetch from 'weimar' dataset for a consistent tutorial experience
-                    const response = await fetch(`${API_BASE_URL}/public-gallery?dataset=weimar`);
+                    const response = await fetch(`${API_BASE_URL}/random-generation?dataset=weimar`);
                     if (!response.ok) {
-                         throw new Error(`Failed to fetch public gallery with status: ${response.status}`);
+                         throw new Error(`Failed to fetch random generation: ${response.status}`);
                     }
-                    const galleryItems: GenerationDetails[] = await response.json();
+                    const item: GenerationDetails = await response.json();
                     
-                    if (galleryItems && galleryItems.length > 0 && galleryItems[0].generated_image_url) {
-                        const firstItem = galleryItems[0];
-                        setOriginalImageUrl(`${API_BASE_URL}/images/${firstItem.dataset}/${firstItem.original_image_filename}`);
-                        setGeneratedImageUrl(`${API_BASE_URL}/${firstItem.generated_image_url}`);
+                    if (item && item.generated_image_url) {
+                        setOriginalImageUrl(`${API_BASE_URL}/images/${item.dataset}/${item.original_image_filename}`);
+                        setGeneratedImageUrl(`${API_BASE_URL}/${item.generated_image_url}`);
                     }
                 } catch (error) {
                     console.error("Could not fetch dynamic tutorial image, using fallback.", error);
-                    // Reset to fallbacks in case of error
                     setOriginalImageUrl(FALLBACK_ORIGINAL_URL);
                     setGeneratedImageUrl(FALLBACK_GENERATED_URL);
                 }
@@ -55,6 +58,7 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => 
     };
 
     if (!isVisible) return null;
+
     return (
         <div className={`tutorial-modal-overlay ${isVisible ? 'visible' : ''}`} onClick={onClose}>
             <div className="tutorial-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -74,25 +78,23 @@ const TutorialModal: React.FC<TutorialModalProps> = ({ isVisible, onClose }) => 
                         }}
                     ></div>
                     <div className="slider-line" style={{ left: `${clipPosition}%` }}>
-                         <div className="slider-handle"></div>
+                      <div className="slider-handle"></div>
                     </div>
                 </div>
 
                 <div className="tutorial-description">
                     <p>
-                        This installation invites you to explore the future of urban living. It showcases a speculative design study by students of Bauhaus-Universität Weimar, who have reimagined the Dutch city of Almere for the year 2075. The project confronts critical future challenges, such as rising sea levels and resource scarcity, by proposing innovative urban and architectural solutions. To make these future scenarios tangible, this tool uses AI to transform photographs of our own city, Weimar, alongside images of Almere. You are invited to visualize how familiar spaces could evolve when faced with the need for radical new strategies like 'Sponge Parks' that manage water or 'Circular Economy Hubs' that localize production.
+                        Welcome to the <b>Almere 2075 AI Exhibition</b>, an interactive exploration of our urban future based on the speculative design work of Bauhaus-Universität Weimar students.
                     </p>
                     <p>
-                        <b>Participate in this process of urban transformation:</b>
+                        <b>The process is a two-step transformation:</b>
                         <br />
-                        <b>1. Select a Site:</b> Begin by selecting a contemporary photograph from either the Weimar or Almere gallery, or upload an image of your own.
+                        <b><span style={{color: 'var(--color-error)'}}>1. VISUALIZE THE CRISIS:</span></b> First, select a "Crisis" tag (like Extreme Flooding) to see how a potential threat could impact a city if no action is taken.
                         <br />
-                        <b>2. Apply a Strategy:</b> Choose from a palette of design concepts developed by the students. Each represents a different strategy for a more resilient future.
-                        <br />
-                        <b>3. Generate Your Vision:</b> Activate the AI to generate a unique visual narrative, showing how your chosen site adapts based on the selected strategy.
+                        <b><span style={{color: 'var(--color-system)'}}>2. ARCHITECT THE SOLUTION:</span></b> Next, from that crisis image, choose one or more "Solution" concepts (like Sponge Parks or Modular Housing) to generate a vision of a resilient, adapted future.
                     </p>
                     <p>
-                        Every image created contributes to the Community Gallery, a collective archive of possible futures. We encourage you to explore the gallery, see the visions created by others, and vote for the most compelling transformations. Your participation helps shape a dynamic picture of our shared urban future.
+                        Every image you create joins the <b>Community Gallery</b>. Explore the gallery to see what others have imagined and vote for the futures you find most compelling!
                     </p>
                 </div>
 

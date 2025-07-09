@@ -3,6 +3,7 @@ import ComparisonView from '../components/ui/ComparisonView';
 import type { GenerationDetails } from '../types';
 import { API_BASE_URL } from '../config';
 import './CommunityGalleryView.css';
+
 /**
  * @typedef {object} CommunityGalleryViewProps
  * @property {boolean} isVisible - Whether the view is currently visible.
@@ -26,6 +27,7 @@ interface CommunityGalleryViewProps {
 }
 
 type ComparisonMode = 'slider' | 'side-by-side';
+
 /**
  * Renders the community gallery grid and the modal for viewing individual items.
  * @param {CommunityGalleryViewProps} props The component props.
@@ -39,14 +41,12 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
     onItemSelect,
     onModalClose,
     fetchGallery,
-    dataset, // ADDED
+    dataset,
 }) => {
     const [modalComparisonMode, setModalComparisonMode] = useState<ComparisonMode>('side-by-side');
     const modalRef = useRef<HTMLDivElement>(null);
-    const viewRef = useRef<HTMLDivElement>(null); // ADDED: Ref for the main view container
+    const viewRef = useRef<HTMLDivElement>(null);
 
-    // MODIFIED: This effect now correctly sets the height of the main gallery view
-    // to the true visible height of the window, fixing the scrolling issue on mobile.
     useEffect(() => {
         if (isVisible && viewRef.current) {
             const setViewHeight = () => {
@@ -54,13 +54,12 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                     viewRef.current.style.height = `${window.innerHeight}px`;
                 }
             };
- 
             setViewHeight();
             window.addEventListener('resize', setViewHeight);
             return () => window.removeEventListener('resize', setViewHeight);
         }
     }, [isVisible]);
-    // MODIFIED: Re-fetch gallery when view becomes visible OR when dataset changes.
+
     useEffect(() => {
         if (isVisible && !modalItem) {
             fetchGallery();
@@ -74,7 +73,6 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                     modalRef.current.style.height = `${window.innerHeight}px`;
                 }
             };
- 
             setModalHeight();
             window.addEventListener('resize', setModalHeight);
             return () => window.removeEventListener('resize', setModalHeight);
@@ -85,11 +83,22 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
         e.stopPropagation();
         onVote(itemId);
     };
-
+    
     const handleModalVote = useCallback(() => {
         if (!modalItem) return;
         onVote(modalItem.id);
     }, [modalItem, onVote]);
+
+    /**
+     * Handles clicks on the modal overlay. Closes the modal only if the click
+     * is on the overlay itself, not on its children.
+     * @param {React.MouseEvent<HTMLDivElement>} e The mouse event.
+     */
+    const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (e.target === e.currentTarget) {
+            onModalClose();
+        }
+    };
 
     return (
         <div className={`community-gallery-view ${isVisible ? 'visible' : ''}`} ref={viewRef}>
@@ -97,12 +106,10 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                 <p>Explore visions of Almere 2075 from the <b>{dataset.toUpperCase()}</b> dataset. <b>Give a "👍" to your favorites</b> to help the city reach its happiness goal!</p>
             </div>
             <div className="gallery-grid-container">
-        
-                 {items.map(item => {
+                {items.map(item => {
                     const solutionThumbUrl = item.generated_image_thumb_url
                         ? `${API_BASE_URL}/thumbnails/${item.generated_image_thumb_url}`
                         : (item.generated_image_url ? `${API_BASE_URL}/${item.generated_image_url}` : '');
-
                     const threatThumbUrl = item.threat_image_thumb_url
                         ? `${API_BASE_URL}/thumbnails/${item.threat_image_thumb_url}`
                         : (item.threat_image_url ? `${API_BASE_URL}/${item.threat_image_url}` : '');
@@ -114,41 +121,41 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                                 <img src={threatThumbUrl || solutionThumbUrl} alt="Threat" className="gallery-item-thumb original"/>
                             </div>
                             <div className="gallery-item-info">
-                                 <div className="gallery-item-details">
+                                <div className="gallery-item-details">
                                     <div className="gallery-item-tags">
                                         {item.tags_used?.slice(0, 3).join(', ') || 'General Concept'}
                                     </div>
                                     <div className="gallery-item-creator">
-                                         by {item.creator_name || 'Anonymous'}
+                                        by {item.creator_name || 'Anonymous'}
                                     </div>
                                 </div>
-                                 <button className="like-button" onClick={(e) => handleVoteClick(e, item.id)}>
-                                  👍 {item.votes}
+                                <button className="like-button" onClick={(e) => handleVoteClick(e, item.id)}>
+                                    👍 {item.votes}
                                 </button>
-                             </div>
+                            </div>
                         </div>
                     );
-                 })}
+                })}
             </div>
 
             {modalItem && (
-                 <div className="modal-overlay" onClick={onModalClose} ref={modalRef}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                 <div className="modal-overlay" onClick={handleOverlayClick} ref={modalRef}>
+                    <div className="modal-content">
                         <div className="modal-header">
-                             <button className="modal-close-button" onClick={onModalClose}>← CLOSE</button>
+                            <button className="modal-close-button" onClick={onModalClose}>← CLOSE</button>
                             <div className="view-mode-toggle">
                                 <button className={modalComparisonMode === 'side-by-side' ? 'active' : ''} onClick={() => setModalComparisonMode('side-by-side')}>3-Way</button>
-                                 <button className={modalComparisonMode === 'slider' ? 'active' : ''} onClick={() => setModalComparisonMode('slider')}>Slider</button>
+                                <button className={modalComparisonMode === 'slider' ? 'active' : ''} onClick={() => setModalComparisonMode('slider')}>Slider</button>
                             </div>
                         </div>
-                         <ComparisonView
+                        <ComparisonView
                             generationDetails={modalItem}
                             isVisible={true}
                             isModal={true}
-                             mode={modalComparisonMode}
+                            mode={modalComparisonMode}
                             onModeChange={setModalComparisonMode}
                             onVote={handleModalVote}
-                         />
+                        />
                     </div>
                 </div>
              )}

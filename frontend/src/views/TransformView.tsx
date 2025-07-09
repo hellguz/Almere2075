@@ -20,6 +20,12 @@ interface TransformViewProps {
     onSolutionTagToggle: (tagId: string) => void;
 }
 
+/**
+ * A view for the main image transformation process, guiding the user
+ * through the two steps of 'threat' and 'solution' generation.
+ * @param {TransformViewProps} props The component props.
+ * @returns {JSX.Element | null} The rendered TransformView component or null.
+ */
 const TransformView: React.FC<TransformViewProps> = ({ 
     sourceImage, 
     threatImage,
@@ -60,19 +66,21 @@ const TransformView: React.FC<TransformViewProps> = ({
     if (!imageToShow) return null;
 
     return (
-        <div ref={viewRef} className={`transform-view ${isVisible ? 'visible' : ''}`}>
+        <div ref={viewRef} className={`transform-view ${isVisible ? 'visible' : ''} ${transformStep === 'threat' ? 'step-threat' : 'step-solution'}`}>
             <div className="transform-content">
                 <div className="main-image-container">
-                    <p className="transform-step-title">
-                        {transformStep === 'threat' ? 'Step 1: The Crisis Scenario' : 'Step 2: The Resilient Solution'}
-                    </p>
                     <img src={imageToShow.url} alt="Transformation subject" className="main-image" />
                 </div>
                 <div className="transform-options">
                     {transformStep === 'threat' ? (
                         <>
+                            <div className="transform-step-title">
+                                <span className="step-number">1</span>
+                                VISUALIZE THE CRISIS
+                            </div>
+                            <p className="transform-step-description">Select a single crisis to see its potential impact on the city.</p>
                             <TagSelector 
-                                title="1. Choose a crisis scenario"
+                                title=""
                                 tags={availableThreatTags} 
                                 selectedTags={selectedThreatTag ? [selectedThreatTag] : []} 
                                 onTagToggle={onThreatTagSelect}
@@ -83,13 +91,18 @@ const TransformView: React.FC<TransformViewProps> = ({
                                 onClick={onGenerateThreat} 
                                 disabled={isProcessing || !selectedThreatTag}
                             >
-                                {isProcessing ? 'GENERATING THREAT...' : (isMobile ? '2. GENERATE THREAT' : '2. GENERATE THREAT IMAGE')}
+                                {isProcessing ? 'GENERATING CRISIS...' : 'GENERATE CRISIS IMAGE'}
                             </button>
                         </>
                     ) : (
                         <>
+                            <div className="transform-step-title">
+                                <span className="step-number">2</span>
+                                ARCHITECT THE SOLUTION
+                            </div>
+                            <p className="transform-step-description">Now, choose one or more concepts to build a resilient future.</p>
                             <TagSelector 
-                                title="3. Choose concepts to build a better future"
+                                title=""
                                 tags={availableSolutionTags} 
                                 selectedTags={selectedSolutionTags} 
                                 onTagToggle={onSolutionTagToggle} 
@@ -97,14 +110,14 @@ const TransformView: React.FC<TransformViewProps> = ({
                             <button 
                                 className="transform-action-button" 
                                 onClick={onGenerateSolution} 
-                                disabled={isProcessing}
+                                disabled={isProcessing || selectedSolutionTags.length === 0}
                             >
-                                {isProcessing ? 'GENERATING SOLUTION...' : (isMobile ? '4. GENERATE SOLUTION' : '4. GENERATE SOLUTION IMAGE')}
+                                {isProcessing ? 'GENERATING SOLUTION...' : 'GENERATE SOLUTION IMAGE'}
                             </button>
                         </>
                     )}
-                 </div>
-             </div>
+                </div>
+            </div>
             {isProcessing && <div className="scanline"></div>}
         </div>
     );

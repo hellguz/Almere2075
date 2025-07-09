@@ -38,7 +38,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
     const [clipPosition, setClipPosition] = useState(50);
     const [creatorName, setCreatorName] = useState('');
     const [nameSaved, setNameSaved] = useState(false);
-
     // Refs for arrow calculations
     const sbsWrapperRef = useRef<HTMLDivElement>(null);
     const threatPanelRef = useRef<HTMLDivElement>(null);
@@ -82,12 +81,10 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                     const startY = originalRect.top + originalRect.height/2 - containerRect.top;
                     const endX = targetRect.left + targetRect.width / 2 - containerRect.left;
                     const endY = targetRect.top + targetRect.height - containerRect.top;
-                    
                     const dx = endX - startX;
                     const dy = endY - startY;
                     const length = Math.sqrt(dx * dx + dy * dy);
                     const angle = Math.atan2(dy, dx) * 180 / Math.PI - 90;
-                    
                     return {
                         left: `${startX}px`,
                         top: `${startY}px`,
@@ -111,7 +108,6 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
         }
     }, [mode, generationDetails, isVisible]);
 
-
     const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
         if (!sliderContainerRef.current) return;
         const rect = sliderContainerRef.current.getBoundingClientRect();
@@ -119,6 +115,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
         if (clientX === undefined) return;
         setClipPosition(Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100)));
     };
+
     const handleNameSubmit = () => {
         if (creatorName.trim() && onSetName) {
             onSetName(creatorName);
@@ -131,7 +128,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
     const originalImageUrl = `${API_BASE_URL}/images/${generationDetails.dataset}/${generationDetails.original_image_filename}`;
     const threatImageUrl = generationDetails.threat_image_url ? `${API_BASE_URL}/${generationDetails.threat_image_url}` : '';
     const solutionImageUrl = generationDetails.generated_image_url ? `${API_BASE_URL}/${generationDetails.generated_image_url}` : '';
-    
+
     const promptButton = (promptText: string | null, label: string) => (
         <div className="prompt-container">
             <div className="prompt-button">
@@ -151,13 +148,15 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                         {mode === 'side-by-side' ? (
                             <div className="comparison-view side-by-side" ref={sbsWrapperRef}>
                                 <div className="sbs-top-row">
-                                    <div ref={threatPanelRef} className="image-panel" style={{backgroundImage: `url("${threatImageUrl}")`}}>
+                                    <div ref={threatPanelRef} className="image-panel">
+                                        <img src={threatImageUrl} alt="Crisis" />
                                         <div className="image-header">CRISIS</div>
                                         <div className="image-tag-overlay">
                                             {generationDetails.threat_tags_used?.map(tag => <span key={tag} className="tag-chip">{tag}</span>)}
                                         </div>
                                     </div>
-                                    <div ref={solutionPanelRef} className="image-panel" style={{backgroundImage: `url("${solutionImageUrl}")`}}>
+                                    <div ref={solutionPanelRef} className="image-panel">
+                                        <img src={solutionImageUrl} alt="Solution" />
                                         <div className="image-header">SOLUTION</div>
                                         <div className="image-tag-overlay">
                                             {generationDetails.tags_used?.map(tag => <span key={tag} className="tag-chip">{tag}</span>)}
@@ -165,7 +164,10 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                                     </div>
                                 </div>
                                 <div className="sbs-bottom-row">
-                                    <div ref={originalPanelRef} className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}><div className="image-header">ORIGINAL</div></div>
+                                    <div ref={originalPanelRef} className="image-panel">
+                                        <img src={originalImageUrl} alt="Original" />
+                                        <div className="image-header">ORIGINAL</div>
+                                    </div>
                                 </div>
                                 <div className="arrow-container">
                                     <div className="arrow threat" style={arrowStyles.threat}></div>
@@ -174,10 +176,12 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                             </div>
                         ) : (
                             <div className="comparison-view slider-mode" ref={sliderContainerRef} onMouseMove={handleSliderMove} onTouchMove={handleSliderMove}>
-                                <div className="image-panel" style={{backgroundImage: `url("${originalImageUrl}")`}}>
+                                <div className="image-panel">
+                                    <img src={originalImageUrl} alt="Original" />
                                     <div className="image-header">ORIGINAL</div>
                                 </div>
-                                <div className="image-panel" style={{backgroundImage: `url("${solutionImageUrl}")`, clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
+                                <div className="image-panel after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
+                                    <img src={solutionImageUrl} alt="Solution" />
                                     <div className="image-header">SOLUTION</div>
                                 </div>
                                 <div className="slider-line" style={{ left: `${clipPosition}%` }}><div className="slider-handle"></div></div>
@@ -185,7 +189,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                         )}
                     </div>
                 </div>
-                 {!isModal && (
+                {!isModal && (
                     <div className="floating-controls-top">
                         <div className="view-mode-toggle">
                             <button className={mode === 'side-by-side' ? 'active' : ''} onClick={() => onModeChange('side-by-side')}>3-Way</button>
@@ -204,7 +208,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
 
                 <div className="footer-center">
                     {!isModal && onSetName && (
-                       <div className="name-input-container">
+                        <div className="name-input-container">
                             <input type="text" placeholder="Sign your creation..." value={creatorName} onChange={(e) => setCreatorName(e.target.value)} disabled={nameSaved} />
                             <button onClick={handleNameSubmit} disabled={nameSaved || !creatorName.trim()} className={nameSaved ? "save-button-saved" : "save-button"}>
                                 {nameSaved ? '✓ SAVED' : 'SAVE NAME'}

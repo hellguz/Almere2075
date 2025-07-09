@@ -5,7 +5,7 @@ import DynamicGallery from '../components/gallery/DynamicGallery';
 import type { GalleryImage, SourceImage } from '../types';
 import type { Texture } from 'three';
 import './GalleryView.css';
-import { useStore } from '../store'; // ADDED: Import the store
+import { useStore } from '../store';
 
 interface GalleryViewProps {
     images: GalleryImage[];
@@ -16,11 +16,16 @@ interface GalleryViewProps {
     onShowTutorial: () => void;
 }
 
+/**
+ * The main view for Browse and selecting images from a dynamic 3D grid.
+ * @param {GalleryViewProps} props The component props.
+ * @returns {JSX.Element} The rendered GalleryView component.
+ */
 const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackground, onImageClick, onNewImage, onShowTutorial }) => {
     const viewRef = useRef<HTMLDivElement>(null);
     const [showInstructions, setShowInstructions] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const dataset = useStore(state => state.dataset); // ADDED: Get the current dataset
+    const dataset = useStore(state => state.dataset);
 
     useEffect(() => {
         const setViewHeight = () => {
@@ -31,14 +36,16 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
 
         if (isVisible) {
              setViewHeight();
-             window.addEventListener('resize', setViewHeight);
+              window.addEventListener('resize', setViewHeight);
         }
 
         return () => {
             window.removeEventListener('resize', setViewHeight);
         };
     }, [isVisible]);
+
     const panState = useRef({ isPanning: false, startCoords: { x: 0, y: 0 }, hasDragged: false });
+
     useEffect(() => {
         const handleInteraction = () => setShowInstructions(false);
         window.addEventListener('mousemove', handleInteraction, { once: true });
@@ -50,6 +57,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
             clearTimeout(timer);
         };
     }, []);
+
     const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
         panState.current.isPanning = true;
         panState.current.hasDragged = false;
@@ -86,31 +94,29 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
         }
         e.target.value = '';
     };
+
     return (
         <div ref={viewRef} className={`fullscreen-canvas-container ${isVisible ? 'visible' : ''} ${isInBackground ? 'in-background' : ''}`}>
             {!isInBackground && (
                 <>
                     <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
-                         DRAG TO EXPLORE. TAP AN IMAGE TO BEGIN.
+                        Welcome to the Almere 2075 AI Exhibition. Select a starting image, or upload your own, to begin.
                     </div>
                     <div className="main-actions-container">
                         <button className="upload-button" onClick={onShowTutorial}>❓HOW IT WORKS</button>
-                        {/* MODIFIED: The Upload button is now only visible when not in 'almere' mode */}
-                        {dataset !== 'almere' && (
-                             <button className="upload-button" onClick={() => fileInputRef.current?.click()}>⬆️ UPLOAD AN IMAGE</button>
-                        )}
+                        <button className="upload-button" onClick={() => fileInputRef.current?.click()}>⬆️ UPLOAD YOUR OWN IMAGE</button>
                     </div>
                     <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}/>
                 </>
             )}
             <Canvas 
-                 orthographic camera={{ position: [0, 0, 10], zoom: 100 }}
+                orthographic camera={{ position: [0, 0, 10], zoom: 100 }}
                 onPointerDown={handlePointerDown}
                 onPointerMove={handlePointerMove}
                 onPointerUp={handlePointerUp}
                 onPointerLeave={handlePointerUp}
             >
-                 <ambientLight intensity={3} />
+                <ambientLight intensity={3} />
                 {images.length > 0 && 
                     <DynamicGallery 
                         images={images} 

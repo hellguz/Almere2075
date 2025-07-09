@@ -3,9 +3,8 @@
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    /* MODIFIED: Using CSS variable to account for the ticker's height */
     padding: 15px;
-    padding-top: calc(var(--top-offset, 0px) + 85px); /* Header is 80px high, so 85 gives a little margin */
+    padding-top: calc(var(--top-offset, 0px) + 85px);
     padding-top: calc(var(--top-offset, 0px) + 85px + env(safe-area-inset-top));
     padding-bottom: calc(var(--bottom-offset, 0px) + 15px);
     padding-bottom: calc(var(--bottom-offset, 0px) + 15px + env(safe-area-inset-bottom));
@@ -22,11 +21,11 @@
 
 .main-image-container {
     width: 100%;
-    flex: 1; /* Grow to fill available space */
-    min-height: 0; /* Critical for flex layout */
+    flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px; /* Reduced gap */
+    gap: 8px;
 }
 
 .transform-view .main-image {
@@ -38,22 +37,45 @@
 
 .transform-options {
     width: 100%;
-    flex-shrink: 0; /* Don't shrink this container */
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     gap: 15px;
 }
 
 .transform-step-title {
-    font-size: 0.8rem; /* Made titles smaller */
+    font-size: 1rem;
     font-weight: 600;
     text-transform: uppercase;
     color: var(--color-text-secondary);
     margin: 0;
     text-align: center;
+    padding-bottom: 5px;
 }
 
-/* Tag Selector Styles */
+.transform-step-title .step-number {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    border-radius: 50%;
+    color: black;
+    font-weight: 700;
+    margin-right: 10px;
+    text-align: center;
+}
+
+.transform-view.step-threat .step-number { background-color: var(--color-error); }
+.transform-view.step-solution .step-number { background-color: var(--color-system); }
+
+.transform-step-description {
+    font-size: 0.85rem;
+    text-align: center;
+    color: var(--color-text-secondary);
+    margin-top: -10px;
+    margin-bottom: 10px;
+}
+
 .tag-selector-container {
     display: flex;
     flex-direction: column;
@@ -67,8 +89,8 @@
 .tag-list {
     display: flex;
     overflow-x: auto;
-    padding-bottom: 5px; /* Reduced padding */
-    gap: 8px; /* Reduced gap */
+    padding-bottom: 5px;
+    gap: 8px;
     white-space: nowrap;
     scrollbar-width: none;
 }
@@ -81,7 +103,7 @@
     background: #2c2c2e;
     color: var(--color-text-primary);
     border: 1px solid #444;
-    padding: 8px 14px; /* Made tags smaller */
+    padding: 8px 14px;
     border-radius: 20px;
     font-size: 0.8rem;
     cursor: pointer;
@@ -89,44 +111,60 @@
     flex-shrink: 0;
 }
 
-/* ADDED: Single selection style for threat tags */
-.tag-button.single-select {
-    background: #1c1c1e;
-    border-style: dashed;
-}
-
 .tag-button:hover {
     border-color: #777;
     background: #3a3a3c;
 }
 
-.tag-button.active {
-    background: var(--color-system);
+/* --- Step Color Coding --- */
+.transform-view.step-threat .tag-button.active {
+    background: var(--color-error);
+    border-color: var(--color-error);
     color: white;
-    border-color: var(--color-system);
     font-weight: 600;
-    border-style: solid;
 }
 
+.transform-view.step-solution .tag-button.active {
+    background: var(--color-system);
+    border-color: var(--color-system);
+    color: white;
+    font-weight: 600;
+}
 
-/* Transform Button */
+/* --- Transform Button --- */
 .transform-action-button {
-    font-size: 1rem; /* Made button smaller */
+    font-size: 1rem;
     font-weight: 600;
     color: var(--color-background);
     background: var(--color-accent-white);
-    padding: 14px 25px; /* Made button smaller */
+    padding: 14px 25px;
     border: none;
     border-radius: 30px;
     cursor: pointer;
     transition: all 0.2s ease;
     width: 100%;
-    box-shadow: 0 0 25px var(--color-accent-glow);
+}
+
+.transform-view.step-threat .transform-action-button {
+    background: var(--color-error);
+    color: white;
+    box-shadow: 0 0 25px #ff453a80;
+}
+.transform-view.step-solution .transform-action-button {
+    background: var(--color-system);
+    color: white;
+    box-shadow: 0 0 25px #0a84ff80;
 }
 
 .transform-action-button:hover:not(:disabled) {
     transform: scale(1.02);
-    box-shadow: 0 0 40px var(--color-accent-glow);
+}
+
+.transform-view.step-threat .transform-action-button:hover:not(:disabled) {
+    box-shadow: 0 0 40px #ff453a;
+}
+.transform-view.step-solution .transform-action-button:hover:not(:disabled) {
+    box-shadow: 0 0 40px #0a84ff;
 }
 
 .transform-action-button:disabled {
@@ -136,7 +174,6 @@
     box-shadow: none;
 }
 
-/* Scanline animation (no changes) */
 .scanline {
     position: absolute; top: 0; left: 0; width: 100%; height: 3px;
     background: var(--color-accent-white);
@@ -144,24 +181,20 @@
     animation: scan 20s infinite ease-in-out;
     z-index: 10;
 }
+
 @keyframes scan {
     0% { transform: translateY(0vh); }
     50% { transform: translateY(100vh); }
     100% { transform: translateY(0vh); }
 }
 
-/* MODIFIED: Mobile layout adjustments for Transform View */
 @media (max-width: 768px) {
     .transform-view {
         padding-top: calc(var(--top-offset, 0px) + 85px);
         padding-top: calc(var(--top-offset, 0px) + 85px + env(safe-area-inset-top));
     }
     .transform-content {
-        gap: 10px; /* Tighter gap */
-    }
-    /* Hide the redundant title on mobile */
-    .transform-step-title {
-        display: none;
+        gap: 10px;
     }
     .main-image-container {
         gap: 0;
