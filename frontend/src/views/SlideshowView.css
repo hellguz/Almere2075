@@ -74,17 +74,18 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 3px;
+    width: 6px;
     height: 100%;
     background: var(--color-accent-white);
-    box-shadow: 0 0 7px rgba(255, 255, 255, 0.9), 0 0 20px 2px var(--color-accent-glow);
+    box-shadow: 0 0 7px rgba(255, 255, 255, 1), 0 0 20px 10px var(--color-accent-glow);
     z-index: 4;
 }
 
 /* Text Overlay */
 .slideshow-text-overlay {
     position: absolute;
-    top: 10px;
+    /* MODIFIED: Use CSS variable to position below the top ticker */
+    top: calc(var(--top-offset, 0px) + 10px);
     left: 50%;
     transform: translateX(-50%);
     width: auto;
@@ -169,3 +170,4 @@
     animation-iteration-count: 4;
     animation-direction: alternate;
 }
+

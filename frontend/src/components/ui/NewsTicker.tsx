@@ -7,17 +7,19 @@ interface NewsItem {
     text: string;
 }
 
+// MODIFIED: Added isRotated prop for slideshow view
 interface NewsTickerProps {
     position: 'top' | 'bottom';
+    isRotated?: boolean;
 }
 
 /**
  * A component that displays a scrolling news ticker.
  * It fetches news from a public JSON file and can be configured via tickerConfig.ts.
- * @param {NewsTickerProps} props The component props.
+ * @param {NewsTickerProps} props The component props, including position and optional rotation.
  * @returns {JSX.Element | null} The rendered NewsTicker component.
  */
-const NewsTicker: React.FC<NewsTickerProps> = ({ position }) => {
+const NewsTicker: React.FC<NewsTickerProps> = ({ position, isRotated = false }) => {
     const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
 
     useEffect(() => {
@@ -63,7 +65,7 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ position }) => {
     };
 
     return (
-        <div className={`news-ticker-container ${position}`} style={style}>
+        <div className={`news-ticker-container ${position} ${isRotated ? 'rotated' : ''}`} style={style}>
             <div className="news-ticker-content" style={contentStyle}>
                 {tickerContent}
             </div>
@@ -72,3 +74,4 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ position }) => {
 };
 
 export default NewsTicker;
+

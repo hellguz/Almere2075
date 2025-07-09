@@ -183,10 +183,10 @@ const SlideshowView: React.FC = () => {
         }
     }, [isLoading, animationKey]);
     
-    // Set CSS variables for ticker offsets
+    // MODIFIED: Set CSS variables for ticker offsets, always including the top one
     const viewStyle = {
         '--bottom-offset': tickerConfig.showBottomTicker ? tickerConfig.tickerHeight : '0px',
-        '--top-offset': tickerConfig.showTopTicker ? tickerConfig.tickerHeight : '0px',
+        '--top-offset': tickerConfig.tickerHeight,
     } as React.CSSProperties;
 
     if (isLoading) {
@@ -204,7 +204,8 @@ const SlideshowView: React.FC = () => {
     
     return (
         <div className="slideshow-view" style={viewStyle}>
-            {tickerConfig.showTopTicker && <NewsTicker position="top" />}
+            {/* MODIFIED: Always show a top, rotated ticker in this view */}
+            <NewsTicker position="top" isRotated={true} />
             <div className="slideshow-content-wrapper">
                 <div key={animationKey} className={`slideshow-content ${isAnimating ? 'is-animating' : ''}`}>
                     <div className="slideshow-image-base" style={{ opacity: isFinalPass ? 0 : 1 }}>
@@ -230,6 +231,7 @@ const SlideshowView: React.FC = () => {
                     ))}
                 </div>
             </div>
+            {/* MODIFIED: Keep bottom ticker conditional, but it will also be uppercase */}
             {tickerConfig.showBottomTicker && <NewsTicker position="bottom" />}
         </div>
     );

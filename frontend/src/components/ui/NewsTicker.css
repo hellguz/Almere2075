@@ -13,6 +13,11 @@
     font-weight: 500;
 }
 
+/* ADDED: Rotated class for the top ticker in slideshow */
+.news-ticker-container.rotated {
+    transform: rotate(180deg);
+}
+
 .news-ticker-container.top {
     border-bottom: 1px solid var(--liquid-border);
 }
@@ -26,6 +31,7 @@
     white-space: nowrap;
     will-change: transform;
     animation: scroll-left linear infinite;
+    text-transform: uppercase; /* MODIFIED: Make text uppercase */
 }
 
 .news-item {
@@ -41,3 +47,4 @@
         transform: translateX(-100%);
     }
 }
+
