@@ -23,11 +23,14 @@ FROM nginx:alpine
 # Copy the built static files from the 'builder' stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
+# ADDED: Copy our custom Nginx configuration for the frontend service.
+# This configuration is specifically designed to handle single-page applications
+# by correctly routing all non-file requests to index.html.
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+
 # Expose port 80 to the Docker network
 EXPOSE 80
 
 # The default Nginx command will start the server
 CMD ["nginx", "-g", "daemon off;"]
-
-
 
