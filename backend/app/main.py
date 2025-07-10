@@ -221,9 +221,9 @@ def run_solution_generation_task(job_id: str, image_string_from_request: str, pr
     db.commit()
 
     try:
-        # REVERTED: The input image is now the THREAT image again, passed from the endpoint.
+        # MODIFIED: The input image is now the ORIGINAL image, passed from the endpoint.
         image_data_url = resolve_image_to_data_url(image_string_from_request)
-        print(f"[{job_id}] Resolved threat image to data URL for Replicate.")
+        print(f"[{job_id}] Resolved original image to data URL for Replicate.")
         model_name = "black-forest-labs/flux-kontext-pro"
         input_data = {"prompt": prompt, "input_image": image_data_url, "output_format": "png"}
         
@@ -433,16 +433,18 @@ async def create_solution_image(
         print(f"ERROR: Job {job_id} is in wrong state: {generation.status}. Required: {db_models.JobStatus.THREAT_COMPLETED.value}")
         raise HTTPException(status_code=400, detail=f"Generation job is not in the correct state ('{db_models.JobStatus.THREAT_COMPLETED.value}') to generate a solution.")
     
-    # REVERTED: Use THREAT image for solution generation.
-    if not generation.threat_image_url:
-        print(f"ERROR: Job {job_id} has no threat_image_url.")
-        raise HTTPException(status_code=400, detail="Threat image URL is missing for this generation.")
+    # MODIFIED: Use ORIGINAL image for solution generation, not the threat image.
+    if not generation.original_image_filename:
+        print(f"ERROR: Job {job_id} has no original_image_filename.")
+        raise HTTPException(status_code=400, detail="Original image filename is missing for this generation.")
     
     print(f"Proceeding to generate solution prompt for job {job_id}.")
     
     solution_system_prompt = create_system_prompt(request.solution_tags)
-    threat_image_path = generation.threat_image_url
-    image_data_url = resolve_image_to_data_url(threat_image_path)
+    
+    # Construct the full relative path to the original image
+    original_image_path = f"{generation.dataset}/{generation.original_image_filename}"
+    image_data_url = resolve_image_to_data_url(original_image_path)
 
     response = openai.chat.completions.create(
         model="gpt-4.1-mini-2025-04-14",
@@ -460,8 +462,8 @@ async def create_solution_image(
     db.commit()
 
     db_for_task = database.SessionLocal()
-    # REVERTED: Pass the THREAT image path to the background task.
-    background_tasks.add_task(run_solution_generation_task, job_id, threat_image_path, solution_prompt, db_for_task)
+    # MODIFIED: Pass the ORIGINAL image path to the background task.
+    background_tasks.add_task(run_solution_generation_task, job_id, original_image_path, solution_prompt, db_for_task)
     
     print(f"Successfully launched solution generation task for job {job_id}.")
     return {"job_id": job_id}

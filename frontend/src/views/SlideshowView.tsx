@@ -114,13 +114,18 @@ const SlideshowView: React.FC = () => {
 
     const { stage, tags } = useMemo(() => {
         const genIndex = Math.floor(step / 3);
-        const stageIndex = step % 3;
+        const stageIndex = (step + 1) % 3;
         const currentGen = generationQueue[genIndex];
         if (!currentGen) return { stage: 0, tags: [] };
 
-        if (stageIndex === 0) return {
+        if (stageIndex ===1 ) return {
             stage: stageIndex,
             tags: currentGen.threat_tags_used?.map(tag => ({ key: tag, type: 'threat', text: tag })) || []
+        };
+        
+        if (stageIndex ===0 ) return {
+            stage: stageIndex,
+            tags: []
         };
         
         return { 
