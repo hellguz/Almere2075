@@ -25,8 +25,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
     const viewRef = useRef<HTMLDivElement>(null);
     const [showInstructions, setShowInstructions] = useState(true);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const dataset = useStore(state => state.dataset);
-
+    
     useEffect(() => {
         const setViewHeight = () => {
             if (viewRef.current) {
@@ -36,7 +35,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
 
         if (isVisible) {
              setViewHeight();
-              window.addEventListener('resize', setViewHeight);
+             window.addEventListener('resize', setViewHeight);
         }
 
         return () => {
@@ -100,7 +99,7 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
             {!isInBackground && (
                 <>
                     <div className={`gallery-instructions ${!showInstructions ? 'fade-out' : ''}`}>
-                        Welcome to the Almere 2075 AI Exhibition. Select a starting image, or upload your own, to begin.
+                         Welcome to the Almere 2075 AI Exhibition. Select a starting image, or upload your own, to begin.
                     </div>
                     <div className="main-actions-container">
                         <button className="upload-button" onClick={onShowTutorial}>❓HOW IT WORKS</button>
@@ -130,3 +129,4 @@ const GalleryView: React.FC<GalleryViewProps> = ({ images, isVisible, isInBackgr
 };
 
 export default GalleryView;
+

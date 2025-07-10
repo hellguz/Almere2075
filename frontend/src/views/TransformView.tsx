@@ -2,7 +2,6 @@ import React, { useRef, useEffect } from 'react';
 import TagSelector from '../components/ui/TagSelector';
 import type { SourceImage, Tag } from '../types';
 import './TransformView.css';
-import { useIsMobile } from '../hooks/useIsMobile';
 
 interface TransformViewProps {
     sourceImage: SourceImage | null;
@@ -13,8 +12,8 @@ interface TransformViewProps {
     onGenerateThreat: () => void;
     onGenerateSolution: () => void;
     availableThreatTags: Tag[];
-    selectedThreatTags: string[]; // MODIFIED: Changed from single string
-    onThreatTagToggle: (tagId: string) => void; // MODIFIED: Changed from onThreatTagSelect
+    selectedThreatTags: string[]; 
+    onThreatTagToggle: (tagId: string) => void; 
     availableSolutionTags: Tag[];
     selectedSolutionTags: string[];
     onSolutionTagToggle: (tagId: string) => void;
@@ -42,7 +41,6 @@ const TransformView: React.FC<TransformViewProps> = ({
     onSolutionTagToggle,
 }) => {
     const viewRef = useRef<HTMLDivElement>(null);
-    const isMobile = useIsMobile();
 
     useEffect(() => {
         const setViewHeight = () => {
