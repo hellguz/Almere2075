@@ -509,36 +509,35 @@ async def hide_source_image(request: models.HideImageRequest):
     """
     Moves a specified source image and its thumbnail to a hidden directory
     to remove it from the public gallery for privacy reasons.
+    This version uses a robust copy-and-delete method to avoid cross-volume errors.
     """
     try:
-        # Prevent directory traversal attacks
         if ".." in request.filename:
             raise HTTPException(status_code=400, detail="Invalid filename.")
         
-        # Construct the full path to the source image within the correct dataset folder
         source_path = IMAGES_DIR / request.dataset / request.filename
         if not source_path.is_file():
             raise HTTPException(status_code=404, detail=f"Source image not found at {source_path}")
 
-        # Construct the destination path in the hidden directory
+        # --- Move main image file ---
         dest_path = HIDDEN_DIR / f"{request.dataset}_{source_path.name}"
-        
-        # Move the main image file
-        source_path.rename(dest_path)
+        with open(source_path, 'rb') as f_src:
+            with open(dest_path, 'wb') as f_dst:
+                f_dst.write(f_src.read())
+        os.remove(source_path)
         print(f"Moved source image to hidden: {dest_path}")
 
-        # Now, handle the thumbnail
+        # --- Move thumbnail file ---
         thumb_name = f"{source_path.stem}.jpeg"
         thumb_prefix = Path(request.filename).parent
-        
-        # Construct the full path to the thumbnail
-        thumb_source_dir = THUMBNAILS_DIR / request.dataset / thumb_prefix
-        thumb_source_path = thumb_source_dir / thumb_name
+        thumb_source_path = THUMBNAILS_DIR / request.dataset / thumb_prefix / thumb_name
 
         if thumb_source_path.is_file():
-            # Move the thumbnail file to the hidden thumbnails directory
             thumb_dest_path = HIDDEN_THUMBNAILS_DIR / f"{request.dataset}_{thumb_name}"
-            thumb_source_path.rename(thumb_dest_path)
+            with open(thumb_source_path, 'rb') as f_src:
+                with open(thumb_dest_path, 'wb') as f_dst:
+                    f_dst.write(f_src.read())
+            os.remove(thumb_source_path)
             print(f"Moved thumbnail to hidden: {thumb_dest_path}")
         else:
             print(f"Warning: Thumbnail not found for {request.filename} at {thumb_source_path}")
@@ -546,10 +545,11 @@ async def hide_source_image(request: models.HideImageRequest):
         return {"message": f"Image {request.filename} has been hidden."}
 
     except HTTPException as e:
-        raise e # Re-raise known HTTP exceptions
+        raise e
     except Exception as e:
         print(f"--- ERROR hiding image {request.filename}: {e} ---")
         raise HTTPException(status_code=500, detail="An unexpected error occurred while hiding the image.")
+
 
 @app.get("/api/gallery")
 async def get_gallery_index(dataset: str = Query('weimar', enum=['weimar', 'almere'])):
@@ -719,60 +719,53 @@ async def create_solution_image(
 ):
     """
     Endpoint to generate the solution image for an existing generation process.
-    This is now idempotent to handle rapid duplicate requests from the frontend.
+    This now includes robust error handling to prevent non-JSON responses.
     """
-    print(f"Received request to generate solution for job ID: {job_id}")
-    print(f"Solution tags received: {request.solution_tags}")
-
     generation = db.query(db_models.Generation).filter(db_models.Generation.id == job_id).first()
     if not generation:
-        print(f"ERROR: Job ID {job_id} not found.")
         raise HTTPException(status_code=404, detail="Generation job not found.")
     
-    print(f"Found generation record with status: {generation.status}")
-
     if generation.status == db_models.JobStatus.PROCESSING:
-        print(f"Job {job_id} is already processing a solution. Acknowledging duplicate request.")
         return {"job_id": job_id}
     
     if generation.status != db_models.JobStatus.THREAT_COMPLETED:
-        print(f"ERROR: Job {job_id} is in wrong state: {generation.status}. Required: {db_models.JobStatus.THREAT_COMPLETED.value}")
         raise HTTPException(status_code=400, detail=f"Generation job is not in the correct state ('{db_models.JobStatus.THREAT_COMPLETED.value}') to generate a solution.")
-    
-    # MODIFIED: Use ORIGINAL image for solution generation, not the threat image.
-    if not generation.original_image_filename:
-        print(f"ERROR: Job {job_id} has no original_image_filename.")
-        raise HTTPException(status_code=400, detail="Original image filename is missing for this generation.")
-    
-    print(f"Proceeding to generate solution prompt for job {job_id}.")
-    
-    solution_system_prompt = create_system_prompt(request.solution_tags)
-    
-    # Construct the full relative path to the original image
-    original_image_path = f"{generation.dataset}/{generation.original_image_filename}"
-    image_data_url = resolve_image_to_data_url(original_image_path)
 
-    response = openai.chat.completions.create(
-        model="gpt-4.1-mini-2025-04-14",
-        messages=[
-            {"role": "system", "content": solution_system_prompt},
-            {"role": "user", "content": [{"type": "text", "text": "Generate a prompt for this image."}, {"type": "image_url", "image_url": {"url": image_data_url}}]},
-        ],
-        max_tokens=500,
-    )
-    solution_prompt = response.choices[0].message.content.strip()
+    try:
+        print(f"Proceeding to generate solution prompt for job {job_id}.")
+        
+        solution_system_prompt = create_system_prompt(request.solution_tags)
+        
+        original_image_path = f"{generation.dataset}/{generation.original_image_filename}"
+        image_data_url = resolve_image_to_data_url(original_image_path)
 
-    print(f"Generated solution prompt for job {job_id}: {solution_prompt[:100]}...")
-    generation.prompt_text = solution_prompt
-    generation.tags_used = [tag['name'] for tag in AVAILABLE_TAGS if tag['id'] in request.solution_tags]
-    db.commit()
+        response = openai.chat.completions.create(
+            model="gpt-4.1-mini-2025-04-14",
+            messages=[
+                {"role": "system", "content": solution_system_prompt},
+                {"role": "user", "content": [{"type": "text", "text": "Generate a prompt for this image."}, {"type": "image_url", "image_url": {"url": image_data_url}}]},
+            ],
+            max_tokens=500,
+        )
+        solution_prompt = response.choices[0].message.content.strip()
 
-    db_for_task = database.SessionLocal()
-    # MODIFIED: Pass the ORIGINAL image path to the background task.
-    background_tasks.add_task(run_solution_generation_task, job_id, original_image_path, solution_prompt, db_for_task)
-    
-    print(f"Successfully launched solution generation task for job {job_id}.")
-    return {"job_id": job_id}
+        print(f"Generated solution prompt for job {job_id}: {solution_prompt[:100]}...")
+        generation.prompt_text = solution_prompt
+        generation.tags_used = [tag['name'] for tag in AVAILABLE_TAGS if tag['id'] in request.solution_tags]
+        db.commit()
+
+        db_for_task = database.SessionLocal()
+        background_tasks.add_task(run_solution_generation_task, job_id, original_image_path, solution_prompt, db_for_task)
+        
+        print(f"Successfully launched solution generation task for job {job_id}.")
+        return {"job_id": job_id}
+
+    except Exception as e:
+        print(f"--- ERROR in create_solution_image for job {job_id}: {e}")
+        # Mark the job as failed in the DB so the UI can react
+        generation.status = db_models.JobStatus.FAILED
+        db.commit()
+        raise HTTPException(status_code=500, detail=f"Failed to generate solution prompt: {str(e)}")
 
 
 @app.get("/api/job-status/{job_id}", response_model=models.JobStatusResponse)

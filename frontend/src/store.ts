@@ -269,9 +269,15 @@ const storeCreator: StoreCreator = (set, get) => {
             const thumbnailSrc = texture.image.src;
             const fullImage = galleryImages.find(img => thumbnailSrc.endsWith(img.thumbnail));
             if (fullImage) {
+                // fullImage.filename is like "weimar/uploads/image.jpg"
+                // We need to strip the dataset part for the 'name' property
+                const pathParts = fullImage.filename.split('/');
+                pathParts.shift(); // remove the dataset part
+                const relativePath = pathParts.join('/');
+
                 const source: SourceImage = {
                     url: `${API_BASE_URL}/images/${fullImage.filename}`,
-                    name: fullImage.filename.split('/').pop() || ''
+                    name: relativePath,
                 };
                 actions.startTransform(source);
             } else {
@@ -357,10 +363,7 @@ const storeCreator: StoreCreator = (set, get) => {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            // The filename needs to include the 'uploads/' prefix if it's an uploaded image
-                            filename: sourceImageForTransform.url.includes('/uploads/') 
-                                ? `uploads/${sourceImageForTransform.name}`
-                                : sourceImageForTransform.name,
+                            filename: sourceImageForTransform.name,
                             dataset: dataset
                         })
                     });

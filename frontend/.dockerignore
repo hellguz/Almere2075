@@ -1,0 +1,23 @@
+# This file tells Docker to ignore specific files and directories when
+# building the frontend image. This is crucial for build performance.
+
+# Ignore build artifacts and local caches
+dist
+.vite
+coverage
+
+# Ignore local node modules, as they will be installed inside the container
+node_modules
+
+# Ignore local environment files and logs
+.env
+.env.*
+!/.env.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore IDE and OS-specific files
+.vscode
+.idea
+.DS_Store
