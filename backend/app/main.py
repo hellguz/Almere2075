@@ -47,6 +47,11 @@ VOTE_RATE_LIMIT_SECONDS = 60 # 1 minute
 GAMIFICATION_TARGET_SCORE = 100
 # Set deadline to July 13, 2025, 23:59:59 UTC
 GAMIFICATION_DEADLINE = datetime(2025, 7, 13, 23, 59, 59, tzinfo=timezone.utc)
+# ADDED: Directory to move hidden source images to
+HIDDEN_DIR = IMAGES_DIR / "hidden"
+# ADDED: Directory for hidden thumbnails
+HIDDEN_THUMBNAILS_DIR = THUMBNAILS_DIR / "hidden"
+
 
 # --- Ensure static directories exist ---
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
@@ -61,6 +66,9 @@ DATABASE_DIR.mkdir(parents=True, exist_ok=True)
 # Also create the 'uploads' subdirectories
 (WEIMAR_IMAGES_DIR / 'uploads').mkdir(parents=True, exist_ok=True)
 (ALMERE_IMAGES_DIR / 'uploads').mkdir(parents=True, exist_ok=True)
+# ADDED: Ensure the hidden directories exist
+HIDDEN_DIR.mkdir(parents=True, exist_ok=True)
+HIDDEN_THUMBNAILS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 # API Clients
@@ -495,6 +503,53 @@ async def mobile_upload(request: models.MobileUploadRequest):
     except Exception as e:
         print(f"Error in mobile-upload: {e}")
         raise HTTPException(status_code=500, detail="Could not process and save uploaded image.")
+
+@app.post("/api/gallery/hide-image", status_code=200)
+async def hide_source_image(request: models.HideImageRequest):
+    """
+    Moves a specified source image and its thumbnail to a hidden directory
+    to remove it from the public gallery for privacy reasons.
+    """
+    try:
+        # Prevent directory traversal attacks
+        if ".." in request.filename:
+            raise HTTPException(status_code=400, detail="Invalid filename.")
+        
+        # Construct the full path to the source image within the correct dataset folder
+        source_path = IMAGES_DIR / request.dataset / request.filename
+        if not source_path.is_file():
+            raise HTTPException(status_code=404, detail=f"Source image not found at {source_path}")
+
+        # Construct the destination path in the hidden directory
+        dest_path = HIDDEN_DIR / f"{request.dataset}_{source_path.name}"
+        
+        # Move the main image file
+        source_path.rename(dest_path)
+        print(f"Moved source image to hidden: {dest_path}")
+
+        # Now, handle the thumbnail
+        thumb_name = f"{source_path.stem}.jpeg"
+        thumb_prefix = Path(request.filename).parent
+        
+        # Construct the full path to the thumbnail
+        thumb_source_dir = THUMBNAILS_DIR / request.dataset / thumb_prefix
+        thumb_source_path = thumb_source_dir / thumb_name
+
+        if thumb_source_path.is_file():
+            # Move the thumbnail file to the hidden thumbnails directory
+            thumb_dest_path = HIDDEN_THUMBNAILS_DIR / f"{request.dataset}_{thumb_name}"
+            thumb_source_path.rename(thumb_dest_path)
+            print(f"Moved thumbnail to hidden: {thumb_dest_path}")
+        else:
+            print(f"Warning: Thumbnail not found for {request.filename} at {thumb_source_path}")
+
+        return {"message": f"Image {request.filename} has been hidden."}
+
+    except HTTPException as e:
+        raise e # Re-raise known HTTP exceptions
+    except Exception as e:
+        print(f"--- ERROR hiding image {request.filename}: {e} ---")
+        raise HTTPException(status_code=500, detail="An unexpected error occurred while hiding the image.")
 
 @app.get("/api/gallery")
 async def get_gallery_index(dataset: str = Query('weimar', enum=['weimar', 'almere'])):

@@ -27,6 +27,11 @@ class MobileUploadRequest(BaseModel):
     imageBase64: str
     dataset: str
 
+# ADDED: Model for the new endpoint to hide a source image
+class HideImageRequest(BaseModel):
+    filename: str
+    dataset: str
+
 # --- Response Models ---
 
 class Tag(BaseModel):

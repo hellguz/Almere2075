@@ -2,7 +2,24 @@ import React, { useRef, useEffect } from 'react';
 import TagSelector from '../components/ui/TagSelector';
 import type { SourceImage, Tag } from '../types';
 import './TransformView.css';
+import { useStore } from '../store';
 
+/**
+ * @typedef {object} TransformViewProps
+ * @property {SourceImage | null} sourceImage - The source image for the transformation.
+ * @property {SourceImage | null} threatImage - The intermediate threat image.
+ * @property {boolean} isVisible - Whether the view is currently visible.
+ * @property {boolean} isProcessing - Whether an AI generation is in progress.
+ * @property {'threat' | 'solution'} transformStep - The current step of the transformation.
+ * @property {() => void} onGenerateThreat - Callback to start threat image generation.
+ * @property {() => void} onGenerateSolution - Callback to start solution image generation.
+ * @property {Tag[]} availableThreatTags - The list of available threat tags.
+ * @property {string[]} selectedThreatTags - The IDs of the selected threat tags.
+ * @property {(tagId: string) => void} onThreatTagToggle - Callback to toggle a threat tag.
+ * @property {Tag[]} availableSolutionTags - The list of available solution tags.
+ * @property {string[]} selectedSolutionTags - The IDs of the selected solution tags.
+ * @property {(tagId: string) => void} onSolutionTagToggle - Callback to toggle a solution tag.
+ */
 interface TransformViewProps {
     sourceImage: SourceImage | null;
     threatImage: SourceImage | null;
@@ -42,6 +59,8 @@ const TransformView: React.FC<TransformViewProps> = ({
 }) => {
     const viewRef = useRef<HTMLDivElement>(null);
     const selectedThreats = availableThreatTags.filter(tag => selectedThreatTags.includes(tag.id));
+    // ADDED: Get the hide action from the store
+    const handleHideSourceImage = useStore(state => state.actions.handleHideSourceImage);
 
     useEffect(() => {
         const setViewHeight = () => {
@@ -59,6 +78,23 @@ const TransformView: React.FC<TransformViewProps> = ({
             window.removeEventListener('resize', setViewHeight);
         };
     }, [isVisible]);
+
+    // ADDED: Effect to listen for the "Delete" key press to hide the source image
+    useEffect(() => {
+        if (!isVisible) return;
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Delete') {
+                handleHideSourceImage();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isVisible, handleHideSourceImage]); 
 
     const imageToShow = transformStep === 'threat' ? sourceImage : threatImage;
 

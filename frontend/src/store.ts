@@ -56,6 +56,8 @@ export interface StoreActions {
     handleBackToStart: () => void;
     handleShowTutorial: () => void;
     optimisticallyUpdateVote: (generationId: string) => void;
+    // ADDED: New action to hide a source image from the gallery
+    handleHideSourceImage: () => Promise<void>;
 }
 
 type FullStore = StoreState & { actions: StoreActions };
@@ -337,6 +339,46 @@ const storeCreator: StoreCreator = (set, get) => {
                     ? { ...state.modalItem, votes: state.modalItem.votes + 1 } 
                     : state.modalItem,
             }));
+        },
+        /**
+         * ADDED: Hides the current source image from the gallery for privacy.
+         * This is intended to be called from the TransformView.
+         */
+        handleHideSourceImage: async () => {
+            const { sourceImageForTransform, dataset } = get();
+            if (!sourceImageForTransform || !sourceImageForTransform.name) {
+                console.warn("No source image to hide.");
+                return;
+            }
+
+            if (window.confirm("Are you sure you want to permanently remove this source image from the gallery? This cannot be undone.")) {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/gallery/hide-image`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            // The filename needs to include the 'uploads/' prefix if it's an uploaded image
+                            filename: sourceImageForTransform.url.includes('/uploads/') 
+                                ? `uploads/${sourceImageForTransform.name}`
+                                : sourceImageForTransform.name,
+                            dataset: dataset
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || "Failed to hide image");
+                    }
+                    
+                    alert("The source image has been removed from the gallery.");
+                    // Go back to the main gallery view after hiding
+                    actions.handleBackToStart();
+
+                } catch (error) {
+                    console.error("Failed to hide source image:", error);
+                    alert(`Failed to hide the image: ${(error as Error).message}`);
+                }
+            }
         },
     };
     
