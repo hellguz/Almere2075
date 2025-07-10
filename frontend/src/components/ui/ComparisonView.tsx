@@ -151,7 +151,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                                     <img src={originalImageUrl} alt="Original" />
                                     <div className="image-header">ORIGINAL</div>
                                 </div>
-                                <div className="image-panel after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
+                                <div className="image-panel" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
                                     <img src={solutionImageUrl} alt="Solution" />
                                     <div className="image-header">SOLUTION</div>
                                 </div>

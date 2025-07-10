@@ -1,7 +1,6 @@
 export enum JobStatus {
     PENDING = "pending",
     PROCESSING = "processing",
-    // ADDED: New intermediate status
     THREAT_COMPLETED = "threat_completed",
     COMPLETED = "completed",
     FAILED = "failed",
@@ -16,25 +15,21 @@ export interface Tag {
 export interface GenerationDetails {
     id: string;
     status: JobStatus;
-    dataset: string; // ADDED: To know if it's 'weimar' or 'almere'
+    dataset: string;
     original_image_filename: string;
-    original_image_thumb_url?: string; // ADDED: The path to the thumbnail of the original image.
-
-    // ADDED: Fields for the threat image
+    original_image_thumb_url?: string;
     threat_image_url: string | null;
     threat_image_thumb_url: string | null;
     threat_prompt_text: string | null;
     threat_tags_used: string[] | null;
-
-    // Fields for the solution image
     generated_image_url: string | null;
-    generated_image_thumb_url?: string; // ADDED: The path to the thumbnail of the generated image.
+    generated_image_thumb_url?: string; 
     prompt_text: string | null;
     tags_used: string[] | null;
     creator_name: string | null;
     votes: number;
     is_visible: boolean;
-    created_at: string; // ISO date string
+    created_at: string;
 }
 
 export interface GalleryImage {
@@ -54,14 +49,14 @@ export interface SourceImage {
 }
 
 export interface LogMessage {
-    time: string;
+    time?: string; // MODIFIED: Made time optional to align with UI changes
     text: string;
     type: 'info' | 'system' | 'success' | 'error' | 'data';
 }
 
 export interface AppState {
     view: 'gallery' | 'transform' | 'comparison' | 'community_gallery';
-    dataset: 'weimar' | 'almere'; // ADDED
+    dataset: 'weimar' | 'almere';
     comparisonMode: 'slider' | 'side-by-side';
     sourceImageForTransform: SourceImage | null;
     isProcessing: boolean;
