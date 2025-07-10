@@ -8,7 +8,7 @@
     color: white;
     font-family: var(--font-family);
     overflow: hidden;
-    --slideshow-image-container-size: 90%;
+    --slideshow-image-container-size: 95%;
     display: flex;
     flex-direction: column;
 }
@@ -21,6 +21,14 @@
     justify-content: center;
     font-size: 1.5rem;
     color: var(--color-text-secondary);
+}
+
+.slideshow-tickers-wrapper {
+    flex-shrink: 0;
+}
+.slideshow-tickers-wrapper .news-ticker-container {
+    height: 60px; /* 40px * 1.5 */
+    font-size: 21px; /* 14px * 1.5 */
 }
 
 .slideshow-content-wrapper {

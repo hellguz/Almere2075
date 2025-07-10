@@ -12,7 +12,7 @@ import ComparisonView from './components/ui/ComparisonView';
 import TutorialModal from './components/ui/TutorialModal';
 import DatasetToggle from './components/ui/DatasetToggle';
 import NewsTicker from './components/ui/NewsTicker';
-import LogoPanel from './components/ui/LogoPanel'; // ADDED: Logo panel component
+import LogoPanel from './components/ui/LogoPanel';
 import { tickerConfig } from './tickerConfig';
 
 // Views
@@ -118,6 +118,7 @@ function App() {
               isVisible={view === 'community_gallery'}
               items={state.communityGalleryItems}
               onVote={actions.handleVote}
+              onHide={actions.handleHide} // Pass down the hide action
               modalItem={state.modalItem}
               onItemSelect={actions.openModal}
               onModalClose={actions.closeModal}
@@ -126,7 +127,7 @@ function App() {
           />
         </main>
         
-        <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
+         <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
         
         <TutorialModal 
              isVisible={state.showTutorial}

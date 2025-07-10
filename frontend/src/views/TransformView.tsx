@@ -41,6 +41,7 @@ const TransformView: React.FC<TransformViewProps> = ({
     onSolutionTagToggle,
 }) => {
     const viewRef = useRef<HTMLDivElement>(null);
+    const selectedThreats = availableThreatTags.filter(tag => selectedThreatTags.includes(tag.id));
 
     useEffect(() => {
         const setViewHeight = () => {
@@ -94,11 +95,21 @@ const TransformView: React.FC<TransformViewProps> = ({
                         </>
                     ) : (
                         <>
+                            {selectedThreats.length > 0 && (
+                                <div className="threat-context">
+                                    <h4 className="threat-context-title">Based on Crisis:</h4>
+                                    <div className="threat-context-tags">
+                                        {selectedThreats.map(tag => (
+                                            <span key={tag.id} className="context-tag-chip">{tag.name}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                             <div className="transform-step-title">
                                 <span className="step-number">2</span>
                                 ARCHITECT THE SOLUTION
                             </div>
-                            <p className="transform-step-description">Now, choose one or more concepts to build a resilient future.</p>
+                            <p className="transform-step-description">Now, choose one or more concepts to build a resilient future from the crisis.</p>
                             <TagSelector 
                                 title=""
                                 tags={availableSolutionTags} 

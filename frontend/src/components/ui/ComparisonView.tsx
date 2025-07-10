@@ -59,6 +59,28 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
         }
     }, [generationDetails]);
 
+    // ADDED: Effect to listen for the "Delete" key press in modal view
+    useEffect(() => {
+        // Only apply this effect when in a modal and the onHide function is available
+        if (!isModal || !onHide) return;
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Delete') {
+                // Added a confirmation dialog to prevent accidental deletions
+                if (window.confirm("Are you sure you want to permanently remove this image from the gallery?")) {
+                    onHide();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        // Cleanup function to remove the event listener when the component unmounts or props change
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isModal, onHide]); // Effect dependencies
+
     const handleSliderMove = (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
         if (!sliderContainerRef.current) return;
         const rect = sliderContainerRef.current.getBoundingClientRect();
