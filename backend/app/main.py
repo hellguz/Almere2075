@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from fastapi import FastAPI, HTTPException, Request, BackgroundTasks, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
 from pathlib import Path
 from PIL import Image, ImageOps
@@ -18,7 +19,7 @@ import replicate
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
+from typing import List, Dict
 
 from . import db_models, models, database
 from .ai_prompts import AVAILABLE_TAGS, AVAILABLE_THREAT_TAGS, create_system_prompt, create_threat_system_prompt
@@ -274,21 +275,272 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 app.mount("/api/images", StaticFiles(directory=IMAGES_DIR), name="images")
 app.mount("/api/thumbnails", StaticFiles(directory=THUMBNAILS_DIR), name="thumbnails")
 
+@app.get("/upload-mobile", response_class=HTMLResponse)
+async def get_mobile_upload_page():
+    """
+    Serves the simple HTML page for visitors to upload photos from their phones.
+    """
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Almere 2075 - Photo Upload</title>
+        <style>
+            :root {
+                --bg: #000; --text: #f0f0f0; --primary: #0A84FF; --border: #333;
+                --error: #FF453A; --success: #32D74B;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                background-color: var(--bg); color: var(--text);
+                display: flex; flex-direction: column; align-items: center;
+                justify-content: center; min-height: 100vh; margin: 0; padding: 20px;
+                box-sizing: border-box; text-align: center;
+            }
+            .container {
+                width: 100%; max-width: 400px;
+                background-color: #1c1c1e; padding: 30px;
+                border-radius: 16px; border: 1px solid var(--border);
+            }
+            h1 { margin-top: 0; font-size: 24px; }
+            p { color: #a1a1a6; line-height: 1.5; }
+            #image-preview {
+                width: 100%; aspect-ratio: 1/1; border-radius: 8px;
+                background-color: #000; margin-bottom: 20px;
+                background-size: contain; background-position: center;
+                background-repeat: no-repeat; border: 1px dashed var(--border);
+                display: flex; align-items: center; justify-content: center; color: #555;
+                cursor: pointer;
+            }
+            .button {
+                width: 100%; padding: 15px; font-size: 16px; font-weight: 600;
+                border-radius: 12px; border: none; cursor: pointer;
+                transition: background-color 0.2s;
+            }
+            #upload-button { background-color: var(--primary); color: white; }
+            #upload-button:disabled { background-color: #555; cursor: not-allowed; }
+            #file-label {
+                display: block; background-color: #333; color: var(--text);
+                margin-bottom: 20px;
+            }
+            input[type="file"] { display: none; }
+            #status-message {
+                margin-top: 20px; font-weight: 500; min-height: 24px;
+            }
+            .status-error { color: var(--error); }
+            .status-success { color: var(--success); }
+            .spinner {
+                border: 4px solid rgba(255, 255, 255, 0.2);
+                border-left-color: var(--primary);
+                border-radius: 50%; width: 24px; height: 24px;
+                animation: spin 1s linear infinite;
+                margin: 20px auto 0; display: none;
+            }
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Almere 2075</h1>
+            <p>Upload a photo from your phone. It will appear in the main exhibition gallery shortly.</p>
+            
+            <div id="image-preview"><span>Tap to select image</span></div>
+            
+            <label for="file-input" id="file-label" class="button">CHOOSE FILE</label>
+            <input type="file" id="file-input" accept="image/*">
+            
+            <button id="upload-button" class="button" disabled>UPLOAD TO GALLERY</button>
+            
+            <div id="status-message"></div>
+            <div id="spinner" class="spinner"></div>
+        </div>
+
+        <script>
+            const fileInput = document.getElementById('file-input');
+            const uploadButton = document.getElementById('upload-button');
+            const imagePreview = document.getElementById('image-preview');
+            const fileLabel = document.getElementById('file-label');
+            const statusMessage = document.getElementById('status-message');
+            const spinner = document.getElementById('spinner');
+            let imageBase64 = null;
+            const MAX_DIMENSION = 1500;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataset = urlParams.get('dataset') || 'almere';
+
+            imagePreview.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        let { width, height } = img;
+                        if (width > height) {
+                            if (width > MAX_DIMENSION) {
+                                height *= MAX_DIMENSION / width;
+                                width = MAX_DIMENSION;
+                            }
+                        } else {
+                            if (height > MAX_DIMENSION) {
+                                width *= MAX_DIMENSION / height;
+                                height = MAX_DIMENSION;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        imageBase64 = canvas.toDataURL('image/jpeg', 0.9);
+                        imagePreview.style.backgroundImage = `url(${imageBase64})`;
+                        imagePreview.textContent = '';
+                        uploadButton.disabled = false;
+                        fileLabel.textContent = file.name;
+                        statusMessage.textContent = '';
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+
+            uploadButton.addEventListener('click', async () => {
+                if (!imageBase64) return;
+
+                uploadButton.disabled = true;
+                spinner.style.display = 'block';
+                statusMessage.textContent = 'Uploading...';
+                statusMessage.className = '';
+
+                try {
+                    const response = await fetch('/api/mobile-upload', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ imageBase64, dataset })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Upload failed');
+                    }
+
+                    const result = await response.json();
+                    statusMessage.textContent = 'Success! Your photo will appear in the gallery soon.';
+                    statusMessage.className = 'status-success';
+                    
+                    setTimeout(() => {
+                        window.close();
+                    }, 3000);
+
+                } catch (error) {
+                    statusMessage.textContent = `Error: ${error.message}`;
+                    statusMessage.className = 'status-error';
+                    uploadButton.disabled = false;
+                } finally {
+                    spinner.style.display = 'none';
+                }
+            });
+        </script>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
+
+@app.post("/api/mobile-upload", status_code=201)
+async def mobile_upload(request: models.MobileUploadRequest):
+    """
+    Handles a public image upload from the mobile page.
+    Saves the image to the correct 'uploads' directory and creates a thumbnail,
+    making it available in the main gallery.
+    """
+    if not request.dataset or not request.imageBase64:
+        raise HTTPException(status_code=400, detail="Dataset and image data are required.")
+
+    try:
+        header, encoded = request.imageBase64.split(",", 1)
+        
+        missing_padding = len(encoded) % 4
+        if missing_padding:
+            encoded += '=' * (4 - missing_padding)
+
+        image_data = base64.b64decode(encoded)
+        
+        with Image.open(io.BytesIO(image_data)) as img:
+            img = ImageOps.exif_transpose(img)
+            if img.mode in ("RGBA", "P"):
+                img = img.convert("RGB")
+            
+            # Standardize image size and format
+            img.thumbnail((2000, 2000), Image.Resampling.LANCZOS)
+            
+            new_filename = f"{uuid.uuid4()}.jpg"
+            save_dir = IMAGES_DIR / request.dataset / 'uploads'
+            save_path = save_dir / new_filename
+            
+            img.save(save_path, "JPEG", quality=85, optimize=True)
+
+        # Create thumbnail for the newly uploaded image
+        thumb_dir = (WEIMAR_THUMBNAILS_DIR if request.dataset == 'weimar' else ALMERE_THUMBNAILS_DIR) / 'uploads'
+        create_thumbnail(save_path, thumb_dir)
+        
+        print(f"Successfully uploaded image {new_filename} to dataset {request.dataset}")
+        return {"message": "Upload successful!", "filename": new_filename}
+
+    except Exception as e:
+        print(f"Error in mobile-upload: {e}")
+        raise HTTPException(status_code=500, detail="Could not process and save uploaded image.")
+
 @app.get("/api/gallery")
 async def get_gallery_index(dataset: str = Query('weimar', enum=['weimar', 'almere'])):
     """
     Gets the list of available images for a specific dataset, filtering out hidden ones.
+    This now correctly processes subdirectories for uploaded images.
     """
-    dataset_dir = WEIMAR_IMAGES_DIR if dataset == 'weimar' else ALMERE_IMAGES_DIR
-    thumb_dir = WEIMAR_THUMBNAILS_DIR if dataset == 'weimar' else ALMERE_THUMBNAILS_DIR
+    base_dirs = {
+        'weimar': WEIMAR_IMAGES_DIR,
+        'almere': ALMERE_IMAGES_DIR
+    }
+    thumb_dirs = {
+        'weimar': WEIMAR_THUMBNAILS_DIR,
+        'almere': ALMERE_THUMBNAILS_DIR
+    }
+    
+    dataset_dir = base_dirs.get(dataset)
+    thumb_dir = thumb_dirs.get(dataset)
 
-    if not dataset_dir.exists(): return []
+    if not dataset_dir or not dataset_dir.exists():
+        return []
+
     gallery_data = []
-    image_files = sorted([f for f in dataset_dir.iterdir() if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS])
-    for f in image_files:
-        thumbnail_filename = f"{f.stem}.jpeg"
-        if (thumb_dir / thumbnail_filename).exists():
-            gallery_data.append({"filename": f"{dataset}/{f.name}", "thumbnail": f"{dataset}/{thumbnail_filename}"})
+
+    def process_directory(directory: Path, thumb_directory: Path, prefix: str = ""):
+        if not directory.exists():
+            return
+        
+        image_files = sorted(
+            [f for f in directory.iterdir() if f.is_file() and f.suffix.lower() in ALLOWED_EXTENSIONS],
+            key=lambda f: f.stat().st_mtime,
+            reverse=True
+        )
+        
+        for f in image_files:
+            thumbnail_filename = f"{f.stem}.jpeg"
+            if (thumb_directory / thumbnail_filename).exists():
+                gallery_data.append({
+                    "filename": f"{dataset}/{prefix}{f.name}",
+                    "thumbnail": f"{dataset}/{prefix}{thumbnail_filename}"
+                })
+
+    # Process uploads first, then the base directory
+    process_directory(dataset_dir / 'uploads', thumb_dir / 'uploads', "uploads/")
+    process_directory(dataset_dir, thumb_dir)
+    
     return gallery_data
 
 @app.get("/api/tags", response_model=list[models.Tag])
@@ -341,10 +593,8 @@ async def create_generation_and_threat(
     request: models.CreateGenerationRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
 ):
     """
-    Endpoint to start a new generation process.
-    1. Creates the initial database record with a 'pending' status.
-    2. Starts a background task to generate the threat prompt and then the threat image.
-    This avoids server timeouts by offloading the slow AI calls.
+    Endpoint to start a new generation process for a public image.
+    This handles images selected from the gallery or uploaded via the public button.
     """
     if not os.getenv("REPLICATE_API_KEY"): raise HTTPException(status_code=500, detail="Replicate API key not configured.")
     if not os.getenv("OPENAI_API_KEY"): raise HTTPException(status_code=500, detail="OpenAI API key not configured.")
@@ -353,6 +603,7 @@ async def create_generation_and_threat(
     final_image_filename_for_db = request.original_filename
     original_thumb_url_for_db = f"{request.dataset}/{Path(final_image_filename_for_db).stem}.jpeg"
 
+    # This block handles public uploads from the main screen's "UPLOAD FROM THIS DEVICE" button
     if image_str.startswith('data:'):
         try:
             header, encoded = image_str.split(",", 1)

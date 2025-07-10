@@ -8,7 +8,6 @@ from .db_models import JobStatus
 class GeneratePromptRequest(BaseModel):
     imageBase64: str
     tags: Optional[List[str]] = None
-    # ADDED: To distinguish between threat and solution prompt generation
     type: str = 'solution'
 
 class CreateGenerationRequest(BaseModel):
@@ -23,6 +22,11 @@ class GenerateSolutionRequest(BaseModel):
 class SetCreatorNameRequest(BaseModel):
     name: str
 
+# ADDED: Model for the public mobile upload endpoint
+class MobileUploadRequest(BaseModel):
+    imageBase64: str
+    dataset: str
+
 # --- Response Models ---
 
 class Tag(BaseModel):
@@ -33,33 +37,22 @@ class Tag(BaseModel):
 class GenerationInfo(BaseModel):
     id: str
     status: JobStatus
-    # ADDED: To filter galleries and construct correct image paths
     dataset: str
     original_image_filename: str
-    # ADDED: URL for the original image's thumbnail.
     original_image_thumb_url: Optional[str] = None
-    
-    # ADDED: Fields for the intermediate threat image
     threat_image_url: Optional[str] = None
     threat_image_thumb_url: Optional[str] = None
     threat_prompt_text: Optional[str] = None
     threat_tags_used: Optional[List[str]] = None
-    
-    # Fields for the final solution image
     generated_image_url: Optional[str] = None
-    # ADDED: URL for the generated image's thumbnail.
     generated_image_thumb_url: Optional[str] = None
     prompt_text: Optional[str] = None
     tags_used: Optional[List[str]] = None
-    
     creator_name: Optional[str] = None
     votes: int
     is_visible: bool
     created_at: datetime
-
-    # MODIFIED: Updated from 'orm_mode' to 'from_attributes' for Pydantic v2 compatibility.
     model_config = ConfigDict(from_attributes=True)
-
 
 class JobStatusResponse(BaseModel):
     status: JobStatus

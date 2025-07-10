@@ -1,0 +1,81 @@
+/* ADDED: Styles for the new QR Code Modal */
+.qr-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s;
+}
+
+.qr-modal-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.qr-modal-content {
+    background: #1c1c1e;
+    border: 1px solid var(--liquid-border);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+    box-sizing: border-box;
+    text-align: center;
+    color: var(--color-text-primary);
+    transform: scale(0.95);
+    transition: transform 0.4s ease;
+}
+
+.qr-modal-overlay.visible .qr-modal-content {
+    transform: scale(1);
+}
+
+.qr-modal-content h2 {
+    margin-top: 0;
+    font-size: 1.5rem;
+}
+
+.qr-modal-content p {
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+.qr-code-container {
+    padding: 15px;
+    background: #1c1c1e;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    border: 1px solid var(--liquid-border);
+}
+
+.qr-modal-close-button {
+    padding: 12px 30px;
+    border-radius: 25px;
+    border: none;
+    background: var(--color-system);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.qr-modal-close-button:hover {
+    transform: scale(1.05);
+    background: #0b94ff;
+}
