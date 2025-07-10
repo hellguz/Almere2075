@@ -8,7 +8,7 @@ exclude_folders = [
     'node_modules', 'venv', '.venv', '__pycache__', 'env', '.env', '.cache', '.mypy_cache', '.pytest_cache',
     'build', 'dist', 'bin', 'obj', '.git', '.github', '.gpt', '.idea', '.vscode',
     'coverage', '.coverage', '.tox', '.eggs', 'eggs', '.gradle', '.svn', '.DS_Store',
-    'tileset', 'postgres_data', 'data', 'datasets', 'logs', 'doc', 'docs', 'tmp', 'temp', '.dump.log'
+    'tileset', 'postgres_data', 'data', 'datasets', 'logs', 'doc', 'docs', 'tmp', 'temp', '.dump.log', 'images', 'thumbnails',
 ]
 
 # Allowed file extensions
