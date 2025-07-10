@@ -22,11 +22,10 @@ export interface StoreState {
     communityGalleryItems: GenerationDetails[];
     availableThreatTags: Tag[];
     availableSolutionTags: Tag[];
-    selectedThreatTags: string[]; // MODIFIED: now an array for multiple selections
+    selectedThreatTags: string[];
     selectedSolutionTags: string[];
     modalItem: GenerationDetails | null;
     pollingRef: React.MutableRefObject<number | null>;
-    // ADDED: state to track if prompts have been logged to prevent duplicates
     threatPromptLogged: boolean;
     solutionPromptLogged: boolean;
 }
@@ -38,7 +37,7 @@ export interface StoreActions {
     addLogMessage: (text: string, type?: LogMessage['type']) => void;
     resetForNewTransform: () => void;
     startTransform: (sourceImage: SourceImage) => void;
-    toggleThreatTag: (tagId: string) => void; // MODIFIED: New action for toggling
+    toggleThreatTag: (tagId: string) => void;
     toggleSolutionTag: (tagId: string) => void;
     openModal: (item: GenerationDetails) => void;
     closeModal: () => void;
@@ -59,9 +58,6 @@ export interface StoreActions {
     optimisticallyUpdateVote: (generationId: string) => void;
 }
 
-const formatTime = (): string => new Date().toLocaleTimeString('en-GB');
-const isMobile = window.innerWidth <= 768;
-
 type FullStore = StoreState & { actions: StoreActions };
 type StoreCreator = (set: StoreApi<FullStore>['setState'], get: StoreApi<FullStore>['getState']) => FullStore;
 
@@ -72,7 +68,7 @@ const storeCreator: StoreCreator = (set, get) => {
         setDataset: (dataset) => set({ dataset, galleryImages: [], communityGalleryItems: [] }),
         
         addLogMessage: (text, type = 'info') => {
-            const newLog: LogMessage = { time: formatTime(), text, type };
+            const newLog: LogMessage = { text, type };
             set(state => ({ logMessages: [...state.logMessages, newLog] }));
         },
         resetForNewTransform: () => {
@@ -82,7 +78,7 @@ const storeCreator: StoreCreator = (set, get) => {
                 sourceImageForTransform: null, threatImageForTransform: null, isProcessing: false, logMessages: [],
                 jobId: null, generationDetails: null, isCommunityItem: false, selectedThreatTags: [], selectedSolutionTags: [],
                 transformStep: 'threat', view: 'gallery',
-                threatPromptLogged: false, solutionPromptLogged: false // Reset logging flags
+                threatPromptLogged: false, solutionPromptLogged: false
             })
         },
         startTransform: (sourceImage) => {
@@ -171,13 +167,11 @@ const storeCreator: StoreCreator = (set, get) => {
                     return;
                 }
 
-                // Log threat prompt when it becomes available
                 if (data.generation_data?.threat_prompt_text && !currentState.threatPromptLogged) {
                     actions.addLogMessage('CRISIS PROMPT:\n' + data.generation_data.threat_prompt_text, 'data');
                     set({ threatPromptLogged: true });
                 }
 
-                // Log solution prompt when it becomes available
                 if (data.generation_data?.prompt_text && !currentState.solutionPromptLogged) {
                     actions.addLogMessage('SOLUTION PROMPT:\n' + data.generation_data.prompt_text, 'data');
                     set({ solutionPromptLogged: true });
@@ -220,14 +214,14 @@ const storeCreator: StoreCreator = (set, get) => {
             const { sourceImageForTransform, selectedThreatTags, dataset } = get();
             if (!sourceImageForTransform || selectedThreatTags.length === 0) return;
             
-            set({ isProcessing: true, logMessages: [{time: formatTime(), text: '--- Initiating Transformation Protocol ---', type: 'system'}]});
+            set({ isProcessing: true, logMessages: [{text: '--- Initiating Transformation Protocol ---', type: 'system'}]});
             try {
                 actions.addLogMessage('Step 1/4: Submitting threat request...');
                 const threatResponse = await fetch(`${API_BASE_URL}/generations`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         imageBase64: sourceImageForTransform.url, 
-                        threat_tags: selectedThreatTags, // MODIFIED: send array
+                        threat_tags: selectedThreatTags,
                         original_filename: sourceImageForTransform.name,
                         dataset: dataset
                     }) 
@@ -297,13 +291,24 @@ const storeCreator: StoreCreator = (set, get) => {
             }
         },
         handleHide: async () => {
-            const { generationDetails } = get();
-            if (!generationDetails) return;
-            if (window.confirm("Are you sure you want to permanently remove this image? This cannot be undone.")) {
+            const { generationDetails, modalItem, view } = get();
+            // Determine which item to hide based on the current view context
+            const itemToHide = view === 'community_gallery' ? modalItem : generationDetails;
+
+            if (!itemToHide) return;
+
+            if (window.confirm("Are you sure you want to permanently remove this image from the gallery? This cannot be undone.")) {
                 try {
-                    await fetch(`${API_BASE_URL}/generations/${generationDetails.id}/hide`, { method: 'POST' });
+                    await fetch(`${API_BASE_URL}/generations/${itemToHide.id}/hide`, { method: 'POST' });
                     alert("This image has been removed from the public gallery.");
-                    actions.handleBackToStart();
+
+                    // After hiding, update the UI accordingly
+                    if (view === 'community_gallery') {
+                        actions.closeModal(); // Close the modal if it was open
+                        actions.fetchCommunityGallery(); // Refresh the gallery list
+                    } else {
+                        actions.handleBackToStart(); // Go back to the main gallery if on comparison page
+                    }
                 } catch (error) {
                     console.error("Failed to hide generation:", error);
                     alert("Failed to hide generation. See console for details.");
@@ -339,7 +344,7 @@ const storeCreator: StoreCreator = (set, get) => {
         view: 'gallery',
         transformStep: 'threat',
         dataset: 'weimar',
-        comparisonMode: isMobile ? 'slider' : 'side-by-side',
+        comparisonMode: 'side-by-side',
         sourceImageForTransform: null,
         threatImageForTransform: null,
         isProcessing: false,
