@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { API_BASE_URL } from '../config';
 import type { GenerationDetails } from '../types';
 import NewsTicker from '../components/ui/NewsTicker';
+import LogoPanel from '../components/ui/LogoPanel';
 import { tickerConfig } from '../tickerConfig';
 import './SlideshowView.css';
 
@@ -48,35 +49,21 @@ const SlideshowView: React.FC = () => {
     const [revealImageUrl, setRevealImageUrl] = useState('');
 
     const dataset = useMemo(() => new URLSearchParams(window.location.search).get('set') || 'almere', []);
-    const capitalizedDataset = useMemo(() => dataset.charAt(0).toUpperCase() + dataset.slice(1), [dataset]);
 
     const handleAnimationIteration = useCallback(() => {
         const newStep = step + 1;
         
-        // This is the "shell game" logic.
-        // It determines which layer is hidden and updates it with the *next* image in the queue.
         const isFinishingLtrPass = step % 2 === 0;
         const nextImageUrlInSequence = imageQueue[newStep + 1];
 
         if (isFinishingLtrPass) {
-            // Slider is on the RIGHT, so the BASE layer is hidden. Update it.
-            if (nextImageUrlInSequence) {
-                setBaseImageUrl(nextImageUrlInSequence);
-            }
+            if (nextImageUrlInSequence) setBaseImageUrl(nextImageUrlInSequence);
         } else {
-            // Slider is on the LEFT, so the REVEAL layer is hidden. Update it.
-            if (nextImageUrlInSequence) {
-                setRevealImageUrl(nextImageUrlInSequence);
-            }
+            if (nextImageUrlInSequence) setRevealImageUrl(nextImageUrlInSequence);
         }
-
-        setStep(newStep);
-    }, [step, imageQueue]);
-    
-    // Effect to fetch more generations when the queue is running low
-    useEffect(() => {
-        const imagesNeeded = step + 2;
-        if (!isLoading && imageQueue.length > 0 && imageQueue.length < imagesNeeded + (PRELOAD_AHEAD * 3)) {
+        
+        const nextGenIndex = Math.floor((newStep + 3) / 3);
+        if (generationQueue.length - nextGenIndex < PRELOAD_AHEAD) {
             fetchRandomGeneration(dataset).then(newGen => {
                 if (newGen) {
                     const newImageUrls = [
@@ -84,7 +71,6 @@ const SlideshowView: React.FC = () => {
                         getImageUrl(newGen, 'threat', dataset),
                         getImageUrl(newGen, 'generated', dataset)
                     ];
-                    // Preload before adding to queue
                     Promise.all(newImageUrls.map(preloadImage)).then(() => {
                         setGenerationQueue(g => [...g, newGen]);
                         setImageQueue(q => [...q, ...newImageUrls]);
@@ -92,9 +78,9 @@ const SlideshowView: React.FC = () => {
                 }
             });
         }
-    }, [step, isLoading, imageQueue, generationQueue, dataset]);
-
-    // Initial data load effect
+        setStep(newStep);
+    }, [step, imageQueue, generationQueue.length, dataset]);
+    
     useEffect(() => {
         const init = async () => {
             try {
@@ -102,9 +88,7 @@ const SlideshowView: React.FC = () => {
                     [...Array(PRELOAD_AHEAD)].map(() => fetchRandomGeneration(dataset))
                 )).filter((g): g is GenerationDetails => g !== null);
 
-                if (initialGens.length < 2) {
-                    throw new Error("Could not fetch enough initial generations.");
-                }
+                if (initialGens.length < 2) throw new Error("Could not fetch enough initial generations.");
 
                 const allImageUrls: string[] = [];
                 initialGens.forEach(gen => {
@@ -128,22 +112,25 @@ const SlideshowView: React.FC = () => {
         init();
     }, [dataset]);
 
-    const { textOverlay, tags } = useMemo(() => {
+    const { stage, tags } = useMemo(() => {
         const genIndex = Math.floor(step / 3);
         const stageIndex = step % 3;
         const currentGen = generationQueue[genIndex];
-        if (!currentGen) return { textOverlay: 'Loading...', tags: [] };
+        if (!currentGen) return { stage: 0, tags: [] };
 
         if (stageIndex === 0) return {
-            textOverlay: `${capitalizedDataset}: Original → Crisis`,
+            stage: stageIndex,
             tags: currentGen.threat_tags_used?.map(tag => ({ key: tag, type: 'threat', text: tag })) || []
         };
-        if (stageIndex === 1) return {
-            textOverlay: `${capitalizedDataset}: Crisis → Solution`,
+        
+        return { 
+            stage: stageIndex,
             tags: currentGen.tags_used?.map(tag => ({ key: tag, type: 'solution', text: tag })) || []
         };
-        return { textOverlay: `Next Vision: ${capitalizedDataset}`, tags: [] };
-    }, [step, generationQueue, capitalizedDataset]);
+    }, [step, generationQueue]);
+
+    const currentBaseImageUrl = imageQueue[step];
+    const currentRevealImageUrl = imageQueue[step + 1];
 
     const viewStyle = {
         '--bottom-offset': tickerConfig.showBottomTicker ? tickerConfig.tickerHeight : '0px',
@@ -151,7 +138,7 @@ const SlideshowView: React.FC = () => {
         '--animation-duration': `${ANIMATION_DURATION}s`,
     } as React.CSSProperties;
 
-    if (isLoading || imageQueue.length < 2) {
+    if (isLoading || !currentBaseImageUrl || !currentRevealImageUrl) {
         return <div className="slideshow-view" style={viewStyle}><div className="slideshow-loading">Loading Slideshow...</div></div>;
     }
 
@@ -168,11 +155,29 @@ const SlideshowView: React.FC = () => {
                     </div>
                     <div className="slideshow-slider" />
                 </div>
-                <div className="slideshow-text-overlay">{textOverlay}</div>
+                
+                <div className="slideshow-info-panel">
+                    <div className="info-step-item">
+                        <span className={`info-step-number active ${stage === 0 ? 'current' : ''}`}>1</span>
+                        <span className="info-step-label">Original 2025</span>
+                    </div>
+                    <div className="info-step-connector" />
+                    <div className="info-step-item">
+                        <span className={`info-step-number ${stage >= 1 ? 'active' : ''} ${stage === 1 ? 'current' : ''} threat`}>2</span>
+                        <span className="info-step-label">Crisis 2075</span>
+                    </div>
+                    <div className="info-step-connector" />
+                    <div className="info-step-item">
+                        <span className={`info-step-number ${stage >= 2 ? 'active' : ''} ${stage === 2 ? 'current' : ''} solution`}>3</span>
+                        <span className="info-step-label">Solution</span>
+                    </div>
+                </div>
+
                 <div className="slideshow-tags-overlay">
                     {tags.map(tag => <div key={tag.key} className={`slideshow-tag-chip ${tag.type}`}>{tag.text}</div>)}
                 </div>
             </div>
+            <LogoPanel />
             {tickerConfig.showBottomTicker && <NewsTicker position="bottom" />}
         </div>
     );

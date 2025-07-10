@@ -49,13 +49,9 @@
   pointer-events: auto; /* Make logos interactive if needed */
 }
 
-
-/* Mobile adjustments */
+/* MODIFIED: Hide logo panel on mobile devices */
 @media (max-width: 768px) {
   .logo-panel-container {
-    --logo-height: 30px;
-    --logo-panel-left: 15px;
-    --logo-panel-bottom: 15px;
-    --logo-gap: 15px;
+    display: none;
   }
 }
