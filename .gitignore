@@ -34,6 +34,7 @@ almere_app.db
 */thumbnails
 backend/images/generated/*
 backend/images/*/uploads/*
+backend/images/hidden/*
 
 # Node / Frontend
 node_modules/

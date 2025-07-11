@@ -1,0 +1,27 @@
+
+# ADDED: This file tells Docker to ignore certain files and directories
+# when building the image. This is crucial for development speed.
+
+# Ignore Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Ignore the SQLite database file from the build context, as it's mounted as a volume.
+database/
+*.db
+*.db-journal
+
+# CRITICAL: Ignore the images and thumbnails directories.
+# These are mounted as volumes in docker-compose.dev.yml, so they don't
+# need to be copied into the image. This is the main optimization for
+# speeding up development builds and restarts.
+images/
+thumbnails/
