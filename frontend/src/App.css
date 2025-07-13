@@ -13,20 +13,24 @@ main {
 
 .app-header {
   /* MODIFIED: Using CSS variable to account for the ticker's height */
-  position: fixed; top: var(--top-offset, 0px); left: 0; width: 100%;
+  position: fixed;
+  top: var(--top-offset, 0px); left: 0; width: 100%;
   height: 80px; /* Increased height for floating elements */
   padding: 0 25px;
   box-sizing: border-box; z-index: 100;
   display: flex; justify-content: space-between; align-items: center;
-  pointer-events: none; /* Container is passthrough */
+  pointer-events: none;
+  /* Container is passthrough */
 }
 .app-header > * { pointer-events: auto; /* Children are clickable */ }
 
-.header-left, .header-right { flex: 1; display: flex; align-items: center; }
+.header-left, .header-right { flex: 1;
+  display: flex; align-items: center; }
 .header-left { justify-content: flex-start; }
 .header-right { justify-content: flex-end; }
 .header-center { 
-  flex: 2; display: flex; justify-content: center; align-items: center;
+  flex: 2; display: flex;
+  justify-content: center; align-items: center;
 }
 
 .back-button, .community-gallery-button {
@@ -36,43 +40,14 @@ main {
   font-weight: 600; font-size: 14px;
   backdrop-filter: blur(var(--liquid-blur)); -webkit-backdrop-filter: blur(var(--liquid-blur));
   transition: all 0.2s ease;
-  white-space: nowrap; /* Prevent text wrapping */
+  white-space: nowrap;
+  /* Prevent text wrapping */
 }
 .back-button:hover, .community-gallery-button:hover {
   background: var(--button-hover-bg); transform: scale(1.05);
 }
 
-/* ADDED: New Footer for the Transform View */
-.transform-view-footer {
-  position: fixed;
-  bottom: calc(var(--bottom-offset, 0px) + 20px + env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 50;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.transform-view-footer .footer-remove-button-text {
-  background: var(--liquid-bg);
-  border: 1px solid var(--color-error);
-  color: var(--color-error);
-  padding: 10px 20px;
-  border-radius: 25px;
-  font-weight: 600;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(var(--liquid-blur));
-  -webkit-backdrop-filter: blur(var(--liquid-blur));
-}
-
-.transform-view-footer .footer-remove-button-text:hover {
-  background: var(--color-error);
-  color: white;
-  transform: scale(1.05);
-}
+/* REMOVED: Footer from the Transform View is no longer needed */
 
 
 @media (max-width: 900px) {
@@ -85,12 +60,12 @@ main {
 @media (max-width: 768px) {
   .app-header {
     flex-wrap: wrap; 
-    height: auto; 
+    height: auto;
     padding-top: 10px; /* Reduced padding for mobile */
     padding-bottom: 10px;
     padding-left: 15px;
     padding-right: 15px;
-    row-gap: 10px; 
+    row-gap: 10px;
   }
   .header-left {
     flex-basis: 50%;
@@ -107,12 +82,11 @@ main {
   }
   .back-button, .community-gallery-button {
     padding: 6px 12px; /* Made smaller */
-    font-size: 11px;  /* Made smaller */
+    font-size: 11px;
+    /* Made smaller */
     font-weight: 500;
   }
 
-  .transform-view-footer .footer-remove-button-text {
-    padding: 8px 16px;
-    font-size: 12px;
-  }
 }
+
+

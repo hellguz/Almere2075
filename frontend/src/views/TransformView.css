@@ -1,249 +1,263 @@
 .transform-view {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    padding: 15px;
-    padding-top: calc(var(--top-offset, 0px) + 85px);
-    padding-top: calc(var(--top-offset, 0px) + 85px + env(safe-area-inset-top));
-    padding-bottom: calc(var(--bottom-offset, 0px) + 15px);
-    padding-bottom: calc(var(--bottom-offset, 0px) + 15px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 15px;
+  padding-top: calc(var(--top-offset, 0px) + 85px);
+  padding-top: calc(var(--top-offset, 0px) + 85px + env(safe-area-inset-top));
+  padding-bottom: 15px;
+  padding-bottom: 15px + env(safe-area-inset-bottom);
 }
 
 .transform-content {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 100%;
-    max-width: 800px;
-    height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-width: 800px;
+  height: 100%;
 }
 
 .main-image-container {
-    width: 100%;
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    position: relative; /* For positioning the remove button */
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative; /* For positioning the remove button */
 }
 
 /* REMOVED: The 'x' button style is no longer needed here */
 
 .transform-view .main-image {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 12px;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
 }
 
 .transform-options {
-    width: 100%;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    /* ADDED: Add padding to prevent overlap with the new footer */
-    padding-bottom: 60px;
+  width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  /* ADDED: Add padding to prevent overlap with the new footer */
+  padding-bottom: 60px;
 }
 
 .transform-step-title {
-    font-size: 1rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: var(--color-text-secondary);
-    margin: 0;
-    text-align: center;
-    padding-bottom: 5px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  margin: 0;
+  text-align: center;
+  padding-bottom: 5px;
 }
 
 .transform-step-title .step-number {
-    display: inline-block;
-    width: 24px;
-    height: 24px;
-    line-height: 24px;
-    border-radius: 50%;
-    color: black;
-    font-weight: 700;
-    margin-right: 10px;
-    text-align: center;
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
+  border-radius: 50%;
+  color: black;
+  font-weight: 700;
+  margin-right: 10px;
+  text-align: center;
 }
 
-.transform-view.step-threat .step-number { background-color: var(--color-error); }
-.transform-view.step-solution .step-number { background-color: var(--color-system);
+.transform-view.step-threat .step-number {
+  background-color: var(--color-error);
+}
+.transform-view.step-solution .step-number {
+  background-color: var(--color-system);
 }
 
 .transform-step-description {
-    font-size: 0.85rem;
-    text-align: center;
-    color: var(--color-text-secondary);
-    margin-top: -10px;
-    margin-bottom: 10px;
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--color-text-secondary);
+  margin-top: -10px;
+  margin-bottom: 10px;
 }
 
 .threat-context {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    padding: 8px 12px;
-    background: rgba(255, 69, 58, 0.08); /* Subtle red background */
-    border: 1px solid rgba(255, 69, 58, 0.2);
-    border-radius: 8px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 69, 58, 0.08); /* Subtle red background */
+  border: 1px solid rgba(255, 69, 58, 0.2);
+  border-radius: 8px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
 }
 
 .threat-context-title {
-    margin: 0;
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--color-error);
-    text-transform: uppercase;
-    white-space: nowrap;
-    opacity: 0.8;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-error);
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0.8;
 }
 
 .threat-context-tags {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .context-tag-chip {
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: var(--color-text-secondary);
-    background-color: rgba(120, 120, 128, 0.15);
-    padding: 3px 10px;
-    border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: rgba(120, 120, 128, 0.15);
+  padding: 3px 10px;
+  border-radius: 12px;
 }
 
-
 .tag-selector-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .tag-list-wrapper {
-    position: relative;
+  position: relative;
 }
 
 .tag-list {
-    display: flex;
-    flex-wrap: wrap; 
-    justify-content: center; 
-    gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
 }
 
 .tag-button {
-    background: #2c2c2e;
-    color: var(--color-text-primary);
-    border: 1px solid #444;
-    padding: 8px 14px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
+  background: #2c2c2e;
+  color: var(--color-text-primary);
+  border: 1px solid #444;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .tag-button:hover {
-    border-color: #777;
-    background: #3a3a3c;
+  border-color: #777;
+  background: #3a3a3c;
 }
 
 /* --- Step Color Coding --- */
 .transform-view.step-threat .tag-button.active {
-    background: var(--color-error);
-    border-color: var(--color-error);
-    color: white;
-    font-weight: 600;
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: white;
+  font-weight: 600;
 }
 
 .transform-view.step-solution .tag-button.active {
-    background: var(--color-system);
-    border-color: var(--color-system);
-    color: white;
-    font-weight: 600;
+  background: var(--color-system);
+  border-color: var(--color-system);
+  color: white;
+  font-weight: 600;
 }
 
 /* --- Transform Button --- */
 .transform-action-button {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-background);
-    background: var(--color-accent-white);
-    padding: 14px 25px;
-    border: none;
-    border-radius: 30px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 100%;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-background);
+  background: var(--color-accent-white);
+  padding: 14px 25px;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
 }
 
 .transform-view.step-threat .transform-action-button {
-    background: var(--color-error);
-    color: white;
-    box-shadow: 0 0 25px #ff453a80;
+  background: var(--color-error);
+  color: white;
+  box-shadow: 0 0 25px #ff453a80;
 }
 .transform-view.step-solution .transform-action-button {
-    background: var(--color-system);
-    color: white;
-    box-shadow: 0 0 25px #0a84ff80;
+  background: var(--color-system);
+  color: white;
+  box-shadow: 0 0 25px #0a84ff80;
 }
 
 .transform-action-button:hover:not(:disabled) {
-    transform: scale(1.02);
+  transform: scale(1.02);
 }
 
 .transform-view.step-threat .transform-action-button:hover:not(:disabled) {
-    box-shadow: 0 0 40px #ff453a;
+  box-shadow: 0 0 40px #ff453a;
 }
 .transform-view.step-solution .transform-action-button:hover:not(:disabled) {
-    box-shadow: 0 0 40px #0a84ff;
+  box-shadow: 0 0 40px #0a84ff;
 }
 
 .transform-action-button:disabled {
-    background: #555;
-    color: #999;
-    cursor: not-allowed;
-    box-shadow: none;
+  background: #555;
+  color: #999;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .scanline {
-    position: absolute; top: 0; left: 0; width: 100%; height: 3px;
-    background: var(--color-accent-white);
-    box-shadow: 0 0 7px rgba(255, 255, 255, 1), 0 0 20px 10px var(--color-accent-glow);
-    animation: scan 20s infinite ease-in-out;
-    z-index: 10;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--color-accent-white);
+  box-shadow: 0 0 7px rgba(255, 255, 255, 1),
+    0 0 20px 10px var(--color-accent-glow);
+  animation: scan 20s infinite ease-in-out;
+  z-index: 10;
 }
 
 @keyframes scan {
-    0% { transform: translateY(0vh); }
-    50% { transform: translateY(100vh);
-}
-    100% { transform: translateY(0vh); }
+  0% {
+    transform: translateY(0vh);
+  }
+  50% {
+    transform: translateY(100vh);
+  }
+  100% {
+    transform: translateY(0vh);
+  }
 }
 
 @media (max-width: 768px) {
-    .transform-view {
-        padding-top: calc(var(--top-offset, 0px) + 145px);
-        padding-top: calc(var(--top-offset, 0px) + 145px + env(safe-area-inset-top));
-    }
-    .transform-content {
-        gap: 10px;
-    }
-    .main-image-container {
-        gap: 0;
-    }
-    .tag-button {
-        padding: 6px 12px;
-        font-size: 0.75rem;
-    }
-    .transform-action-button {
-        padding: 12px 20px;
-        font-size: 0.9rem;
-    }
+  .transform-view {
+    padding-top: calc(var(--top-offset, 0px) + 145px);
+    padding-top: calc(
+      var(--top-offset, 0px) + 145px + env(safe-area-inset-top)
+    );
+  }
+  .transform-content {
+    gap: 10px;
+  }
+  .main-image-container {
+    gap: 0;
+  }
+  .tag-button {
+    padding: 6px 12px;
+    font-size: 0.75rem;
+  }
+  .transform-action-button {
+    padding: 12px 20px;
+    font-size: 0.9rem;
+  }
 }

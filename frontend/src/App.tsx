@@ -3,7 +3,7 @@ import './App.css';
 // Hooks and Store
 import { useStore } from './store';
 import { useIsMobile } from './hooks/useIsMobile';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 // UI Components
 import LogPanel from './components/ui/LogPanel';
@@ -29,10 +29,49 @@ function App() {
   const isMobile = useIsMobile();
   // Get all state and actions from the store
   const { state, actions } = useStore(state => ({ state: state, actions: state.actions }));
-  const { view, dataset, isProcessing } = state;
+  const { view, dataset, isProcessing, modalItem } = state;
+  const headerRef = useRef<HTMLElement>(null);
 
   // NEW: Add routing logic for the slideshow
   const [isSlideshow] = useState(window.location.pathname === '/slides');
+
+  /**
+   * Effect to set a CSS variable (--vh) to the actual inner height of the window.
+   * This provides a robust replacement for the 'vh' unit, which behaves
+   * inconsistently on mobile browsers due to dynamic UI bars.
+   */
+  useEffect(() => {
+    const setRealViewportHeight = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    window.addEventListener('resize', setRealViewportHeight);
+    setRealViewportHeight(); // Initial set
+
+    return () => window.removeEventListener('resize', setRealViewportHeight);
+  }, []);
+
+  /**
+   * Effect to dynamically set the header height as a CSS variable for robust layout spacing.
+   * This ensures content in views is always pushed down by the correct amount.
+   */
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (let entry of entries) {
+        const height = entry.contentRect.height;
+        document.documentElement.style.setProperty('--header-height', `${height}px`);
+      }
+    });
+
+    resizeObserver.observe(header);
+
+    return () => resizeObserver.disconnect();
+  }, [modalItem]); // Re-run if modal appears/disappears, which affects header existence
+
   // Effect for fetching initial data on mount
   useEffect(() => {
     // Don't fetch interactive-app data if we are in slideshow mode
@@ -45,7 +84,6 @@ function App() {
     if (isSlideshow) return;
     actions.fetchGalleryImages();
   }, [dataset, actions, isSlideshow]);
-
   if (isSlideshow) {
     return <SlideshowView />;
   }
@@ -53,12 +91,10 @@ function App() {
   const appWrapperStyle = {
     '--bottom-offset': tickerConfig.showBottomTicker ? tickerConfig.tickerHeight : '0px',
     '--top-offset': tickerConfig.showTopTicker ? tickerConfig.tickerHeight : '0px',
-    display: 'flex', flexDirection: 'column', width: '100%', height: '100vh', background: '#000'
+    display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#000'
   } as React.CSSProperties;
-
   const showGalleryBackground = (view === 'transform' || view === 'comparison') && !state.isCommunityItem;
   const showBackButton = view !== 'gallery' && !state.modalItem;
-  
   // MODIFIED: Logic to conditionally show the gamification widget
   const showGamificationWidget = !isMobile || view === 'gallery' || view === 'community_gallery';
 
@@ -66,24 +102,27 @@ function App() {
     <div style={appWrapperStyle}>
       {tickerConfig.showTopTicker && <NewsTicker position="top" />}
       <div className="app-container">
-        <header className="app-header">
-            <div className="header-left">
-               {showBackButton && (
-                  <button onClick={actions.handleBackToStart} className="back-button">
-                    {isMobile ? '← BACK' : '← BACK TO START'}
-                  </button>
-               )}
-               {view === 'gallery' && <DatasetToggle />}
-            </div>
-            <div className="header-center">
-              {showGamificationWidget && <GamificationWidget />}
-             </div>
-            <div className="header-right">
-              {(view === 'gallery') && (
-                  <button className="community-gallery-button" onClick={() => actions.setState('view', 'community_gallery')}>COMMUNITY GALLERY</button>
-              )}
-            </div>
-        </header>
+        {/* MODIFIED: The header is now context-aware and will not render when a modal is open. */}
+        {!modalItem && (
+            <header className="app-header" ref={headerRef}>
+                <div className="header-left">
+                   {showBackButton && (
+                      <button onClick={actions.handleBackToStart} className="back-button">
+                         {isMobile ? '← BACK' : '← BACK TO START'}
+                      </button>
+                   )}
+                   {view === 'gallery' && <DatasetToggle />}
+                </div>
+                <div className="header-center">
+                   {showGamificationWidget && <GamificationWidget />}
+                 </div>
+                <div className="header-right">
+                  {(view === 'gallery') && (
+                      <button className="community-gallery-button" onClick={() => actions.setState('view', 'community_gallery')}>COMMUNITY GALLERY</button>
+                  )}
+               </div>
+            </header>
+        )}
 
         <main>
           <GalleryView 
@@ -130,19 +169,8 @@ function App() {
           />
         </main>
         
-        {/* ADDED: Footer for the Transform View with the remove button
-        {view === 'transform' && !isProcessing && (
-          <footer className="transform-view-footer">
-            <button
-              className="footer-remove-button-text"
-              onClick={actions.handleHideSourceImage}
-              title="Permanently remove this source image from the gallery"
-            >
-              &times; Remove Source Image
-            </button>
-          </footer>
-        )}
-         */}
+        {/* REMOVED: Footer for the Transform View with the remove button has been removed */}
+        
          <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
         
         <TutorialModal 
@@ -158,3 +186,5 @@ function App() {
 }
 
 export default App;
+
+
