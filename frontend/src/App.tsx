@@ -130,7 +130,7 @@ function App() {
           />
         </main>
         
-        {/* ADDED: Footer for the Transform View with the remove button */}
+        {/* ADDED: Footer for the Transform View with the remove button
         {view === 'transform' && !isProcessing && (
           <footer className="transform-view-footer">
             <button
@@ -142,7 +142,7 @@ function App() {
             </button>
           </footer>
         )}
-        
+         */}
          <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
         
         <TutorialModal 
