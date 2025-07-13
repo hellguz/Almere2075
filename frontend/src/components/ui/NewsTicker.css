@@ -11,6 +11,7 @@
     z-index: 200;
     font-size: 14px;
     font-weight: 500;
+    box-sizing: content-box; /* Ensures padding adds to height */
 }
 
 /* ADDED: Rotated class for the top ticker in slideshow */
@@ -22,8 +23,11 @@
     border-bottom: 1px solid var(--liquid-border);
 }
 
+/* MODIFIED: Bottom ticker now accounts for safe area */
 .news-ticker-container.bottom {
     border-top: 1px solid var(--liquid-border);
+    padding-bottom: env(safe-area-inset-bottom);
+    height: calc(var(--ticker-height, 40px) + env(safe-area-inset-bottom));
 }
 
 .news-ticker-content {

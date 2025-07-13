@@ -44,31 +44,39 @@
   line-height: 1.5; }
 .info-tooltip:hover .info-tooltip-text { display: block; }
 
-/* MODIFIED: Changed scale to make widget smaller on mobile */
+/* MODIFIED: Mobile compactness overhaul */
 @media (max-width: 768px) {
     .gamification-widget {
-        transform: scale(0.8); /* Further reduced scale */
-    }
-    .countdown-label {
-        display: none; /* Hide "Until Deadline" label to save space */
+        transform: scale(0.85);
+        padding: 8px 15px;
+        gap: 12px;
+        border-radius: 12px;
     }
     .widget-deadline {
-        text-align: center;
         padding-left: 12px;
     }
-}
-
-
-/* MODIFIED: Hide more text on very narrow screens to prevent crowding */
-@media (max-width: 420px) {
-    .score-label, .score-target {
-        display: none; }
-    .widget-deadline {
-        padding-left: 10px;
-        border-left: 1px solid var(--liquid-border); }
     .countdown-text {
-        font-size: 1.1rem; }
-    .gamification-widget {
-        padding: 10px 12px;
-        gap: 10px; }
+        font-size: 1.1rem;
+    }
+    .score-value {
+        font-size: 1.3rem;
+    }
 }
+
+@media (max-width: 480px) {
+    .score-label, .score-target {
+        display: none;
+    }
+    .widget-deadline {
+        border-left: none;
+        padding-left: 0;
+    }
+    .countdown-label {
+        display: none;
+    }
+    .gamification-widget {
+        gap: 10px;
+        padding: 8px 10px;
+    }
+}
+

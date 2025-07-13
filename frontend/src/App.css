@@ -42,6 +42,39 @@ main {
   background: var(--button-hover-bg); transform: scale(1.05);
 }
 
+/* ADDED: New Footer for the Transform View */
+.transform-view-footer {
+  position: fixed;
+  bottom: calc(var(--bottom-offset, 0px) + 20px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.transform-view-footer .footer-remove-button-text {
+  background: var(--liquid-bg);
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  padding: 10px 20px;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(var(--liquid-blur));
+  -webkit-backdrop-filter: blur(var(--liquid-blur));
+}
+
+.transform-view-footer .footer-remove-button-text:hover {
+  background: var(--color-error);
+  color: white;
+  transform: scale(1.05);
+}
+
+
 @media (max-width: 900px) {
   .header-center { 
     flex: 1.5;
@@ -76,5 +109,10 @@ main {
     padding: 6px 12px; /* Made smaller */
     font-size: 11px;  /* Made smaller */
     font-weight: 500;
+  }
+
+  .transform-view-footer .footer-remove-button-text {
+    padding: 8px 16px;
+    font-size: 12px;
   }
 }

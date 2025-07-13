@@ -151,7 +151,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                                     <img src={originalImageUrl} alt="Original" />
                                     <div className="image-header">ORIGINAL</div>
                                 </div>
-                                <div className="image-panel" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
+                                <div className="image-panel after-image" style={{ clipPath: `polygon(0 0, ${clipPosition}% 0, ${clipPosition}% 100%, 0 100%)` }}>
                                     <img src={solutionImageUrl} alt="Solution" />
                                     <div className="image-header">SOLUTION</div>
                                 </div>
@@ -193,7 +193,7 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                         <>
                             {promptButton(generationDetails.threat_prompt_text, "CRISIS PROMPT")}
                             {promptButton(generationDetails.prompt_text, "SOLUTION PROMPT")}
-                            <button className="hide-button" onClick={onHide} title="Remove from public gallery">REMOVE</button>
+                            <button className="footer-remove-button" onClick={onHide} title="Remove this generation from the public gallery">&times;</button>
                         </>
                     )}
                      {isModal && onVote && (
@@ -202,6 +202,9 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
                                 👍 {generationDetails.votes}
                             </button>
                             {promptButton(generationDetails.prompt_text, "SHOW PROMPT")}
+                            {onHide && (
+                                <button className="footer-remove-button" onClick={onHide} title="Remove this generation from the public gallery">&times;</button>
+                            )}
                         </>
                      )}
                  </div>
@@ -211,3 +214,4 @@ const ComparisonView: React.FC<ComparisonViewProps> = ({ generationDetails, isVi
 };
 
 export default ComparisonView;
+

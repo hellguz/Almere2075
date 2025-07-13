@@ -3,7 +3,7 @@
     flex-direction: column;
     box-sizing: border-box;
     width: 100%;
-    height: 100%;
+    height: 100%; /* MODIFIED: Ensure container takes full height of its parent */
     pointer-events: none;
 }
 
@@ -111,10 +111,10 @@
     min-width: 0;
     background-color: transparent;
     display: flex;
-    flex-direction: column; /* Allow content below image */
+    flex-direction: column; 
     align-items: center;
     justify-content: center;
-    gap: 10px; /* Space between image and description */
+    gap: 10px;
 }
 
 .image-panel .image-container {
@@ -131,7 +131,7 @@
 .image-panel img {
     max-width: 100%;
     max-height: 100%;
-    object-fit: contain; /* Ensures full image is visible */
+    object-fit: contain;
     border-radius: 8px;
 }
 
@@ -157,14 +157,13 @@
     z-index: 5;
 }
 
-/* MODIFIED: New styles for the description area below images */
 .image-description {
     flex-shrink: 0;
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: 10px;
-    flex-wrap: wrap; /* Allow tags to wrap */
+    flex-wrap: wrap; 
     justify-content: center;
     padding: 5px 0;
 }
@@ -200,7 +199,7 @@
     position: absolute;
     top: 0;
     left: 0;
-    gap: 0; /* No gap in slider mode */
+    gap: 0;
 }
 
 .slider-mode .image-panel.after-image {
@@ -244,7 +243,7 @@
     align-items: center;
     gap: 15px;
     background: var(--liquid-bg);
-    padding: 12px 5px;
+    padding: 12px 20px;
     border-radius: 16px;
     backdrop-filter: blur(var(--liquid-blur));
     -webkit-backdrop-filter: blur(var(--liquid-blur));
@@ -315,8 +314,7 @@
 }
 
 .save-button,
-.prompt-button,
-.hide-button {
+.prompt-button {
     background: transparent;
     border: 1px solid var(--liquid-border);
     color: var(--color-text-secondary);
@@ -332,8 +330,7 @@
 }
 
 .save-button:hover:not(:disabled),
-.prompt-button:hover,
-.hide-button:hover {
+.prompt-button:hover {
     border-color: var(--color-text-primary);
     color: var(--color-text-primary);
 }
@@ -343,16 +340,30 @@
     border-radius: 0;
 }
 
-.hide-button {
-    border-color: var(--color-error);
+.footer-remove-button {
+    background: transparent;
+    border: 1px solid var(--color-error);
     color: var(--color-error);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 18px;
+    line-height: 1;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
-.hide-button:hover {
+.footer-remove-button:hover {
     background: var(--color-error);
     color: white;
-    border-color: var(--color-error);
+    transform: scale(1.1);
 }
+
 
 .save-button-saved {
     background: var(--color-success);
@@ -432,6 +443,7 @@
 .comparison-footer.is-modal .footer-right {
     flex-grow: 0;
     flex-shrink: 0;
+    gap: 15px;
 }
 
 
@@ -443,6 +455,23 @@
 }
 
 @media (max-width: 768px) {
+    .floating-controls-top {
+        top: calc(var(--top-offset, 0px) + 145px + env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        right: auto;
+        width: auto;
+    }
+
+    /* MODIFIED: Stack images vertically on mobile */
+    .sbs-top-row {
+        flex-direction: column;
+    }
+    
+    .sbs-bottom-row .image-panel {
+        max-width: 50%;
+    }
+
     .comparison-footer {
         width: calc(100% - 20px);
         padding: 8px 12px;
@@ -460,11 +489,18 @@
         flex-basis: 100%;
         align-items: center;
         text-align: center;
+        order: 1;
     }
 
-    .comparison-footer:not(.is-modal) .footer-center,
+    .comparison-footer:not(.is-modal) .footer-center {
+        flex-basis: 100%;
+        order: 2;
+    }
+    
     .comparison-footer:not(.is-modal) .footer-right {
-        flex: 1;
+        flex-basis: 100%;
+        order: 3;
+        justify-content: center;
     }
 
     .comparison-footer .footer-left {
@@ -477,6 +513,8 @@
 
     .name-input-container {
         height: 34px;
+        width: 100%;
+        max-width: 300px;
     }
 
     .name-input-container input {
@@ -485,18 +523,27 @@
 
     .save-button,
     .prompt-button,
-    .hide-button,
     .modal-like-button {
         padding: 6px 12px;
         font-size: 12px;
         border-radius: 16px;
     }
 
-    .floating-controls-top {
-        top: calc(var(--top-offset, 0px) + 70px);
-        left: 50%;
-        transform: translateX(-50%);
-        right: auto;
-        width: auto;
+    .footer-remove-button {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+    }
+
+    /* ADDED: Ensure the comparison view inside the modal is laid out as a column */
+    .comparison-container.is-modal {
+        flex-direction: column;
+    }
+    
+    /* ADDED: Ensure the footer inside the modal is not sticky and scrolls with content */
+    .comparison-footer.is-modal {
+        position: relative;
+        width: 100%;
+        margin-bottom: env(safe-area-inset-bottom);
     }
 }

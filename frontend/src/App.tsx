@@ -29,7 +29,7 @@ function App() {
   const isMobile = useIsMobile();
   // Get all state and actions from the store
   const { state, actions } = useStore(state => ({ state: state, actions: state.actions }));
-  const { view, dataset } = state;
+  const { view, dataset, isProcessing } = state;
 
   // NEW: Add routing logic for the slideshow
   const [isSlideshow] = useState(window.location.pathname === '/slides');
@@ -58,6 +58,9 @@ function App() {
 
   const showGalleryBackground = (view === 'transform' || view === 'comparison') && !state.isCommunityItem;
   const showBackButton = view !== 'gallery' && !state.modalItem;
+  
+  // MODIFIED: Logic to conditionally show the gamification widget
+  const showGamificationWidget = !isMobile || view === 'gallery' || view === 'community_gallery';
 
   return (
     <div style={appWrapperStyle}>
@@ -73,7 +76,7 @@ function App() {
                {view === 'gallery' && <DatasetToggle />}
             </div>
             <div className="header-center">
-              <GamificationWidget />
+              {showGamificationWidget && <GamificationWidget />}
              </div>
             <div className="header-right">
               {(view === 'gallery') && (
@@ -127,6 +130,19 @@ function App() {
           />
         </main>
         
+        {/* ADDED: Footer for the Transform View with the remove button */}
+        {view === 'transform' && !isProcessing && (
+          <footer className="transform-view-footer">
+            <button
+              className="footer-remove-button-text"
+              onClick={actions.handleHideSourceImage}
+              title="Permanently remove this source image from the gallery"
+            >
+              &times; Remove Source Image
+            </button>
+          </footer>
+        )}
+        
          <LogPanel messages={state.logMessages} isVisible={state.isProcessing} />
         
         <TutorialModal 
@@ -134,7 +150,6 @@ function App() {
             onClose={actions.closeTutorial}
         />
         
-        {/* ADDED: Logo panel is rendered at the root level to be always visible */}
         <LogoPanel />
       </div>
       {tickerConfig.showBottomTicker && <NewsTicker position="bottom" />}

@@ -26,27 +26,42 @@
   /* MODIFIED: Added transition for smooth fade effect */
   transition: opacity 0.3s ease;
 
-  pointer-events: none; /* Make the container non-interactive by default */
+  pointer-events: auto; /* Make the container interactive */
   padding: 10px;
 
-  /* background: var(--liquid-bg); */
+  background: var(--liquid-bg);
   border: 1px solid var(--liquid-border);
-  border-radius: 8px;
+  border-radius: 12px;
   backdrop-filter: blur(var(--liquid-blur));
   -webkit-backdrop-filter: blur(var(--liquid-blur));
 }
 
-/* ADDED: On hover, make the panel invisible and non-interactive */
-.logo-panel-container:hover {
-  opacity: 0;
-  pointer-events: none;
+/* Individual Logos and Links */
+.logo-panel-container a {
+  display: inline-block;
+  line-height: 0; /* Removes extra space below image */
+  transition: transform 0.2s ease;
 }
 
-/* Individual Logos */
+.logo-panel-container a:hover {
+  transform: scale(1.1);
+}
+
 .logo-panel-container img {
   height: var(--logo-height);
   width: auto; /* Maintain aspect ratio */
-  pointer-events: auto; /* Make logos interactive if needed */
+}
+
+/* ADDED: Styles for the inline GitHub SVG logo */
+.github-logo-svg {
+  height: calc(var(--logo-height) * 0.75); /* Slightly smaller */
+  width: auto;
+  fill: var(--color-text-secondary);
+  transition: fill 0.2s ease;
+}
+
+.logo-panel-container a:hover .github-logo-svg {
+  fill: var(--color-text-primary);
 }
 
 /* MODIFIED: Hide logo panel on mobile devices */
@@ -55,3 +70,4 @@
     display: none;
   }
 }
+

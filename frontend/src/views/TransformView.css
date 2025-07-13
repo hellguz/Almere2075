@@ -26,7 +26,10 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    position: relative; /* For positioning the remove button */
 }
+
+/* REMOVED: The 'x' button style is no longer needed here */
 
 .transform-view .main-image {
     width: 100%;
@@ -41,6 +44,8 @@
     display: flex;
     flex-direction: column;
     gap: 15px;
+    /* ADDED: Add padding to prevent overlap with the new footer */
+    padding-bottom: 60px;
 }
 
 .transform-step-title {
@@ -77,7 +82,6 @@
     margin-bottom: 10px;
 }
 
-/* ADDED: New subtle display for threat context on solution step */
 .threat-context {
     display: flex;
     align-items: baseline;
@@ -225,13 +229,21 @@
 
 @media (max-width: 768px) {
     .transform-view {
-        padding-top: calc(var(--top-offset, 0px) + 85px);
-        padding-top: calc(var(--top-offset, 0px) + 85px + env(safe-area-inset-top));
+        padding-top: calc(var(--top-offset, 0px) + 145px);
+        padding-top: calc(var(--top-offset, 0px) + 145px + env(safe-area-inset-top));
     }
     .transform-content {
         gap: 10px;
     }
     .main-image-container {
         gap: 0;
+    }
+    .tag-button {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+    }
+    .transform-action-button {
+        padding: 12px 20px;
+        font-size: 0.9rem;
     }
 }

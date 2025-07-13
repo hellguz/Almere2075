@@ -22,7 +22,7 @@ interface CommunityGalleryViewProps {
     onVote: (id: string) => Promise<void>;
     onItemSelect: (item: GenerationDetails) => void;
     onModalClose: () => void;
-    onHide?: () => void; // ADDED: onHide is now an optional prop
+    onHide?: () => void;
     fetchGallery: () => void;
     dataset: 'weimar' | 'almere';
 }
@@ -40,7 +40,7 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
     onVote,
     onItemSelect,
     onModalClose,
-    onHide, // ADDED
+    onHide,
     fetchGallery,
     dataset,
 }) => {
@@ -145,15 +145,18 @@ const CommunityGalleryView: React.FC<CommunityGalleryViewProps> = ({
                                  <button className={modalComparisonMode === 'slider' ? 'active' : ''} onClick={() => setModalComparisonMode('slider')}>Slider</button>
                             </div>
                         </div>
-                         <ComparisonView
-                            generationDetails={modalItem}
-                            isVisible={true}
-                            isModal={true}
-                            mode={modalComparisonMode}
-                            onModeChange={setModalComparisonMode}
-                            onVote={handleModalVote}
-                            onHide={onHide} // Pass down onHide to ComparisonView
-                        />
+                        {/* ADDED: a scrollable body wrapper for the comparison view */}
+                        <div className="modal-body">
+                            <ComparisonView
+                                generationDetails={modalItem}
+                                isVisible={true}
+                                isModal={true}
+                                mode={modalComparisonMode}
+                                onModeChange={setModalComparisonMode}
+                                onVote={handleModalVote}
+                                onHide={onHide}
+                            />
+                        </div>
                     </div>
                 </div>
              )}

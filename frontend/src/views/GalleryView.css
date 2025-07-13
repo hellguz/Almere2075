@@ -44,8 +44,8 @@
 .main-actions-container {
     position: absolute;
     /* MODIFIED: Using CSS variable to account for the ticker's height */
-    bottom: calc(var(--bottom-offset) + 30px);
-    bottom: calc(var(--bottom-offset) + 30px + env(safe-area-inset-bottom));
+    bottom: calc(var(--bottom-offset, 0px) + 30px);
+    bottom: calc(var(--bottom-offset, 0px) + 30px + env(safe-area-inset-bottom));
     left: 50%;
     transform: translateX(-50%); display: flex;
     z-index: 20;
@@ -63,3 +63,29 @@
 }
 .upload-button:hover { color: var(--color-text-primary);
     border-color: rgba(255,255,255,0.3); transform: scale(1.05); }
+
+/* MODIFIED: Mobile styles for bottom buttons and instructions */
+@media (max-width: 768px) {
+  .main-actions-container {
+    flex-direction: column;
+    gap: 8px;
+    width: 80%;
+    max-width: 300px;
+    bottom: calc(var(--bottom-offset, 0px) + 20px + env(safe-area-inset-bottom));
+  }
+  .upload-button {
+    font-size: 0.8rem;
+    min-width: unset;
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 20px;
+  }
+  .gallery-instructions {
+      width: 90%;
+      font-size: 12px;
+      padding: 8px 15px;
+      /* Position below the taller mobile header */
+      top: calc(var(--top-offset, 0px) + 145px + env(safe-area-inset-top));
+  }
+}
+

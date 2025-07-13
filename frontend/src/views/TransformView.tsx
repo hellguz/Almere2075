@@ -59,7 +59,7 @@ const TransformView: React.FC<TransformViewProps> = ({
 }) => {
     const viewRef = useRef<HTMLDivElement>(null);
     const selectedThreats = availableThreatTags.filter(tag => selectedThreatTags.includes(tag.id));
-    // ADDED: Get the hide action from the store
+    // The hide action is now called from the new footer in App.tsx
     const handleHideSourceImage = useStore(state => state.actions.handleHideSourceImage);
 
     useEffect(() => {
@@ -79,7 +79,6 @@ const TransformView: React.FC<TransformViewProps> = ({
         };
     }, [isVisible]);
 
-    // ADDED: Effect to listen for the "Delete" key press to hide the source image
     useEffect(() => {
         if (!isVisible) return;
 
@@ -104,6 +103,7 @@ const TransformView: React.FC<TransformViewProps> = ({
         <div ref={viewRef} className={`transform-view ${isVisible ? 'visible' : ''} ${transformStep === 'threat' ? 'step-threat' : 'step-solution'}`}>
             <div className="transform-content">
                 <div className="main-image-container">
+                    {/* REMOVED: The 'x' button is now in a dedicated footer in App.tsx */}
                     <img src={imageToShow.url} alt="Transformation subject" className="main-image" />
                 </div>
                 <div className="transform-options">
