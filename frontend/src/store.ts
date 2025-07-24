@@ -388,7 +388,7 @@ const storeCreator: StoreCreator = (set, get) => {
     return {
         view: 'gallery',
         transformStep: 'threat',
-        dataset: 'weimar',
+        dataset: 'almere',
         comparisonMode: 'side-by-side',
         sourceImageForTransform: null,
         threatImageForTransform: null,
