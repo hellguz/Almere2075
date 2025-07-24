@@ -43,7 +43,7 @@ ALMERE_THUMBNAILS_DIR = THUMBNAILS_DIR / "almere"
 GENERATED_THUMBNAILS_DIR = THUMBNAILS_DIR / "generated"
 DATABASE_DIR = Path("/app/database")
 ALLOWED_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.webp'}
-VOTE_RATE_LIMIT_SECONDS = 60 # 1 minute
+VOTE_RATE_LIMIT_SECONDS = 0 # 1 minute
 GAMIFICATION_TARGET_SCORE = 100
 # Set deadline to July 13, 2025, 23:59:59 UTC
 GAMIFICATION_DEADLINE = datetime(2025, 7, 13, 23, 59, 59, tzinfo=timezone.utc)
@@ -192,7 +192,7 @@ def run_full_threat_generation_pipeline(job_id: str, image_string_from_request: 
         
         response = requests.get(replicate_url, stream=True, timeout=30)
         response.raise_for_status()
-        
+         
         local_filename = f"{uuid.uuid4()}.png"
         save_path = GENERATED_IMAGES_DIR / local_filename
         
@@ -251,7 +251,7 @@ def run_solution_generation_task(job_id: str, image_string_from_request: str, pr
         
         response = requests.get(replicate_url, stream=True, timeout=30)
         response.raise_for_status()
-        
+         
         local_filename = f"{uuid.uuid4()}.png"
         save_path = GENERATED_IMAGES_DIR / local_filename
         
@@ -301,8 +301,7 @@ async def get_mobile_upload_page():
                 --error: #FF453A; --success: #32D74B;
             }
             body {
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                background-color: var(--bg); color: var(--text);
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text);
                 display: flex; flex-direction: column; align-items: center;
                 justify-content: center; min-height: 100vh; margin: 0; padding: 20px;
                 box-sizing: border-box; text-align: center;
@@ -340,8 +339,7 @@ async def get_mobile_upload_page():
             .status-error { color: var(--error); }
             .status-success { color: var(--success); }
             .spinner {
-                border: 4px solid rgba(255, 255, 255, 0.2);
-                border-left-color: var(--primary);
+                border: 4px solid rgba(255, 255, 255, 0.2); border-left-color: var(--primary);
                 border-radius: 50%; width: 24px; height: 24px;
                 animation: spin 1s linear infinite;
                 margin: 20px auto 0; display: none;
@@ -377,7 +375,6 @@ async def get_mobile_upload_page():
 
             const urlParams = new URLSearchParams(window.location.search);
             const dataset = urlParams.get('dataset') || 'almere';
-
             imagePreview.addEventListener('click', () => fileInput.click());
 
             fileInput.addEventListener('change', (event) => {
@@ -417,7 +414,6 @@ async def get_mobile_upload_page():
                 };
                 reader.readAsDataURL(file);
             });
-
             uploadButton.addEventListener('click', async () => {
                 if (!imageBase64) return;
 
@@ -441,11 +437,9 @@ async def get_mobile_upload_page():
                     const result = await response.json();
                     statusMessage.textContent = 'Success! Your photo will appear in the gallery soon.';
                     statusMessage.className = 'status-success';
-                    
                     setTimeout(() => {
                         window.close();
                     }, 3000);
-
                 } catch (error) {
                     statusMessage.textContent = `Error: ${error.message}`;
                     statusMessage.className = 'status-error';
@@ -478,7 +472,7 @@ async def mobile_upload(request: models.MobileUploadRequest):
             encoded += '=' * (4 - missing_padding)
 
         image_data = base64.b64decode(encoded)
-        
+         
         with Image.open(io.BytesIO(image_data)) as img:
             img = ImageOps.exif_transpose(img)
             if img.mode in ("RGBA", "P"):
@@ -637,7 +631,7 @@ async def generate_prompt(request: models.GeneratePromptRequest):
             max_tokens=500,
         )
         generated_prompt = response.choices[0].message.content.strip()
-        
+         
         return {"prompt": generated_prompt, "tags_used": selected_tags_ids}
     except Exception as e:
         print(f"!!! UNHANDLED EXCEPTION IN generate_prompt: {e}")

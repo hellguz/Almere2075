@@ -6,20 +6,51 @@ import LogoPanel from '../components/ui/LogoPanel';
 import { tickerConfig } from '../tickerConfig';
 import './SlideshowView.css';
 
-const ANIMATION_DURATION = 8; // 8 seconds for one slider pass
-const PRELOAD_AHEAD = 3;      // How many full generations to preload in advance
+const ANIMATION_DURATION = 6; // 8 seconds for one slider pass
+const PRELOAD_AHEAD = 3; // How many full generations to preload in advance
 
-// --- Helper Functions ---
+// This cache will hold the ordered list of generations from the public gallery.
+let galleryCache: GenerationDetails[] = [];
+// This index will track our position in the cache to provide sequential generations.
+let cacheIndex = 0;
 
-const fetchRandomGeneration = async (dataset: string): Promise<GenerationDetails | null> => {
-    try {
-        const response = await fetch(`${API_BASE_URL}/random-generation?dataset=${dataset}`);
-        if (!response.ok) throw new Error(`Failed to fetch random generation for ${dataset}`);
-        return response.json();
-    } catch (error) {
-        console.error("Fetch failed:", error);
-        return null; // Return null on failure
+/**
+ * Fetches generations for the slideshow.
+ * On the first call, it fetches the entire ordered public gallery and caches it.
+ * On subsequent calls, it returns the next generation from the cache, looping around.
+ * This replaces the original "fetch random" logic to ensure a specific order.
+ * @param {string} dataset The dataset to fetch ('weimar' or 'almere').
+ * @returns {Promise<GenerationDetails | null>} A promise that resolves to the next generation.
+ */
+const fetchNextGenerationFromGallery = async (dataset: string): Promise<GenerationDetails | null> => {
+    // If the cache is empty, populate it by fetching the entire gallery.
+    if (galleryCache.length === 0) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/public-gallery?dataset=${dataset}`);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch public gallery for ${dataset}`);
+            }
+            galleryCache = await response.json();
+            // Reset index when refetching, although this should only happen once.
+            cacheIndex = 0; 
+            if (galleryCache.length === 0) {
+                console.error("Slideshow: The public gallery is empty.");
+                return null;
+            }
+        } catch (error) {
+            console.error("Slideshow fetch failed:", error);
+            // Clear cache on error to allow a retry on the next call.
+            galleryCache = []; 
+            return null;
+        }
     }
+    
+    // Get the next generation from the cache using the current index.
+    const nextGen = galleryCache[cacheIndex];
+    // Increment the index, looping back to the start if we reach the end.
+    cacheIndex = (cacheIndex + 1) % galleryCache.length;
+    
+    return nextGen;
 };
 
 const getImageUrl = (gen: GenerationDetails, type: 'original' | 'threat' | 'generated', dataset: string): string => {
@@ -64,7 +95,7 @@ const SlideshowView: React.FC = () => {
         
         const nextGenIndex = Math.floor((newStep + 3) / 3);
         if (generationQueue.length - nextGenIndex < PRELOAD_AHEAD) {
-            fetchRandomGeneration(dataset).then(newGen => {
+            fetchNextGenerationFromGallery(dataset).then(newGen => {
                 if (newGen) {
                     const newImageUrls = [
                         getImageUrl(newGen, 'original', dataset),
@@ -80,12 +111,16 @@ const SlideshowView: React.FC = () => {
         }
         setStep(newStep);
     }, [step, imageQueue, generationQueue.length, dataset]);
-    
+
     useEffect(() => {
+        // Reset cache and index when the component mounts or dataset changes.
+        galleryCache = [];
+        cacheIndex = 0;
+
         const init = async () => {
             try {
                 const initialGens = (await Promise.all(
-                    [...Array(PRELOAD_AHEAD)].map(() => fetchRandomGeneration(dataset))
+                    [...Array(PRELOAD_AHEAD)].map(() => fetchNextGenerationFromGallery(dataset))
                 )).filter((g): g is GenerationDetails => g !== null);
 
                 if (initialGens.length < 2) throw new Error("Could not fetch enough initial generations.");
@@ -113,7 +148,10 @@ const SlideshowView: React.FC = () => {
     }, [dataset]);
 
     const { stage, tags } = useMemo(() => {
-        const genIndex = Math.floor(step / 3);
+        if (generationQueue.length === 0) {
+            return { stage: 0, tags: [] };
+        }
+        const genIndex = Math.floor(step / 3) % generationQueue.length;
         const stageIndex = (step + 1) % 3;
         const currentGen = generationQueue[genIndex];
         if (!currentGen) return { stage: 0, tags: [] };
@@ -134,17 +172,18 @@ const SlideshowView: React.FC = () => {
         };
     }, [step, generationQueue]);
 
-    const currentBaseImageUrl = imageQueue[step];
-    const currentRevealImageUrl = imageQueue[step + 1];
-
     const viewStyle = {
         '--bottom-offset': tickerConfig.showBottomTicker ? tickerConfig.tickerHeight : '0px',
         '--top-offset': tickerConfig.tickerHeight,
         '--animation-duration': `${ANIMATION_DURATION}s`,
     } as React.CSSProperties;
 
-    if (isLoading || !currentBaseImageUrl || !currentRevealImageUrl) {
+    if (isLoading) {
         return <div className="slideshow-view" style={viewStyle}><div className="slideshow-loading">Loading Slideshow...</div></div>;
+    }
+    
+    if (imageQueue.length < 2) {
+        return <div className="slideshow-view" style={viewStyle}><div className="slideshow-loading">Not enough images for slideshow.</div></div>;
     }
 
     return (
